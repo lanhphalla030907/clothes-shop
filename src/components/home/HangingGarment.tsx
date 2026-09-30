@@ -1,119 +1,189 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { formatPrice } from '@/lib/format'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import type { Product } from '@/types'
+import { DEFAULT_HOOK_Y, DEFAULT_HEM_Y, clamp01, round2 } from './garmentGeometry'
+import { CHROME } from './studioTokens'
 
 interface HangingGarmentProps {
   product: Product
   index: number
   className?: string
+  ratio?: number
 }
 
-/**
- * Per-piece swing. A garment on a rail pivots about its hook, so each piece
- * gets its own amplitude, period and phase — otherwise four identical loops
- * read as one mechanical animation rather than four separate clothes.
- */
-const SWAY = [
-  { rotate: 0.9, duration: 8.4, delay: 0 },
-  { rotate: -1.15, duration: 9.7, delay: 1.6 },
-  { rotate: 0.75, duration: 7.6, delay: 3.1 },
-  { rotate: -1.35, duration: 10.8, delay: 0.8 },
-] as const
+const EASE = [0.16, 1, 0.3, 1] as const
 
-/**
- * How far each cut-out is lifted above the cell's top edge. The cell edge sits
- * on the rail, so this is what carries the hook — already present in the
- * artwork — over the line. Measured against `image.png`, whose hook curls
- * across source rows 11-28 with the shoulders starting at row 72: the rail has
- * to land inside that curl, which puts the image top 7px above the rail.
- * Per-piece corrections live on `cutoutOffsetY`, because the hook sits at a
- * slightly different height in every photograph.
- */
-const HOOK_LIFT = 7
-
-/**
- * One piece of the rail. The product photography already contains its own
- * hanger, so nothing is drawn here: the cell's top edge sits on the rail line
- * and the cut-out is lifted just far enough for the hook in the artwork to
- * ride over it. Everything below the hook hangs underneath.
- */
-export function HangingGarment({ product, index, className = '' }: HangingGarmentProps) {
+export function HangingGarment({
+  product,
+  index,
+  className = '',
+  ratio = 1,
+}: HangingGarmentProps) {
   const prefersReduced = useReducedMotion()
+  const canHover = useMediaQuery('(hover: hover) and (pointer: fine)')
   const [hovered, setHovered] = useState(false)
-  const swing = SWAY[index % SWAY.length]
+
+  const hookY = clamp01(product.hookY ?? DEFAULT_HOOK_Y)
+  const hemY = clamp01(product.hemY ?? DEFAULT_HEM_Y)
+
+  /**
+   * We translate the image upward by the fraction of *its own rendered height*
+   * that sits above the hook. Because the image is drawn at height
+   * `(ratio * pieceScale * g) * aspect`, and `hookY` is a fraction of the
+   * canvas, `-hookY * 100%` of the *image element* is exactly the pixel
+   * distance from the top of the canvas to the hook. So plain `-{hookY}%`
+   * is correct — it does not need to know the pixel size.
+   */
+  const pieceShift = `-${round2(hookY * 100, 3)}%`
+
+  /**
+   * The drop shadow's bottom edge sits at the hem, i.e. `(1 - hemY)` from the
+   * bottom of the canvas. Same logic as above: express as a percentage of the
+   * image element's own height.
+   */
+  const shadowBottom = `${round2((1 - hemY) * 100, 3)}%`
+
+  const isHovered = canHover && hovered
+
+  useEffect(() => {
+    const release = () => setHovered(false)
+    window.addEventListener('scroll', release, { passive: true })
+    window.addEventListener('blur', release)
+    return () => {
+      window.removeEventListener('scroll', release)
+      window.removeEventListener('blur', release)
+    }
+  }, [])
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 26 }}
+      initial={prefersReduced ? false : { opacity: 0, y: -40 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 1.1, delay: 0.6 + index * 0.12, ease: [0.16, 1, 0.3, 1] }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      className={`group relative flex flex-col items-center ${className}`}
+      transition={{ duration: 0.9, delay: 0.75 + index * 0.11, ease: EASE }}
+      onPointerEnter={(event) => {
+        if (event.pointerType === 'mouse') setHovered(true)
+      }}
+      onPointerLeave={(event) => {
+        if (event.pointerType === 'mouse') setHovered(false)
+      }}
+      onPointerCancel={() => setHovered(false)}
+      className={`group relative flex flex-col items-center ${
+        canHover ? 'cursor-pointer' : ''
+      } [--bleed:0px] [--pad-b:2.75rem] md:[--bleed:calc(var(--g)*-48)] md:[--pad-b:calc(var(--g)*80+1.25rem)] ${className}`}
+      style={
+        {
+          marginInline: 'var(--bleed)',
+          paddingBottom: 'var(--pad-b)',
+          zIndex: isHovered ? 2 : 1,
+          '--w': ratio,
+        } as React.CSSProperties
+      }
     >
-      {/* Swings about the hook, which stays put on the rail — the hem travels
-          furthest, the way a real garment moves. On hover the swing is caught
-          and settles, as if the piece had been lifted off its rest. */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-2 md:hidden"
+        style={{ background: CHROME, boxShadow: '0 6px 10px -4px #00000059' }}
+      />
+
       <motion.div
-        style={{ transformOrigin: 'top center' }}
-        animate={
-          prefersReduced || hovered
-            ? { rotate: 0 }
-            : { rotate: [swing.rotate, -swing.rotate, swing.rotate] }
-        }
-        transition={
-          hovered
-            ? { type: 'spring', stiffness: 120, damping: 14 }
-            : { duration: swing.duration, repeat: Infinity, ease: 'easeInOut', delay: swing.delay }
-        }
-        className="flex w-full flex-col items-center"
+        animate={prefersReduced || !isHovered ? { y: 0 } : { y: -10 }}
+        transition={{ duration: 0.5, ease: EASE }}
+        className="relative block"
+        style={{ marginTop: '-5px' }}
       >
-        {/* ── Garment, hung by the hook already in the cut-out ─────────── */}
         <Link
           to={`/product/${product.id}`}
           aria-label={`${product.name} — ${formatPrice(product.price)}`}
-          className="relative flex w-full justify-center"
+          className="block outline-none"
         >
-          {/* inline-flex so the wrapper shrink-wraps the garment and the shadow
-              ellipse always lands directly beneath that piece, whatever its
-              aspect ratio */}
-          <span className="relative inline-flex flex-col items-center">
-            <motion.img
-              src={product.cutout}
-              alt=""
-              aria-hidden
-              draggable={false}
+          <span
+            className="block"
+            style={{ transformOrigin: '50% 0', willChange: 'transform' }}
+          >
+            <span
+              className="block"
               style={{
-                filter: product.cutoutFilter,
-                // lift the artwork so the hook drawn into it clears the rail
-                marginTop: (product.cutoutOffsetY ?? 0) - HOOK_LIFT,
+                transform: `translateY(${pieceShift})`,
+                ...(product.cutoutFilter && product.cutoutFilter !== 'none'
+                  ? { filter: product.cutoutFilter }
+                  : null),
               }}
-              animate={prefersReduced ? undefined : { y: hovered ? -30 : 0, scale: hovered ? 1.16 : 1, rotate: hovered ? 0.5 : 0 }}
-              transition={
-                hovered
-                  ? { type: 'spring', stiffness: 340, damping: 20,rotate: { type: 'spring', stiffness: 280, damping: 18 } }
-                  : { type: 'spring', stiffness: 180, damping: 26 }
-              }
-              className="block h-auto max-h-[clamp(380px,60vh,720px)] w-auto max-w-full origin-top object-contain object-top drop-shadow-[0_40px_50px_rgba(0,0,0,0.25)] transition-[filter,drop-shadow] duration-500 ease-editorial group-hover:drop-shadow-[0_60px_60px_rgba(0,0,0,0.45)]"
-            />
-
-            {/* soft blurred ellipse sitting directly beneath the piece; it
-                tightens on hover so the garment reads as lifted clear of it */}
-            <motion.span
-              aria-hidden
-              animate={
-                prefersReduced
-                  ? undefined
-                  : { opacity: hovered ? 0.2 : 1, scaleX: hovered ? 0.6 : 1, scaleY: hovered ? 1.3 : 1 }
-              }
-              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-              className="pointer-events-none absolute -bottom-2 left-1/2 h-3 w-[50%] -translate-x-1/2 rounded-[50%] bg-black/15 blur-[14px]"
-            />
+            >
+              <img
+                src={product.cutout ?? product.images[0]}
+                alt=""
+                aria-hidden
+                draggable={false}
+                className="block h-auto max-w-none select-none"
+                style={{
+                  width: 'calc(var(--w) * var(--piece-scale) * var(--g))',
+                  filter: 'drop-shadow(0 18px 22px #00000029)',
+                }}
+              />
+            </span>
           </span>
         </Link>
+
+        {canHover && (
+          <motion.span
+            aria-hidden
+            initial={false}
+            animate={
+              prefersReduced
+                ? undefined
+                : { opacity: isHovered ? 1 : 0, rotate: isHovered ? 0 : -10 }
+            }
+            transition={{ opacity: { duration: 0.18 }, rotate: { duration: 0.7, ease: EASE } }}
+            className="pointer-events-none absolute flex flex-col items-start"
+            style={{
+              top: 'calc(var(--g) * 170)',
+              left: 'calc(50% + var(--g) * 70)',
+              transformOrigin: '.4rem 0',
+              marginTop: isHovered ? 0 : -6,
+            }}
+          >
+            <span className="ml-[.4rem] h-[1.4rem] w-px bg-[var(--ctrl-red)]" />
+            <span
+              className="relative w-[9.25rem] rounded-[3px] px-3 pt-4 pb-[.7rem] text-[var(--ink)]"
+              style={{
+                background: 'var(--paper)',
+                boxShadow: 'inset 0 1px #ffffffcc, 0 10px 18px -8px #00000073',
+              }}
+            >
+              <span
+                className="absolute top-[.35rem] left-[.2rem] h-[.4rem] w-[.4rem] rounded-full bg-[var(--backdrop)]"
+                style={{ boxShadow: 'inset 0 1px 1px #00000059' }}
+              />
+              <span className="block font-extrabold text-[0.7rem] uppercase [font-stretch:125%]">
+                {product.name}
+              </span>
+              <span className="mt-0.5 block text-[0.8rem] text-[var(--ink-soft)]">
+                {formatPrice(product.price)}
+              </span>
+            </span>
+          </motion.span>
+        )}
       </motion.div>
+
+      <motion.span
+        aria-hidden
+        animate={
+          prefersReduced
+            ? undefined
+            : { opacity: isHovered ? 0.55 : 1, scaleX: isHovered ? 0.85 : 1 }
+        }
+        transition={{ opacity: { duration: 0.5 }, scaleX: { duration: 0.5, ease: EASE } }}
+        className="pointer-events-none absolute left-1/2 h-6 -translate-x-1/2 rounded-[50%]"
+        style={{
+          bottom: shadowBottom,
+          width: 'calc(var(--w) * var(--piece-scale) * var(--g) * 0.85)',
+          filter: 'blur(7px)',
+          background: 'radial-gradient(closest-side, #0006, #0000)',
+        }}
+      />
     </motion.div>
   )
 }

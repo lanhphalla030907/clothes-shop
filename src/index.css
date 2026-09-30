@@ -15,9 +15,13 @@
   --color-paper: #fbfaf8;
   --color-paper-pure: #ffffff;
 
-  /* Type scale — display sizes are fluid, clamped between breakpoints */
-  --font-sans: 'Inter Tight', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  /* Type scale — display sizes are fluid, clamped between breakpoints.
+     Archivo is variable on two axes: wdth (62-125) and wght (100-900), so the
+     display face can be pushed wide and heavy without a second download. */
+  --font-sans: 'Archivo', 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --font-stretch-expanded: 125%;
+  --font-stretch-condensed: 78%;
 
   --text-hero: clamp(3.25rem, 15.2vw, 17rem);
   --text-display: clamp(2.5rem, 8.2vw, 8.5rem);
@@ -55,7 +59,7 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: 'ss01', 'cv01';
+    font-variation-settings: 'wdth' 100;
     overflow-x: clip;
   }
 
@@ -65,6 +69,7 @@
   h4 {
     margin: 0;
     font-weight: 800;
+    font-stretch: var(--font-stretch-expanded);
     letter-spacing: -0.035em;
     line-height: 0.92;
     text-wrap: balance;
@@ -140,9 +145,11 @@
   text-transform: uppercase;
 }
 
-/* Massive display type with editorial tracking */
+/* Massive display type with editorial tracking. Archivo is pushed to its
+   widest setting, which is what gives the hero its wide, poster-like weight. */
 @utility type-display {
   font-weight: 800;
+  font-stretch: var(--font-stretch-expanded);
   text-transform: uppercase;
   line-height: 0.82;
   letter-spacing: -0.05em;
