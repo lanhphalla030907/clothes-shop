@@ -30,6 +30,14 @@
 
   --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-swift: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* Signal — the single semantic accent, lifted from the hero's stop button
+     (--ctrl-red in components/home/studioTokens.ts). Reserved for states that
+     must be told apart at a glance: negative movement, failure, low stock.
+     Everything else stays achromatic. */
+  --color-signal: #c8302a;
+  --color-signal-soft: #f7e9e8;
+  --color-signal-contrast: #fbfaf8;
 }
 
 @layer base {
