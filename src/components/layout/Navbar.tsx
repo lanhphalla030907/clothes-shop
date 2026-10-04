@@ -84,6 +84,15 @@ export function Navbar() {
               Studio
             </Link>
 
+            {/* The account, and the only doorway into the dashboard from here. */}
+            <Link
+              to="/dashboard"
+              className="label-micro link-wipe hidden text-graphite transition-colors duration-400 ease-editorial hover:text-ink sm:inline-flex"
+              data-active={pathname.startsWith('/dashboard') ? 'true' : undefined}
+            >
+              Account
+            </Link>
+
             <button
               type="button"
               onClick={openCart}
@@ -157,7 +166,7 @@ function MobileMenu() {
           </div>
 
           <nav className="container-editorial flex flex-1 flex-col justify-center gap-2">
-            {[...navLinks, { label: 'Bag', to: '/cart' }].map((link, index) => (
+            {[...navLinks, { label: 'Bag', to: '/cart' }, { label: 'Account', to: '/dashboard' }].map((link, index) => (
               <motion.div
                 key={link.to}
                 initial={{ opacity: 0, y: 28 }}
