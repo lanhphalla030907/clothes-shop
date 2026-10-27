@@ -1,61 +1,97 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
 import { Action } from '@/components/ui/Action'
 import { PageHeader, Panel } from '@/components/account/PageHeader'
 import { EmptyState, ErrorState, InlineNotice } from '@/components/account/States'
 import { SkeletonCard } from '@/components/account/Skeleton'
 import { SmartImage } from '@/components/ui/SmartImage'
-import { useWishlist } from '@/features/wishlist/useWishlist'
-import { useAccountCart } from '@/features/cart/useAccountCart'
+import { useWishlistActions } from '@/features/wishlist/useWishlistActions'
+import { useCartActions } from '@/features/cart/useCartActions'
 import { toUserMessage } from '@/lib/api/errors'
 import { formatAmount } from '@/lib/money'
 import type { WishlistItem } from '@/types/api'
 
 /**
- * Saved pieces, held server-side against the account.
- *
- * ## "Add to bag" and the missing product pages
- *
- * The storefront's product pages are static, with no variant ids, so a saved
- * product cannot be shown as a row on `/product/:id`. The only honest way to move
- * a saved piece into the cart is to name a real, in-stock variant — which is what
- * this button does, using the server's own answer to "which variant should I
- * pick?". It adds the first in-stock active variant and says which one it chose,
- * rather than silently picking the cheapest and hoping.
- *
- * When nothing is in stock the button is absent rather than disabled-because-empty,
- * and the reason is on the row.
+ * Saved pieces, read from the server. Saving records interest, so a product with
+ * nothing sellable is still listed — it is simply not offered to the bag.
  */
 export default function Wishlist() {
-  const wishlist = useWishlist()
-  const cart = useAccountCart()
+  const wishlist = useWishlistActions()
+  const cart = useCartActions()
   const [added, setAdded] = useState<string | undefined>(undefined)
-  const [addingId, setAddingId] = useState<string | undefined>(undefined)
-  const [actionError, setActionError] = useState<unknown>(undefined)
+  const [confirmingClear, setConfirmingClear] = useState(false)
 
   const addToBag = async (item: WishlistItem) => {
-    const variant = pickVariant(item)
+    const variant = sellableVariant(item)
     if (!variant) return
 
-    setAddingId(item.id)
-    setActionError(undefined)
+    // The cart owns the failure: it re-reads the bag and holds the message.
+    if (await cart.add(variant.id)) setAdded(item.id)
+  }
 
-    try {
-      const ok = await cart.addVariant(variant.id)
-      if (ok) setAdded(item.id)
-      else setActionError(cart.actionError)
-    } finally {
-      setAddingId(undefined)
-    }
+  const header = (
+    <PageHeader
+      eyebrow="Account"
+      title="Wishlist"
+      description="Saved against your account on the studio server, so it is here on any device rather than in this browser."
+      action={
+        confirmingClear ? (
+          <span className="flex flex-wrap items-center gap-3">
+            <span className="text-xs text-graphite">Remove everything saved?</span>
+            <button
+              type="button"
+              disabled={wishlist.isClearing}
+              onClick={() => void wishlist.clear()}
+              className="label-micro border border-signal px-3 py-1.5 text-signal transition-colors hover:bg-signal hover:text-paper disabled:opacity-40"
+            >
+              Confirm
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingClear(false)}
+              className="label-micro text-graphite transition-colors hover:text-ink"
+            >
+              Cancel
+            </button>
+          </span>
+        ) : wishlist.items.length === 0 ? undefined : (
+          <button
+            type="button"
+            onClick={() => setConfirmingClear(true)}
+            className="label-micro text-graphite transition-colors hover:text-signal"
+          >
+            Clear wishlist
+          </button>
+        )
+      }
+    />
+  )
+
+  if (wishlist.isLoading) {
+    return (
+      <div className="space-y-8">
+        {header}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SkeletonCard rows={2} />
+          <SkeletonCard rows={2} />
+        </div>
+      </div>
+    )
+  }
+
+  if (wishlist.error) {
+    return (
+      <div className="space-y-8">
+        {header}
+        <ErrorState message={toUserMessage(wishlist.error)} onRetry={wishlist.refetch} />
+      </div>
+    )
   }
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        eyebrow="Account"
-        title="Wishlist"
-        description="Saved against your account on the studio server, so it is here on any device rather than in this browser."
-      />
+      {header}
 
       {wishlist.actionError !== undefined && (
         <InlineNotice
@@ -64,16 +100,11 @@ export default function Wishlist() {
         />
       )}
 
-      {actionError !== undefined && <InlineNotice message={toUserMessage(actionError)} />}
+      {cart.actionError !== undefined && (
+        <InlineNotice message={toUserMessage(cart.actionError)} onDismiss={cart.dismissActionError} />
+      )}
 
-      {wishlist.isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <SkeletonCard rows={2} />
-          <SkeletonCard rows={2} />
-        </div>
-      ) : wishlist.error ? (
-        <ErrorState message={toUserMessage(wishlist.error)} onRetry={wishlist.refetch} />
-      ) : wishlist.items.length === 0 ? (
+      {wishlist.items.length === 0 ? (
         <EmptyState
           eyebrow="Nothing saved"
           title="Your wishlist is empty"
@@ -87,14 +118,18 @@ export default function Wishlist() {
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2">
           {wishlist.items.map((item) => {
-            const variant = pickVariant(item)
-            const isAdding = addingId === item.id
+            const variant = sellableVariant(item)
+            const isAdding = variant ? cart.isPendingVariant(variant.id) : false
             const isPending = wishlist.isPendingItem(item.id)
 
             return (
               <li key={item.id}>
                 <Panel className="flex h-full flex-col">
-                  <div className="relative aspect-4/5 overflow-hidden bg-bone">
+                  <Link
+                    to={`/product/${item.product.id}`}
+                    className="relative block aspect-4/5 overflow-hidden bg-bone"
+                    aria-label={item.product.name}
+                  >
                     {item.product.image ? (
                       <SmartImage
                         src={item.product.image.imageUrl}
@@ -107,20 +142,31 @@ export default function Wishlist() {
                       </div>
                     )}
 
-                    {!item.product.inStock && (
+                    {!item.product.isActive && (
+                      <span className="label-micro absolute top-3 left-3 bg-paper px-2.5 py-1.5 text-ink">
+                        No longer sold
+                      </span>
+                    )}
+
+                    {item.product.isActive && !item.product.inStock && (
                       <span className="label-micro absolute top-3 left-3 bg-paper px-2.5 py-1.5 text-ink">
                         Out of stock
                       </span>
                     )}
-                  </div>
+                  </Link>
 
                   <div className="flex flex-1 flex-col p-5">
-                    <h2 className="text-sm font-medium text-ink">{item.product.name}</h2>
+                    <h2 className="text-sm font-medium text-ink">
+                      <Link
+                        to={`/product/${item.product.id}`}
+                        className="transition-opacity duration-200 hover:opacity-70"
+                      >
+                        {item.product.name}
+                      </Link>
+                    </h2>
 
                     <p className="mt-2 font-mono text-sm text-ink">
-                      {item.product.priceRange
-                        ? priceLabel(item.product.priceRange)
-                        : '—'}
+                      {item.product.priceRange ? priceLabel(item.product.priceRange) : '—'}
                     </p>
 
                     <p className="mt-2 text-xs leading-relaxed text-graphite">
@@ -138,7 +184,7 @@ export default function Wishlist() {
                           {isAdding ? 'Adding' : added === item.id ? 'Added' : 'Add to bag'}
                         </button>
                       ) : (
-                        <span className="label-micro h-11 flex-1 border border-line text-ash">
+                        <span className="label-micro flex h-11 flex-1 items-center justify-center border border-line text-ash">
                           Unavailable
                         </span>
                       )}
@@ -146,7 +192,7 @@ export default function Wishlist() {
                       <button
                         type="button"
                         onClick={() => void wishlist.remove(item.id)}
-                        disabled={isPending || isAdding}
+                        disabled={isPending || isAdding || wishlist.isClearing}
                         aria-label={`Remove ${item.product.name} from your wishlist`}
                         className="grid size-11 shrink-0 place-items-center border border-line text-graphite transition-colors duration-200 hover:border-signal hover:text-signal disabled:opacity-40"
                       >
@@ -172,24 +218,29 @@ export default function Wishlist() {
 }
 
 /**
- * The variant to put in the bag: the first one that is active and in stock.
- *
- * Not the cheapest. The shopper saved a *product*, and choosing on price for them
- * would put something in their bag they did not choose. Ordering is whatever the
- * server returned, which is deterministic, so the same product always resolves to
- * the same variant.
+ * The variant to put in the bag: an active product's first active variant that
+ * still has stock. No fallback — a wishlist may hold something unsellable, and
+ * naming a dead variant would offer a purchase the server will refuse.
  */
-const pickVariant = (item: WishlistItem) =>
-  item.product.variants.find((variant) => (variant.available ?? 0) > 0) ??
-  item.product.variants[0]
+const sellableVariant = (item: WishlistItem) =>
+  item.product.isActive
+    ? item.product.variants.find((variant) => (variant.available ?? 0) > 0)
+    : undefined
 
 /** A product with one active variant has one price; a range is shown as a range. */
 const priceLabel = (range: { min: string; max: string }): string =>
-  range.min === range.max ? formatAmount(range.min) : `${formatAmount(range.min)} — ${formatAmount(range.max)}`
+  range.min === range.max
+    ? formatAmount(range.min)
+    : `${formatAmount(range.min)} — ${formatAmount(range.max)}`
 
 const describeStock = (item: WishlistItem): string => {
+  if (!item.product.isActive) return 'Withdrawn from the catalogue.'
   if (item.product.variants.length === 0) return 'No active variants are published yet.'
   if (!item.product.inStock) return 'Every variant is currently out of stock.'
-  const available = item.product.variants.reduce((total, variant) => total + (variant.available ?? 0), 0)
+
+  const available = item.product.variants.reduce(
+    (total, variant) => total + (variant.available ?? 0),
+    0,
+  )
   return `${available} available across ${item.product.variants.length} ${item.product.variants.length === 1 ? 'variant' : 'variants'}.`
 }

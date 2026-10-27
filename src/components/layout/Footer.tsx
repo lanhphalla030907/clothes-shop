@@ -86,7 +86,7 @@ export function Footer() {
                     {link.label}
                   </FooterLink>
                 ))}
-                <FooterLink to="/cart">Bag</FooterLink>
+                <FooterLink to="/dashboard/bag">Bag</FooterLink>
               </FooterColumn>
 
               <FooterColumn title="Collections">

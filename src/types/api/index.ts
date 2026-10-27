@@ -8,6 +8,8 @@
  */
 
 export * from './common'
+export * from './catalogue'
+export * from './adminProducts'
 export * from './cart'
 export * from './wishlist'
 export * from './addresses'

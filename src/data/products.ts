@@ -1,12 +1,5 @@
 import { IMG } from '@/lib/images'
-import type { Product, ProductCategory } from '@/types'
-
-export const categories: ProductCategory[] = [
-  'Tops',
-  'Bottoms',
-  'Outerwear',
-  'Accessories',
-]
+import type { Product } from '@/types'
 
 export const products: Product[] = [
  
@@ -271,15 +264,10 @@ export const featuredProducts = products.filter((p) => p.featured)
 
 /**
  * The pieces hung on the hero rail, in order.
+ *
+ * The hero is the one place the storefront shows a hand-picked arrangement rather
+ * than what the catalogue happens to hold, so it keeps its own fixture. Everything
+ * that a customer can buy from — the collection, the product page, the quick add,
+ * the "pairs with" rail — reads the API instead.
  */
 export const heroProducts: Product[] = featuredProducts
-
-export const getProductById = (id: string | undefined): Product | undefined =>
-  products.find((p) => p.id === id)
-
-/** Same-category pieces, excluding the one passed in. */
-export const getRelatedProducts = (product: Product, limit = 3): Product[] =>
-  products.filter((p) => p.id !== product.id && p.category === product.category).slice(0, limit)
-
-export const filterProducts = (filter: string, source: Product[] = products): Product[] =>
-  filter === 'All' ? source : source.filter((p) => p.category === filter)

@@ -21,7 +21,7 @@ import type {
 
 /** Creates an empty cart on first read, so a missing cart is never an error. */
 export const fetchCart = async (signal?: AbortSignal): Promise<Cart | undefined> => {
-  const cart = await apiGet<Cart>(API.cart, { signal, recoverIdentity: true })
+  const cart = await apiGet<Cart>(API.cart, { signal })
   return cart
 }
 

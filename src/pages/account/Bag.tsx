@@ -1,35 +1,27 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
 import { Action } from '@/components/ui/Action'
 import { PageHeader, Panel, PanelHeader } from '@/components/account/PageHeader'
 import { DefinitionRow, Money, QuantityStepper } from '@/components/account/Bits'
 import { EmptyState, ErrorState, InlineNotice } from '@/components/account/States'
 import { SkeletonCard } from '@/components/account/Skeleton'
-import { useAccountCart } from '@/features/cart/useAccountCart'
+import { useCartActions } from '@/features/cart/useCartActions'
 import { STORE_CURRENCY } from '@/lib/api/config'
 import { toUserMessage } from '@/lib/api/errors'
 import type { CartLine } from '@/types/api'
 
 /**
- * The server cart.
+ * The customer's bag: one cart, held in `CartActionsProvider`.
  *
- * ## Why this is not the storefront bag
- *
- * The storefront bag is a local prototype over static products, so its lines have
- * no variant id and nothing to send to the API. This cart is the account's real
- * one. They are separate bags, and this page says so rather than pretending to be
- * a view of the same thing.
- *
- * ## Nothing here is calculated
- *
- * `unitPrice`, `lineTotal` and `subtotal` are read from the response. The stepper
- * sends an absolute quantity and the server answers with the recomputed line, so
- * the figure on screen is always the one the server holds — including after the
- * subtotal changes underneath.
+ * Nothing on this page is calculated. `unitPrice`, `lineTotal`, `subtotal` and
+ * `available` are read from the cart response, and every write is followed by a
+ * re-read — so what is shown is what the server holds, including after a line
+ * was refused.
  */
 export default function Bag() {
-  const cart = useAccountCart()
-  const [confirmedClear, setConfirmedClear] = useState(false)
+  const cart = useCartActions()
+  const [confirmingClear, setConfirmingClear] = useState(false)
 
   if (cart.isLoading) {
     return (
@@ -56,10 +48,10 @@ export default function Bag() {
         <EmptyState
           eyebrow="Nothing here"
           title="Your bag is empty"
-          description="Save a piece to your wishlist and it can be moved straight in here. Your wishlist is attached to this account, not to this browser."
+          description="Anything you add from the collection or your wishlist is kept here against your account, on any device."
           action={
-            <Action to="/dashboard/wishlist" withArrow>
-              Open your wishlist
+            <Action to="/shop" withArrow>
+              Shop the collection
             </Action>
           }
         />
@@ -67,63 +59,70 @@ export default function Bag() {
     )
   }
 
-  // The cart response carries no currency; see STORE_CURRENCY.
   const currency = STORE_CURRENCY
-  const overStocked = cart.lines.filter((line) => line.exceedsAvailable)
+  const blocking = cart.lines.filter(cannotBeOrdered)
 
   return (
     <div className="space-y-8">
       <PageHeader
         eyebrow="Account"
         title="Your bag"
-        description="This bag is stored on the studio server against your account. The storefront bag is a separate local prototype and does not carry over."
+        description="Held on the studio server against your account. Quantities and prices are the server's, checked again at checkout."
+        action={
+          confirmingClear ? (
+            <span className="flex flex-wrap items-center gap-3">
+              <span className="text-xs text-graphite">Empty the whole bag?</span>
+              <button
+                type="button"
+                disabled={cart.isClearing}
+                onClick={() => void cart.clear()}
+                className="label-micro border border-signal px-3 py-1.5 text-signal transition-colors hover:bg-signal hover:text-paper disabled:opacity-40"
+              >
+                Confirm
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingClear(false)}
+                className="label-micro text-graphite transition-colors hover:text-ink"
+              >
+                Cancel
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmingClear(true)}
+              className="label-micro border border-line px-3 py-1.5 text-graphite transition-colors hover:border-ink hover:text-ink"
+            >
+              Empty bag
+            </button>
+          )
+        }
       />
 
       {cart.actionError !== undefined && (
-        <InlineNotice message={toUserMessage(cart.actionError)} onDismiss={cart.dismissActionError} />
+        <InlineNotice
+          message={toUserMessage(cart.actionError)}
+          onDismiss={cart.dismissActionError}
+        />
       )}
 
-      {overStocked.length > 0 && (
+      {blocking.length > 0 && (
         <InlineNotice
           tone="info"
-          message={`${overStocked.length === 1 ? 'One line asks for' : `${overStocked.length} lines ask for`} more than is currently in stock. Checkout will refuse the order until the quantities are reduced.`}
+          message={
+            blocking.length === 1
+              ? 'One line cannot be fulfilled as it stands. Reduce its quantity or remove it to continue.'
+              : `${blocking.length} lines cannot be fulfilled as they stand. Reduce their quantities or remove them to continue.`
+          }
         />
       )}
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Panel className="lg:col-span-2">
           <PanelHeader
-            title={`${cart.cart?.itemCount ?? 0} ${cart.cart?.itemCount === 1 ? 'piece' : 'pieces'}`}
-            action={
-              confirmedClear ? (
-                <span className="flex items-center gap-3">
-                  <span className="text-xs text-graphite">Empty the whole bag?</span>
-                  <button
-                    type="button"
-                    disabled={cart.isClearing}
-                    onClick={() => void cart.clear()}
-                    className="label-micro border border-signal px-3 py-1.5 text-signal transition-colors hover:bg-signal hover:text-paper disabled:opacity-40"
-                  >
-                    Confirm
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmedClear(false)}
-                    className="label-micro text-graphite transition-colors hover:text-ink"
-                  >
-                    Cancel
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmedClear(true)}
-                  className="label-micro text-graphite transition-colors hover:text-ink"
-                >
-                  Empty bag
-                </button>
-              )
-            }
+            title={`${cart.itemCount} ${cart.itemCount === 1 ? 'piece' : 'pieces'} across ${cart.lines.length} ${cart.lines.length === 1 ? 'line' : 'lines'}`}
+            hint={cart.isRefreshing ? 'Checking current prices and stock…' : undefined}
           />
 
           <ul className="divide-y divide-line-soft">
@@ -148,21 +147,20 @@ export default function Bag() {
               <DefinitionRow label="Subtotal">
                 <Money amount={cart.cart?.subtotal ?? '0.00'} currency={currency} />
               </DefinitionRow>
+              <DefinitionRow label="Shipping">
+                <span className="text-xs text-graphite">Priced at checkout</span>
+              </DefinitionRow>
             </dl>
 
             <div className="border-t border-line px-6 py-5">
-              <p className="text-xs leading-relaxed text-graphite">
-                Shipping is priced by the server when you place the order, so there is no
-                shipping figure to show yet.
-              </p>
               <Action
                 to="/dashboard/checkout"
-                className="mt-6 w-full"
-                disabled={overStocked.length > 0}
+                className="w-full"
+                disabled={blocking.length > 0}
               >
                 Checkout
               </Action>
-              {overStocked.length > 0 && (
+              {blocking.length > 0 && (
                 <p className="mt-3 text-xs leading-relaxed text-signal">
                   Reduce the highlighted quantities to continue.
                 </p>
@@ -173,9 +171,8 @@ export default function Bag() {
           <Panel className="p-6">
             <p className="label-micro text-ink">Stock is checked again at checkout</p>
             <p className="mt-3 text-sm leading-relaxed text-graphite">
-              A line can sell out between now and then. If it does, checkout refuses the order
-              rather than charging you for something unavailable — nothing is reserved until you
-              confirm.
+              A bag records what you want; it does not hold anything. If a line sells out before
+              you order, checkout refuses it rather than charging you for something unavailable.
             </p>
           </Panel>
         </div>
@@ -193,18 +190,29 @@ type CartRowProps = {
 }
 
 const CartRow = ({ line, currency, isPending, onQuantity, onRemove }: CartRowProps) => {
-  const label = `${line.product.name}, ${line.variant.sku}`
-  const options = line.variant.options
+  const { product, variant } = line
+  const label = `${product.name}, ${variant.sku}`
+  const withdrawn = !variant.isActive || !product.isActive
 
   return (
-    <div className={`flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between ${isPending ? 'opacity-50' : ''}`}>
+    <div
+      aria-busy={isPending}
+      className={`flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between ${
+        isPending ? 'opacity-50' : ''
+      }`}
+    >
       <div className="min-w-0">
-        <p className="text-sm font-medium text-ink">{line.product.name}</p>
-        <p className="mt-1 font-mono text-xs text-graphite">{line.variant.sku}</p>
+        <Link
+          to={`/product/${product.id}`}
+          className="text-sm font-medium text-ink underline-offset-4 hover:underline"
+        >
+          {product.name}
+        </Link>
+        <p className="mt-1 font-mono text-xs text-graphite">{variant.sku}</p>
 
-        {options.length > 0 && (
+        {variant.options.length > 0 && (
           <ul className="mt-3 flex flex-wrap gap-2">
-            {options.map((option) => (
+            {variant.options.map((option) => (
               <li
                 key={`${option.optionName}-${option.optionValue}`}
                 className="label-micro border border-line px-2 py-1 text-graphite"
@@ -216,42 +224,63 @@ const CartRow = ({ line, currency, isPending, onQuantity, onRemove }: CartRowPro
         )}
 
         <p className="mt-3 text-xs text-graphite">
-          {line.available === null
-            ? 'No stock recorded for this variant'
-            : `${line.available} in stock`}
+          {stockLabel(line)}
           {line.exceedsAvailable && (
-            <span className="ml-2 text-signal">— more than you asked for</span>
+            <span className="ml-2 text-signal">— not fulfillable at this quantity</span>
+          )}
+          {withdrawn && !line.exceedsAvailable && (
+            <span className="ml-2 text-signal">— withdrawn from sale</span>
           )}
         </p>
 
-        <div className="mt-4 flex items-center gap-4">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
           <QuantityStepper
             value={line.quantity}
             max={line.available}
             disabled={isPending}
             label={label}
+            editable
             onChange={onQuantity}
           />
+
+          <p className="font-mono text-xs text-graphite tabular-nums">
+            × <Money amount={line.unitPrice} currency={currency} />
+          </p>
+
           <button
             type="button"
             onClick={onRemove}
             disabled={isPending}
             aria-label={`Remove ${label} from your bag`}
-            className="grid size-11 place-items-center border border-line text-graphite transition-colors duration-200 hover:border-signal hover:text-signal disabled:opacity-40"
+            className="ml-auto grid size-11 place-items-center border border-line text-graphite transition-colors duration-200 hover:border-signal hover:text-signal disabled:opacity-40 sm:ml-0"
           >
             <Trash2 size={14} strokeWidth={1.5} />
           </button>
         </div>
       </div>
 
-      <div className="shrink-0 text-right">
-        <Money amount={line.lineTotal} currency={currency} className="font-mono text-sm" />
-        {line.quantity > 1 && (
-          <p className="mt-2 text-xs text-graphite">
-            {line.quantity} × <Money amount={line.unitPrice} currency={currency} />
-          </p>
-        )}
+      <div className="shrink-0 text-left sm:text-right">
+        <p className="label-micro text-ash">Line total</p>
+        <Money
+          amount={line.lineTotal}
+          currency={currency}
+          className="mt-2 block font-mono text-sm"
+        />
       </div>
     </div>
   )
 }
+
+/** `null` and `0` are different facts, so they are not written the same way. */
+const stockLabel = (line: CartLine): string => {
+  if (line.available === null) return 'No stock recorded for this variant'
+  if (line.available === 0) return 'Sold out'
+  return `${line.available} in stock`
+}
+
+/**
+ * What keeps checkout from being offered: the server's own stock verdict, or a
+ * variant or product that has since been withdrawn from sale.
+ */
+const cannotBeOrdered = (line: CartLine): boolean =>
+  line.exceedsAvailable || !line.variant.isActive || !line.product.isActive

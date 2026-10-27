@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Menu, ShoppingBag, X } from 'lucide-react'
 import { navLinks } from '@/data/navigation'
-import { useCart } from '@/hooks/useCart'
+import { useAuth } from '@/features/auth/useAuth'
+import { useCartActions } from '@/features/cart/useCartActions'
 import { useUI } from '@/hooks/useUI'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 
@@ -19,11 +20,27 @@ const Mark = ({ className = '' }: { className?: string }) => (
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
-  const { isMenuOpen, openMenu, openCart } = useUI()
-  const { itemCount } = useCart()
+  const { isMenuOpen, openMenu } = useUI()
+  // The bag is the server's cart, so the count moves the moment a quick add
+  // lands and the link goes where those lines actually are.
+  const { itemCount } = useCartActions()
+  const { isAuthenticated, isInitializing, logout } = useAuth()
   const { pathname } = useLocation()
+  const navigate = useNavigate()
 
   useLockBodyScroll(isMenuOpen)
+
+  /**
+   * Signing out from a protected screen has to leave it, or the guard would
+   * bounce the shopper to the sign-in form they have just walked away from.
+   * From a public page there is nothing to leave, so the page stays put.
+   */
+  const signOut = () => {
+    logout()
+    if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+      navigate('/', { replace: true })
+    }
+  }
 
   // The home hero carries its own chrome, so the bar stays out of the way
   // until the page is scrolled — but it still surfaces for keyboard users.
@@ -84,20 +101,43 @@ export function Navbar() {
               Studio
             </Link>
 
-            {/* The account, and the only doorway into the dashboard from here. */}
-            <Link
-              to="/dashboard"
-              className="label-micro link-wipe hidden text-graphite transition-colors duration-400 ease-editorial hover:text-ink sm:inline-flex"
-              data-active={pathname.startsWith('/dashboard') ? 'true' : undefined}
-            >
-              Account
-            </Link>
+            {/* The session, and the only doorway into the dashboard from here.
+                Nothing is rendered while a stored token is still being checked:
+                showing "Sign in" for the length of one request would read as
+                having been signed out by the reload. */}
+            {!isInitializing &&
+              (isAuthenticated ? (
+                <>
+                  <Link
+                    to="/dashboard"
+                    className="label-micro link-wipe hidden text-graphite transition-colors duration-400 ease-editorial hover:text-ink sm:inline-flex"
+                    data-active={pathname.startsWith('/dashboard') ? 'true' : undefined}
+                  >
+                    Account
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={signOut}
+                    className="label-micro link-wipe hidden text-graphite transition-colors duration-400 ease-editorial hover:text-ink sm:inline-flex"
+                  >
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  className="label-micro link-wipe hidden text-graphite transition-colors duration-400 ease-editorial hover:text-ink sm:inline-flex"
+                  data-active={pathname === '/login' ? 'true' : undefined}
+                >
+                  Sign in
+                </Link>
+              ))}
 
-            <button
-              type="button"
-              onClick={openCart}
+            <Link
+              to="/dashboard/bag"
+              data-active={pathname.startsWith('/dashboard/bag') ? 'true' : undefined}
               className="group relative flex items-center gap-2 py-2 pl-3 text-ink"
-              aria-label={`Open bag, ${itemCount} items`}
+              aria-label={`Your bag, ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
             >
               <ShoppingBag size={17} strokeWidth={1.4} className="transition-transform duration-500 ease-editorial group-hover:-translate-y-0.5" />
               <span className="label-micro tabular-nums">
@@ -109,7 +149,7 @@ export function Navbar() {
                   itemCount > 0 ? 'scale-x-100' : ''
                 }`}
               />
-            </button>
+            </Link>
 
             <button
               type="button"
@@ -166,7 +206,7 @@ function MobileMenu() {
           </div>
 
           <nav className="container-editorial flex flex-1 flex-col justify-center gap-2">
-            {[...navLinks, { label: 'Bag', to: '/cart' }, { label: 'Account', to: '/dashboard' }].map((link, index) => (
+            {[...navLinks, { label: 'Bag', to: '/dashboard/bag' }, { label: 'Account', to: '/dashboard' }].map((link, index) => (
               <motion.div
                 key={link.to}
                 initial={{ opacity: 0, y: 28 }}

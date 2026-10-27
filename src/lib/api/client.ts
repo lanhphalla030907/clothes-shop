@@ -1,53 +1,36 @@
-import { IDENTITY_HEADER } from './config'
-import { ApiError, isApiError } from './errors'
+import { ApiError } from './errors'
 import { request, type HttpMethod, type RequestOptions, type ResponseBody } from './http'
-import { ensureIdentity, resetIdentity } from './identity'
+import { emitUnauthorized, readAccessToken } from './session'
 
 /**
- * The identity-aware layer every feature calls.
+ * The session-aware layer every feature calls.
  *
- * `http.ts` moves bytes; this attaches *who* is asking and applies the one
- * piece of policy that is identity-specific: recovering from a claimed user the
- * server no longer knows. Features never build a header or call `fetch`.
+ * `http.ts` moves bytes; this attaches *who* is asking — the bearer token, if
+ * there is one — and announces the one outcome that is global to the app: the
+ * server refusing the credential. Features never build a header, never read
+ * storage, and never see a `401` they would each have to interpret differently.
  */
 
-export interface ApiRequestOptions extends RequestOptions {
-  /**
-   * Retry once after re-provisioning, if the server answers 404.
-   *
-   * Only safe on a **collection read scoped to the caller** (`GET /cart`,
-   * `/wishlist`, `/addresses`, `/orders`), where a 404 cannot mean anything
-   * except "the claimed user does not exist". Those endpoints answer an empty
-   * success for a real user with no data, so 404 is unambiguous.
-   *
-   * Never enable it on a detail read: the API answers 404 both for "absent" and
-   * "not yours", so recovering there would silently throw away the customer's
-   * session every time they open a mistyped or deleted order.
-   */
-  recoverIdentity?: boolean
-}
+export type ApiRequestOptions = RequestOptions
 
 export const apiRequest = async <T>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<ResponseBody<T>> => {
-  const { recoverIdentity, ...transport } = options
-  const identity = await ensureIdentity()
-
-  const send = (userId: string) =>
-    request<T>(path, { ...transport, requestHeaders: { [IDENTITY_HEADER]: userId } })
+  const token = readAccessToken()
 
   try {
-    return await send(identity.userId)
+    return await request<T>(path, {
+      ...options,
+      requestHeaders: token === null ? {} : { Authorization: `Bearer ${token}` },
+    })
   } catch (error) {
-    if (!recoverIdentity || !isApiError(error) || error.kind !== 'notFound') throw error
-
-    // The claimed user is gone — most often a development database was reset.
-    // Provision a fresh one and let the caller's retry land on a real identity.
-    resetIdentity()
-    const renewed = await ensureIdentity()
-
-    return send(renewed.userId)
+    // `403` is deliberately not here: it means the credential was accepted and
+    // the request was not permitted, which must never end a valid session.
+    if (error instanceof ApiError && error.status === 401) {
+      emitUnauthorized({ hadToken: token !== null })
+    }
+    throw error
   }
 }
 
@@ -75,6 +58,25 @@ export const apiGetOne = async <T>(
       kind: 'notFound',
       status: 204,
     })
+  }
+  return body
+}
+
+/**
+ * A `GET` that must return a list.
+ *
+ * Guards the same way `apiGetOne` does, for the same reason: a collection
+ * endpoint answering an empty body is the server and the client disagreeing
+ * about the contract, and handing that on as `[]` would render as "this category
+ * is empty" rather than as a failure worth retrying.
+ */
+export const apiGetList = async <T>(
+  path: string,
+  options: Omit<ApiRequestOptions, 'method' | 'body'> = {},
+): Promise<T[]> => {
+  const body = await apiGet<T[]>(path, options)
+  if (!Array.isArray(body)) {
+    throw new ApiError('That collection could not be loaded.', { kind: 'server' })
   }
   return body
 }

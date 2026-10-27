@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ProductCard } from './ProductCard'
-import { categories } from '@/data/products'
 import { padIndex } from '@/lib/format'
-import type { CategoryFilter, Product } from '@/types'
+import type { CataloguePiece, CategoryFilter } from '@/types'
 
 interface ProductGridProps {
-  products: Product[]
+  pieces: CataloguePiece[]
+  /** Names to offer in the filter row, in the order the catalogue lists them. */
+  categories: string[]
   /** Enables the category filter row. */
   filterable?: boolean
   /** Optional externally controlled filter (used by the shop page URL). */
@@ -14,8 +15,6 @@ interface ProductGridProps {
   onFilterChange?: (filter: CategoryFilter) => void
   columns?: 2 | 3 | 4
 }
-
-const filters: CategoryFilter[] = ['All', ...categories]
 
 const columnClass: Record<NonNullable<ProductGridProps['columns']>, string> = {
   2: 'grid-cols-2',
@@ -28,7 +27,8 @@ const columnClass: Record<NonNullable<ProductGridProps['columns']>, string> = {
  * column count rather than shrinking the desktop arrangement.
  */
 export function ProductGrid({
-  products,
+  pieces,
+  categories,
   filterable = false,
   activeFilter,
   onFilterChange,
@@ -38,8 +38,8 @@ export function ProductGrid({
   const current = activeFilter ?? internalFilter
 
   const visible = useMemo(
-    () => (current === 'All' ? products : products.filter((p) => p.category === current)),
-    [current, products],
+    () => (current === 'All' ? pieces : pieces.filter((piece) => piece.category === current)),
+    [current, pieces],
   )
 
   const select = (filter: CategoryFilter) => {
@@ -52,7 +52,7 @@ export function ProductGrid({
       {filterable && (
         <div className="container-editorial mb-10 sm:mb-14">
           <div className="no-scrollbar -mx-5 flex gap-6 overflow-x-auto px-5 sm:mx-0 sm:flex-wrap sm:gap-8 sm:px-0">
-            {filters.map((filter) => {
+            {(['All', ...categories] as CategoryFilter[]).map((filter) => {
               const isActive = current === filter
               return (
                 <button
@@ -80,8 +80,8 @@ export function ProductGrid({
       <div className="container-editorial">
         <motion.div layout className={`grid gap-x-4 gap-y-12 sm:gap-x-6 sm:gap-y-16 ${columnClass[columns]}`}>
           <AnimatePresence mode="popLayout">
-            {visible.map((product, index) => (
-              <ProductCard key={product.id} product={product} index={index} priority={index < 3} />
+            {visible.map((piece, index) => (
+              <ProductCard key={piece.id} piece={piece} index={index} priority={index < 3} />
             ))}
           </AnimatePresence>
         </motion.div>
@@ -95,7 +95,7 @@ export function ProductGrid({
 
       {visible.length > 0 && (
         <p className="container-editorial mt-14 font-mono text-[10px] tracking-[0.16em] text-ash uppercase">
-          Showing {padIndex(0)}—{padIndex(visible.length - 1)} / {padIndex(products.length)}
+          Showing {padIndex(0)}—{padIndex(visible.length - 1)} / {padIndex(pieces.length)}
         </p>
       )}
     </div>

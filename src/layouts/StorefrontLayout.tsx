@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
-import { CartDrawer } from '@/components/cart/CartDrawer'
 
 /** Restores scroll to the top on navigation (but honours hash links). */
 const ScrollToTop = () => {
@@ -37,7 +36,6 @@ export function StorefrontLayout() {
         <Outlet />
       </main>
       <Footer />
-      <CartDrawer />
     </div>
   )
 }

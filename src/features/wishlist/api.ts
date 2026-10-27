@@ -16,7 +16,7 @@ import type {
  */
 
 export const fetchWishlist = async (signal?: AbortSignal): Promise<Wishlist | undefined> =>
-  apiGet<Wishlist>(API.wishlist, { signal, recoverIdentity: true })
+  apiGet<Wishlist>(API.wishlist, { signal })
 
 export const addWishlistItem = (
   body: AddWishlistItemRequest,

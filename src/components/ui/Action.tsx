@@ -30,6 +30,11 @@ type ActionProps = {
   size?: keyof typeof sizes
   className?: string
   withArrow?: boolean
+  /**
+   * A button disables; a link or an anchor cannot, so a disabled one stops being
+   * a link and is rendered inert instead of looking unavailable while navigating.
+   */
+  disabled?: boolean
 } & (
   | ({ to: string } & Omit<ComponentProps<typeof Link>, 'to' | 'className' | 'children'>)
   | ({ href: string } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'className' | 'children'>)
@@ -72,8 +77,16 @@ export function Action({
     </>
   )
 
+  const inert = () => (
+    <span aria-disabled="true" className={`${classes} pointer-events-none cursor-not-allowed opacity-40`}>
+      {inner}
+    </span>
+  )
+
   if ('to' in rest) {
-    const { to, ...linkProps } = rest
+    const { to, disabled, ...linkProps } = rest
+    if (disabled) return inert()
+
     return (
       <Link to={to} className={classes} {...linkProps}>
         {inner}
@@ -82,7 +95,9 @@ export function Action({
   }
 
   if ('href' in rest) {
-    const { href, ...anchorProps } = rest
+    const { href, disabled, ...anchorProps } = rest
+    if (disabled) return inert()
+
     return (
       <a href={href} className={classes} {...anchorProps}>
         {inner}

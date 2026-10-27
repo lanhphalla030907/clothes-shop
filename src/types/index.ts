@@ -1,12 +1,35 @@
-export type ProductCategory = 'Tops' | 'Bottoms' | 'Outerwear' | 'Accessories'
+import type {
+  CatalogueVariant,
+  MoneyString,
+  ProductStatus,
+  UUID,
+} from './api'
 
-export type CategoryFilter = 'All' | ProductCategory
+/**
+ * Free text, not a fixed union: the catalogue decides what a category is called,
+ * and the storefront only ever prints it. Pinning the four names this release
+ * happened to use would make every future category a code change.
+ */
+export type ProductCategory = string
+
+/** `All` is the sentinel for "no category filter"; any other value is a name. */
+export type CategoryFilter = 'All' | (string & {})
+
 
 export interface ProductColor {
   name: string
   hex: string
 }
 
+/**
+ * The art-directed hero set — the pieces suspended on the rail in the landing
+ * page's opening scene, along with the cut-out geometry that hangs them on it.
+ *
+ * This is a design fixture, not the catalogue: it is what the homepage needs to
+ * place a garment at a precise height on an invisible rail, and nothing the
+ * catalogue serves describes that. Every screen a shopper buys from uses
+ * `CataloguePiece` instead.
+ */
 export interface Product {
   id: string
   name: string
@@ -119,4 +142,57 @@ export interface OrderSummary {
   subtotal: number
   shipping: number
   total: number
+}
+
+/* ------------------------------------------------------------------ *
+ * Catalogue pieces
+ *
+ * What the storefront draws. These are *not* API records: `GET /products`
+ * arrives without images, variants or stock, and prices are the server's
+ * two-decimal strings rather than the local demo's numbers. The mapping lives
+ * in `features/catalogue/present.ts` so no component joins the catalogue
+ * itself.
+ * ------------------------------------------------------------------ */
+
+export interface CataloguePiece {
+  id: UUID
+  slug: string
+  name: string
+  /** Category name for display; `''` when the category could not be resolved. */
+  category: string
+  /** Stable name for a category link. Empty when the category is unknown. */
+  categorySlug: string
+  categoryId: UUID
+  /** Always the server's figure — the base price or the cheapest variant's. */
+  price: MoneyString
+  /** Primary image first, then `sortOrder`. Empty until a product has imagery. */
+  images: string[]
+  /** False once a product leaves the collection — retired or switched off. */
+  isAvailable: boolean
+}
+
+export interface CatalogueAxisValue {
+  value: string
+  /** Set only when the value is itself a colour token, so a swatch is honest. */
+  hex: string | undefined
+  /** Some variant reachable through the rest of the selection offers this. */
+  isAvailable: boolean
+}
+
+/** One axis of the variant matrix: `Color`, `Size`, or whatever else is declared. */
+export interface CatalogueAxis {
+  name: string
+  values: CatalogueAxisValue[]
+}
+
+/** Chosen option values, keyed by axis name exactly as the API spelled it. */
+export type OptionSelection = Record<string, string>
+
+export interface CatalogueDetail extends CataloguePiece {
+  description: string | null
+  status: ProductStatus
+  /** Every active variant, sold out ones included, so they can be shown as such. */
+  variants: CatalogueVariant[]
+  /** Colour first, then size, then any other axis, in declaration order. */
+  axes: CatalogueAxis[]
 }

@@ -21,7 +21,7 @@ import type {
 
 /** Default first. An empty book is a success, not a missing resource. */
 export const fetchAddresses = async (signal?: AbortSignal): Promise<Address[]> => {
-  const addresses = await apiGet<Address[]>(API.addresses, { signal, recoverIdentity: true })
+  const addresses = await apiGet<Address[]>(API.addresses, { signal })
   return addresses ?? []
 }
 

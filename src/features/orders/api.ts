@@ -6,14 +6,13 @@ import type { Order, OrderSummary, UUID } from '@/types/api'
  * `GET /orders` and `GET /orders/:id`.
  *
  * Read-only by design: the API exposes no way to change an order, so neither does
- * this module. `recoverIdentity` is set on the collection read only — a 404 there
- * can mean nothing except "the claimed user does not exist", whereas on the
- * detail read 404 deliberately conflates "absent" with "not yours".
+ * this module. On the detail read a 404 deliberately conflates "absent" with
+ * "not yours", so a missing order and someone else's order are the same answer.
  */
 
 /** The caller's orders, newest first. An empty array is a success, not a 404. */
 export const fetchOrders = async (signal?: AbortSignal): Promise<OrderSummary[]> => {
-  const orders = await apiGet<OrderSummary[]>(API.orders, { signal, recoverIdentity: true })
+  const orders = await apiGet<OrderSummary[]>(API.orders, { signal })
   return orders ?? []
 }
 

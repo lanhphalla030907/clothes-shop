@@ -6,10 +6,12 @@ import { Statement } from '@/components/home/Statement'
 import { ProductRail } from '@/components/product/ProductRail'
 import { Reveal } from '@/components/ui/Reveal'
 import { Action } from '@/components/ui/Action'
-import { products, featuredProducts } from '@/data/products'
+import { useCollection } from '@/features/catalogue/useCatalogue'
 
 export default function Home() {
-  const railProducts = [...featuredProducts, ...products.filter((p) => !p.featured)].slice(0, 8)
+  const collection = useCollection()
+  // The rail shows the first eight the catalogue returns, in its own order.
+  const railPieces = (collection.data ?? []).slice(0, 8)
 
   return (
     <>
@@ -17,7 +19,12 @@ export default function Home() {
 
       <div id="rail" className="scroll-mt-24">
         <Marquee />
-        <ProductRail products={railProducts} label="The Rail — Release 01" className="py-16 sm:py-24" />
+        <ProductRail
+          pieces={railPieces}
+          label="The Rail — Release 01"
+          isLoading={collection.isLoading}
+          className="py-16 sm:py-24"
+        />
       </div>
 
       <Manifesto />

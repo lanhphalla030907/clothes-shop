@@ -190,6 +190,16 @@ export default function Cart() {
                 </li>
               ))}
             </ul>
+
+            {/* This bag lives in localStorage; the account bag is the real one. */}
+            <p className="mt-6 border border-line px-5 py-4 text-xs leading-relaxed text-graphite">
+              This is the storefront's own bag, held in this browser. Pieces bought from the
+              collection go to{' '}
+              <Link to="/dashboard/bag" className="text-ink underline underline-offset-4">
+                your account bag
+              </Link>
+              .
+            </p>
           </div>
         </div>
       </div>

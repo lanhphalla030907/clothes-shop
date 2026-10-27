@@ -6,10 +6,10 @@ import { ApiError, isAbortError, kindForStatus, type ApiErrorKind } from './erro
  * timeout, JSON parsing and the translation of every possible failure into an
  * {@link ApiError}.
  *
- * It deliberately knows nothing about who the caller is — no identity header, no
- * token, no retry policy. `client.ts` layers identity on top and features layer
- * intent on top of that, so this file stays small enough to reason about and
- * impossible to bypass by accident.
+ * It deliberately knows nothing about who the caller is — no bearer token, no
+ * retry policy. `client.ts` layers the session on top and features layer intent
+ * on top of that, so this file stays small enough to reason about and impossible
+ * to bypass by accident.
  */
 
 export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
@@ -23,8 +23,8 @@ export interface RequestOptions {
   timeoutMs?: number
   /**
    * Extra headers merged last, so a caller-supplied header wins over a default.
-   * This is how the identity layer attaches `X-User-Id` without the transport
-   * knowing what identity is.
+   * This is how the session layer attaches `Authorization` without the transport
+   * knowing what a session is.
    */
   requestHeaders?: Record<string, string>
   /** Query parameters; `undefined` and `''` values are omitted. */

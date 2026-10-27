@@ -19,9 +19,6 @@ const rawBaseUrl: string =
 /** Normalised to exactly one trailing-slash-free form. */
 export const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '')
 
-/** Header the temporary identity adapter claims a user id in. */
-export const IDENTITY_HEADER = 'X-User-Id'
-
 /** Hard ceiling on a single request. Long enough for a cold backend, short
  * enough that a hung socket surfaces as an error state instead of a spinner
  * that never resolves.
@@ -40,6 +37,12 @@ export const STORE_CURRENCY = 'USD'
 
 /** Paths, named once so a route change is a single-file edit. */
 export const API = {
+  login: '/auth/login',
+  me: '/auth/me',
+  products: '/products',
+  categories: '/categories',
+  adminProducts: '/admin/products',
+  adminCategories: '/admin/categories',
   cart: '/cart',
   cartItems: '/cart/items',
   wishlist: '/wishlist',

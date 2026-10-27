@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom'
+import { useLocation, useParams, Link } from 'react-router-dom'
 import { Action } from '@/components/ui/Action'
 import { BackLink, PageHeader, Panel, PanelHeader } from '@/components/account/PageHeader'
 import { DefinitionRow, Money, StatusBadge } from '@/components/account/Bits'
@@ -11,17 +11,20 @@ import { toUserMessage } from '@/lib/api/errors'
 /**
  * One order in full.
  *
- * Everything on this page comes out of the stored snapshot: the product name, the
- * price paid, the variant options and the delivery address. That is why editing
- * an address later does not change this screen — the order remembers what was
- * true when it was placed, and that is the whole point of a receipt.
+ * Everything here comes from the stored snapshot — the product name, the price
+ * paid, the variant options, the delivery address — so editing an address later
+ * cannot change this screen.
  *
- * `?pay=1` arrives here from checkout, because an order awaiting payment is
- * finished on this screen and nowhere else.
+ * `justPlaced` and `justPaid` are hints set by the screens that sent the customer
+ * here, so the page can greet them. Both are read-only as far as this page is
+ * concerned: what it shows is what the API says.
  */
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>()
   const order = useOrder(id)
+  const location = useLocation()
+  const justPlaced = (location.state as { justPlaced?: boolean } | null)?.justPlaced === true
+  const justPaid = (location.state as { justPaid?: boolean } | null)?.justPaid === true
 
   if (order.isLoading) {
     return (
@@ -79,6 +82,27 @@ export default function OrderDetail() {
         })}`}
         action={<StatusBadge status={data.status} />}
       />
+
+      {justPaid ? (
+        <div role="status" className="border border-ink bg-ink px-6 py-5 text-sm leading-relaxed text-paper">
+          <p className="font-medium">Payment received.</p>
+          <p className="mt-2 opacity-80">
+            PayWay confirmed the payment and the studio has accepted this order. Everything below is
+            the record it now holds.
+          </p>
+        </div>
+      ) : justPlaced ? (
+        <div
+          role="status"
+          className="border border-ink bg-bone px-6 py-5 text-sm leading-relaxed text-ink"
+        >
+          <p className="font-medium">Your order is placed.</p>
+          <p className="mt-2 text-graphite">
+            Nothing has been charged yet — it stays pending until it is paid for. The address below
+            is the copy stored with the order.
+          </p>
+        </div>
+      ) : null}
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Panel className="lg:col-span-2">
@@ -159,8 +183,8 @@ export default function OrderDetail() {
             <Panel className="p-6">
               <p className="label-micro text-ink">Awaiting payment</p>
               <p className="mt-3 text-sm leading-relaxed text-graphite">
-                This order has not been paid yet. Payment opens on your checkout screen — the QR
-                expires, so you will need a new one after a while.
+                This order has not been paid yet. The payment screen issues an ABA PayWay QR for it —
+                the code expires, so a new one is needed after a while.
               </p>
               <Action to={`/dashboard/checkout/${data.id}`} size="sm" className="mt-6" withArrow>
                 Pay this order

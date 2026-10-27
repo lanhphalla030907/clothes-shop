@@ -5,7 +5,9 @@ import { Reveal, StaggerGroup, StaggerItem } from '@/components/ui/Reveal'
 import { SmartImage } from '@/components/ui/SmartImage'
 import { Action } from '@/components/ui/Action'
 import { IMG } from '@/lib/images'
-import { products } from '@/data/products'
+import { STORE_CURRENCY } from '@/lib/api/config'
+import { formatMoney } from '@/lib/money'
+import { useCollection } from '@/features/catalogue/useCatalogue'
 
 const PRINCIPLES = [
   {
@@ -31,7 +33,26 @@ const PRINCIPLES = [
 ] as const
 
 export default function About() {
-  const cheapest = Math.min(...products.map((p) => p.price))
+  const collection = useCollection()
+  const pieces = collection.data ?? []
+
+  // Two figures the catalogue can actually support: what is published, and what
+  // it costs to enter. A studio claim like "six mills" would be copy, not data.
+  const stats: { value: string; label: string }[] = [
+    { value: collection.isLoading ? '—' : String(pieces.length).padStart(2, '0'), label: 'Pieces in release 01' },
+    {
+      value: collection.isLoading
+        ? '—'
+        : pieces.length > 0
+          ? formatMoney(String(Math.min(...pieces.map((piece) => Number(piece.price)))), STORE_CURRENCY)
+          : '—',
+      label: 'Entry price, full collection',
+    },
+    {
+      value: collection.isLoading ? '—' : String(new Set(pieces.map((piece) => piece.categoryId)).size).padStart(2, '0'),
+      label: 'Departments in the catalogue',
+    },
+  ]
 
   return (
     <>
@@ -123,11 +144,7 @@ export default function About() {
       {/* Numbers */}
       <section className="border-y border-line">
         <div className="container-editorial grid gap-px sm:grid-cols-3">
-          {[
-            { value: String(products.length).padStart(2, '0'), label: 'Pieces in release 01' },
-            { value: '06', label: 'Mills across three countries' },
-            { value: `$${cheapest}`, label: 'Entry price, full collection' },
-          ].map((stat, index) => (
+          {stats.map((stat, index) => (
             <Reveal key={stat.label} delay={index * 0.06} className="py-10 sm:py-14">
               <p className="type-display text-[16vw] leading-none sm:text-[4.5rem]">{stat.value}</p>
               <p className="mt-4 font-mono text-[10px] tracking-[0.14em] text-graphite uppercase">

@@ -96,6 +96,9 @@ export const toUserMessage = (error: unknown): string => {
 
     switch (error.kind) {
       case 'validation':
+        // A ValidationPipe failure carries one message per field; joined, they
+        // read as a sentence instead of a bare "Request failed with status 400".
+        if (error.details.length > 1) return error.details.join(' ')
         return serverMessage || 'Some of the details are not valid. Check the form and try again.'
       case 'unauthorized':
         return 'This session is no longer recognised. Reload the page to start a new one.'
@@ -122,14 +125,3 @@ export const toUserMessage = (error: unknown): string => {
 
   return 'Something went wrong. Please try again.'
 }
-
-/**
- * True when the failure means "this claimed identity is not a real user".
- *
- * The API answers 404 for an unknown `X-User-Id`, which is indistinguishable
- * from a genuinely absent resource — by design, so a caller cannot probe for
- * other users' data. Only the identity bootstrap may act on that, and only on
- * a read that is known to be user-scoped.
- */
-export const isUnknownIdentity = (error: unknown): boolean =>
-  isApiError(error) && error.kind === 'notFound'

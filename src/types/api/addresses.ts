@@ -129,7 +129,7 @@ export const addressFormValuesToRequest = (
   city: values.city,
   stateProvince: values.stateProvince.trim() === '' ? null : values.stateProvince,
   postalCode: values.postalCode.trim() === '' ? null : values.postalCode,
-  countryCode: values.countryCode,
+  countryCode: values.countryCode.trim().toUpperCase(),
 })
 
 /** One line of an address, skipping the parts that are absent. */

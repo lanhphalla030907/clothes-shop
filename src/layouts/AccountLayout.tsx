@@ -13,7 +13,8 @@ import {
   X,
 } from 'lucide-react'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
-import { displayName, useIdentity } from '@/features/identity/useIdentity'
+import { displayName, useAuth } from '@/features/auth/useAuth'
+import { useWishlistActions } from '@/features/wishlist/useWishlistActions'
 
 const EASE = [0.16, 1, 0.3, 1] as const
 
@@ -79,7 +80,7 @@ export function AccountLayout() {
   const { pathname } = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const { identity } = useIdentity()
+  const { user } = useAuth()
 
   useLockBodyScroll(mobileOpen)
 
@@ -92,6 +93,9 @@ export function AccountLayout() {
 
   const active =
     NAV.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`)) ?? NAV[0]
+
+  const wishlistCount = useWishlistActions().itemCount
+  const badgeFor = (to: string) => (to === '/dashboard/wishlist' && wishlistCount > 0 ? wishlistCount : undefined)
 
   return (
     <div className="flex min-h-svh bg-canvas">
@@ -126,6 +130,11 @@ export function AccountLayout() {
               >
                 <Icon size={16} strokeWidth={1.5} aria-hidden />
                 <span className="text-[13px] font-medium">{label}</span>
+                {badgeFor(to) !== undefined && (
+                  <span className="ml-auto font-mono text-[11px] text-ash tabular-nums">
+                    {badgeFor(to)}
+                  </span>
+                )}
               </NavLink>
             ))}
           </nav>
@@ -177,10 +186,10 @@ export function AccountLayout() {
                 aria-hidden
                 className="grid size-8 shrink-0 place-items-center bg-ink font-mono text-[11px] text-paper"
               >
-                {initials(identity?.firstName, identity?.lastName)}
+                {initials(user?.firstName, user?.lastName)}
               </span>
               <span className="hidden min-w-0 truncate text-[13px] text-ink sm:block">
-                {displayName(identity) || 'Your account'}
+                {displayName(user) || 'Your account'}
               </span>
             </Link>
           </div>
@@ -239,6 +248,11 @@ export function AccountLayout() {
                   >
                     <Icon size={16} strokeWidth={1.5} aria-hidden />
                     <span className="text-[13px] font-medium">{label}</span>
+                    {badgeFor(to) !== undefined && (
+                      <span className="ml-auto font-mono text-[11px] text-ash tabular-nums">
+                        {badgeFor(to)}
+                      </span>
+                    )}
                   </NavLink>
                 ))}
               </nav>

@@ -1,13 +1,12 @@
 import { Action } from '@/components/ui/Action'
 import { PageHeader, Panel, PanelHeader } from '@/components/account/PageHeader'
-import { ErrorState, InlineNotice } from '@/components/account/States'
 import { Skeleton } from '@/components/account/Skeleton'
 import { DefinitionRow } from '@/components/account/Bits'
-import { displayName, useIdentity } from '@/features/identity/useIdentity'
+import { displayName, useAuth } from '@/features/auth/useAuth'
 import { useOrders } from '@/features/orders/useOrders'
-import { useWishlist } from '@/features/wishlist/useWishlist'
-import { useAddresses } from '@/features/addresses/useAddresses'
-import { toUserMessage } from '@/lib/api/errors'
+import { useWishlistActions } from '@/features/wishlist/useWishlistActions'
+import { useAddressActions } from '@/features/addresses/useAddressActions'
+
 
 /**
  * What this account actually is.
@@ -30,10 +29,10 @@ import { toUserMessage } from '@/lib/api/errors'
  * page failing if one is down.
  */
 export default function Profile() {
-  const { identity, isReady, error, retry } = useIdentity()
+  const { user, isInitializing } = useAuth()
   const orders = useOrders()
-  const wishlist = useWishlist()
-  const addresses = useAddresses()
+  const wishlist = useWishlistActions()
+  const addresses = useAddressActions()
 
   return (
     <div className="space-y-8">
@@ -43,15 +42,7 @@ export default function Profile() {
         description="Your account as the studio server knows it."
       />
 
-      {error !== undefined && (
-        <div className="space-y-4">
-          <ErrorState message={toUserMessage(error)} onRetry={retry} />
-          <InlineNotice
-            tone="info"
-            message="Everything on this page needs a working identity. Retrying will provision a new one for this device, which means an empty cart, wishlist and order history."
-          />
-        </div>
-      )}
+
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Panel className="lg:col-span-2">
@@ -62,21 +53,21 @@ export default function Profile() {
 
           <dl className="px-6 py-5">
             <DefinitionRow label="Name">
-              {isReady ? displayName(identity) : <Skeleton className="h-3 w-32" />}
+              {!isInitializing ? displayName(user) : <Skeleton className="h-3 w-32" />}
             </DefinitionRow>
             <DefinitionRow label="Email">
-              {isReady ? identity?.email : <Skeleton className="h-3 w-48" />}
+              {!isInitializing ? user?.email : <Skeleton className="h-3 w-48" />}
             </DefinitionRow>
             <DefinitionRow label="User id">
-              {isReady ? (
-                <span className="font-mono text-xs break-all">{identity?.userId}</span>
+              {!isInitializing ? (
+                <span className="font-mono text-xs break-all">{user?.id}</span>
               ) : (
                 <Skeleton className="h-3 w-64" />
               )}
             </DefinitionRow>
             <DefinitionRow label="Since">
-              {isReady && identity ? (
-                new Date(identity.claimedAt).toLocaleDateString('en-GB', {
+              {!isInitializing && user ? (
+                new Date(user.createdAt).toLocaleDateString('en-GB', {
                   day: '2-digit',
                   month: 'long',
                   year: 'numeric',

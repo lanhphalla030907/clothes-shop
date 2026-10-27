@@ -5,11 +5,13 @@ import { Panel, PanelHeader } from '@/components/account/PageHeader'
 import { StatusBadge, Money } from '@/components/account/Bits'
 import { ErrorState, EmptyState } from '@/components/account/States'
 import { SkeletonCard, Skeleton } from '@/components/account/Skeleton'
-import { useAccountCart } from '@/features/cart/useAccountCart'
-import { useAddresses } from '@/features/addresses/useAddresses'
+import { useCartActions } from '@/features/cart/useCartActions'
+import type { CartActions } from '@/features/cart/cartActions'
+import { useAddressActions } from '@/features/addresses/useAddressActions'
 import { useOrders } from '@/features/orders/useOrders'
-import { useWishlist } from '@/features/wishlist/useWishlist'
-import { displayName, useIdentity } from '@/features/identity/useIdentity'
+import { useWishlistActions } from '@/features/wishlist/useWishlistActions'
+import type { WishlistActions } from '@/features/wishlist/wishlistActions'
+import { displayName, useAuth } from '@/features/auth/useAuth'
 import { STORE_CURRENCY } from '@/lib/api/config'
 import { toUserMessage } from '@/lib/api/errors'
 import { formatAddressLines } from '@/types/api'
@@ -30,11 +32,11 @@ import { formatAddressLines } from '@/types/api'
 const FIRST_PANEL = 'sm:col-span-2 lg:col-span-3'
 
 export default function Overview() {
-  const { identity } = useIdentity()
+  const { user } = useAuth()
   const orders = useOrders()
-  const cart = useAccountCart()
-  const wishlist = useWishlist()
-  const addresses = useAddresses()
+  const cart = useCartActions()
+  const wishlist = useWishlistActions()
+  const addresses = useAddressActions()
 
   return (
     <div className="space-y-8">
@@ -42,7 +44,7 @@ export default function Overview() {
         <div>
           <p className="label-micro text-ash">Account</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-            {displayName(identity) || 'Your account'}
+            {displayName(user) || 'Your account'}
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-graphite">
             Everything here is stored against your account on the studio server — orders,
@@ -224,7 +226,7 @@ export default function Overview() {
 }
 
 /** Bag summary — the count is the server's, never a localStorage figure. */
-const BagSummary = ({ cart }: { cart: ReturnType<typeof useAccountCart> }) => {
+const BagSummary = ({ cart }: { cart: CartActions }) => {
   if (cart.isLoading) {
     return (
       <div className="space-y-4">
@@ -277,7 +279,7 @@ const BagSummary = ({ cart }: { cart: ReturnType<typeof useAccountCart> }) => {
 }
 
 /** Wishlist summary — a real count from the server, never a localStorage tally. */
-const WishlistSummary = ({ wishlist }: { wishlist: ReturnType<typeof useWishlist> }) => {
+const WishlistSummary = ({ wishlist }: { wishlist: WishlistActions }) => {
   if (wishlist.isLoading) {
     return (
       <div className="space-y-4">

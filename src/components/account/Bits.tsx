@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Minus, Plus } from 'lucide-react'
 import { formatMoney } from '@/lib/money'
@@ -63,6 +63,11 @@ type QuantityStepperProps = {
   min?: number
   disabled?: boolean
   label: string
+  /**
+   * Enables typing a quantity. The typed figure is sent as an absolute value, so
+   * the control commits only when it is a whole number the server could accept.
+   */
+  editable?: boolean
 }
 
 /**
@@ -81,6 +86,7 @@ export const QuantityStepper = ({
   min = 1,
   disabled = false,
   label,
+  editable = false,
 }: QuantityStepperProps) => {
   const id = useId()
   const ceiling = typeof max === 'number' ? Math.min(max, 99) : 1
@@ -96,13 +102,21 @@ export const QuantityStepper = ({
       >
         <Minus size={13} strokeWidth={1.5} />
       </button>
-      <span
-        id={id}
-        aria-live="polite"
-        className="min-w-10 text-center font-mono text-sm tabular-nums text-ink"
-      >
-        {value}
-      </span>
+
+      {editable ? (
+        <QuantityInput
+          id={id}
+          value={value}
+          label={label}
+          disabled={disabled}
+          onCommit={(quantity) => onChange(Math.max(min, Math.min(ceiling, quantity)))}
+        />
+      ) : (
+        <span id={id} aria-live="polite" className="min-w-10 text-center font-mono text-sm tabular-nums text-ink">
+          {value}
+        </span>
+      )}
+
       <button
         type="button"
         aria-label={`Increase ${label}`}
@@ -114,6 +128,65 @@ export const QuantityStepper = ({
       </button>
     </div>
   )
+}
+
+/**
+ * The middle of the stepper, typed into rather than stepped.
+ *
+ * Keeps the server's figure as the truth: whatever is typed is sent as an
+ * absolute quantity and the control only re-reads the value the cart then holds,
+ * so an out-of-stock or rejected figure snaps back instead of standing.
+ */
+const QuantityInput = ({
+  id,
+  value,
+  label,
+  disabled,
+  onCommit,
+}: {
+  id: string
+  value: number
+  label: string
+  disabled: boolean
+  onCommit: (quantity: number) => void
+}) => {
+  const [draft, setDraft] = useState(() => String(value))
+  const [shownValue, setShownValue] = useState(value)
+
+  // A change made elsewhere — a duplicate refused, a refetch landing a different
+  // quantity — wins over whatever is half-typed.
+  if (shownValue !== value) {
+    setShownValue(value)
+    setDraft(String(value))
+  }
+
+  return (
+    <input
+      id={id}
+      type="number"
+      inputMode="numeric"
+      min={1}
+      step={1}
+      value={draft}
+      disabled={disabled}
+      aria-label={`Quantity for ${label}`}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={() => commit(draft, value, onCommit)}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter') return
+        event.preventDefault()
+        commit(draft, value, onCommit)
+      }}
+      className="min-w-12 border-0 bg-transparent px-1 py-2 text-center font-mono text-sm text-ink tabular-nums focus:ring-0 [appearance:textfield] focus:outline-none disabled:text-ash [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+    />
+  )
+}
+
+/** Sends the typed figure only when it is a whole number, and not a no-op. */
+const commit = (draft: string, current: number, onCommit: (quantity: number) => void) => {
+  const typed = Number(draft)
+  if (!Number.isInteger(typed) || typed < 1 || typed === current) return
+  onCommit(typed)
 }
 
 type DefinitionRowProps = {

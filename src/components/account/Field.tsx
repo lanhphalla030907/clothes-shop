@@ -1,5 +1,10 @@
 import { useId } from 'react'
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from 'react'
 
 /**
  * Labelled form controls.
@@ -105,6 +110,30 @@ export const SelectField = ({
       >
         {children}
       </select>
+    </FieldShell>
+  )
+}
+
+type TextAreaFieldProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'id'> & {
+  label: string
+  error?: string | undefined
+  hint?: string
+}
+
+export const TextAreaField = ({ label, error, hint, required, className = '', ...rest }: TextAreaFieldProps) => {
+  const generated = useId()
+  const id = rest.name ? `field-${rest.name}` : generated
+
+  return (
+    <FieldShell id={id} label={label} error={error} hint={hint} required={required}>
+      <textarea
+        id={id}
+        required={required}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+        className={`${controlClasses(Boolean(error))} min-h-32 resize-y py-3 ${className}`}
+        {...rest}
+      />
     </FieldShell>
   )
 }

@@ -1,21 +1,24 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from '@/hooks/useMutation'
 import { createPayment } from './api'
-import type { Payment, UUID } from '@/types/api'
+import { PAYMENT_STATUS, type Payment, type UUID } from '@/types/api'
 
 /**
- * One PayWay QR, and the clock on it.
+ * One PayWay QR and the clock on it.
  *
- * PayWay's QR expires. The response carries both `lifetimeMinutes` and an
- * `expiresAt`, and the countdown is computed from `expiresAt` against the local
- * clock rather than trusted as a fixed number of minutes — if the tab was
- * backgrounded for twenty minutes, the QR should already read as expired instead
- * of inviting a scan that is guaranteed to fail.
+ * Expiry comes from the response's `expiresAt` rather than a locally counted
+ * `lifetimeMinutes`, so a backgrounded tab shows a dead code as dead.
  *
- * When it lapses, the only correct action is a **new** payment: `createPayment`
- * makes a new attempt with a new `tran_id`. Re-showing the old QR would send the
- * shopper to a dead code.
+ * The payment is held against its order id and derived back out during render, so
+ * navigating between orders cannot show one order's code on another.
  */
+
+interface Held {
+  orderId: UUID
+  payment: Payment
+  /** The provider handed back the same attempt we already held, still expired. */
+  replayedExpired: boolean
+}
 
 export interface PaymentFlow {
   payment: Payment | undefined
@@ -27,22 +30,44 @@ export interface PaymentFlow {
   isExpired: boolean
   /** `PENDING` with a QR is the only state that means "scan this". */
   isScannable: boolean
+  replayedExpired: boolean
   reset: () => void
 }
 
-export const usePayment = (orderId: UUID | undefined): PaymentFlow => {
-  const [payment, setPayment] = useState<Payment | undefined>(undefined)
+const isExpiredByClock = (payment: Payment, now: number): boolean => {
+  if (!payment.expiresAt) return false
+  const expiry = Date.parse(payment.expiresAt)
+  return Number.isFinite(expiry) && expiry <= now
+}
+
+export const usePayment = (orderId: UUID | undefined, autoStart = false): PaymentFlow => {
+  const [held, setHeld] = useState<Held | undefined>(undefined)
   const [now, setNow] = useState(() => Date.now())
 
-  const mutation = useMutation<[], Payment>(() => {
-    if (!orderId) throw new Error('No order to pay for.')
-    return createPayment(orderId)
-  }, {
-    onSuccess: (created) => {
-      setPayment(created)
-      setNow(Date.now())
+  const mutation = useMutation<[], Payment>(
+    () => {
+      if (!orderId) throw new Error('No order to pay for.')
+      return createPayment(orderId)
     },
-  })
+    {
+      onSuccess: (created) => {
+        const at = Date.now()
+        setHeld((previous) => ({
+          orderId: created.orderId,
+          payment: created,
+          replayedExpired:
+            previous?.payment.paymentId === created.paymentId && isExpiredByClock(created, at),
+        }))
+        setNow(at)
+      },
+    },
+  )
+
+  // Derived, not reset: a different order id shows nothing rather than another
+  // order's code.
+  const mine = held?.orderId === orderId ? held : undefined
+  const payment = mine?.payment
+  const replayedExpired = mine?.replayedExpired ?? false
 
   const expiresAt = payment?.expiresAt ? Date.parse(payment.expiresAt) : Number.NaN
 
@@ -60,8 +85,27 @@ export const usePayment = (orderId: UUID | undefined): PaymentFlow => {
     return () => window.clearInterval(timer)
   }, [expiresAt])
 
-  const isExpired = secondsRemaining === 0
-  const isScannable = payment?.status === 'PENDING' && Boolean(payment.qrString) && !isExpired
+  // One attempt per order id. The endpoint is idempotent, but asking once per
+  // mount keeps the screen from spending a provider call it does not need.
+  const autoStartedFor = useRef<UUID | undefined>(undefined)
+  useEffect(() => {
+    if (!autoStart || !orderId || payment || mutation.isPending) return
+    if (autoStartedFor.current === orderId) return
+
+    autoStartedFor.current = orderId
+    void mutation.run()
+  }, [autoStart, orderId, payment, mutation])
+
+  const isExpired =
+    payment?.status === PAYMENT_STATUS.EXPIRED ||
+    (payment !== undefined && secondsRemaining === 0)
+  const isScannable =
+    payment?.status === PAYMENT_STATUS.PENDING && Boolean(payment.qrString) && !isExpired
+
+  const reset = useCallback(() => {
+    setHeld((previous) => (previous?.orderId === orderId ? undefined : previous))
+    mutation.reset()
+  }, [orderId, mutation])
 
   return {
     payment,
@@ -71,10 +115,8 @@ export const usePayment = (orderId: UUID | undefined): PaymentFlow => {
     secondsRemaining,
     isExpired,
     isScannable,
-    reset: () => {
-      setPayment(undefined)
-      mutation.reset()
-    },
+    replayedExpired,
+    reset,
   }
 }
 

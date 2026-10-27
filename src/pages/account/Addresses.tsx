@@ -6,7 +6,7 @@ import { FormError, SelectField, TextField } from '@/components/account/Field'
 import { EmptyState, ErrorState, InlineNotice } from '@/components/account/States'
 import { Modal } from '@/components/account/Modal'
 import { SkeletonCard } from '@/components/account/Skeleton'
-import { toCreateRequest, useAddresses } from '@/features/addresses/useAddresses'
+import { useAddressActions } from '@/features/addresses/useAddressActions'
 import {
   ADDRESS_LIMITS,
   COUNTRY_OPTIONS,
@@ -16,6 +16,7 @@ import {
 } from '@/features/addresses/rules'
 import { toUserMessage } from '@/lib/api/errors'
 import {
+  addressFormValuesToRequest,
   addressToFormValues,
   formatAddressLines,
   EMPTY_ADDRESS_FORM,
@@ -26,23 +27,13 @@ import {
 /**
  * The address book.
  *
- * Two rules from the server shape this screen, and both are surfaced rather than
- * hidden:
- *
- * - the **first** address becomes the default automatically, so the create form
- *   never asks about it — asking would be asking a question the server has
- *   already answered;
- * - only one address can be default, and asking for "not default" on the current
- *   one is a conflict, so the "make default" control is simply **absent** on the
- *   address that already holds it.
- *
- * Client validation mirrors the server's field limits (`features/addresses/rules.ts`)
- * so a mistake is caught before a round trip, but the server remains the
- * authority: `forbidNonWhitelisted` means anything this form sends can still be
- * refused, and its message is what gets shown.
+ * Two server rules shape this screen: the first address becomes the default on
+ * its own, and `isDefault: false` on the current default is a 409 — so "make
+ * default" is absent on the address that already holds the slot rather than
+ * offered as an action that would fail.
  */
 export default function Addresses() {
-  const book = useAddresses()
+  const book = useAddressActions()
   const [editing, setEditing] = useState<Address | 'new' | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Address | null>(null)
 
@@ -108,49 +99,69 @@ export default function Addresses() {
           serverError={book.actionError}
           onClose={() => setEditing(null)}
           onSubmit={async (values) => {
+            const body = addressFormValuesToRequest(values)
+
             if (editing === 'new') {
-              const created = await book.create(toCreateRequest(values))
-              if (created) setEditing(null)
+              if (await book.create(body)) setEditing(null)
               return
             }
 
-            const updated = await book.update(editing.id, toCreateRequest(values))
-            if (updated) setEditing(null)
+            if (await book.update(editing.id, body)) setEditing(null)
           }}
         />
       )}
 
       {pendingDelete && (
-        <Modal
-          title="Delete this address?"
+        <DeleteAddressModal
+          address={pendingDelete}
+          isDeleting={book.pendingIds.has(pendingDelete.id)}
           onClose={() => setPendingDelete(null)}
-          footer={
-            <>
-              <Action variant="ghost" size="sm" onClick={() => setPendingDelete(null)}>
-                Keep it
-              </Action>
-              <Action
-                size="sm"
-                onClick={() => {
-                  void book.remove(pendingDelete.id)
-                  setPendingDelete(null)
-                }}
-              >
-                Delete address
-              </Action>
-            </>
-          }
-        >
-          <p className="text-sm leading-relaxed text-graphite">
-            <span className="text-ink">{pendingDelete.label}</span> will be removed from your
-            address book. Orders already placed keep their own copy of it, so no delivery history
-            is affected.
-          </p>
-        </Modal>
+          onConfirm={async () => {
+            if (await book.remove(pendingDelete.id)) setPendingDelete(null)
+          }}
+        />
       )}
     </div>
   )
 }
+
+/** Stays open until the write resolves, so one tap is one request. */
+const DeleteAddressModal = ({
+  address,
+  isDeleting,
+  onClose,
+  onConfirm,
+}: {
+  address: Address
+  isDeleting: boolean
+  onClose: () => void
+  onConfirm: () => Promise<void>
+}) => (
+  <Modal
+    title="Delete this address?"
+    onClose={onClose}
+    footer={
+      <>
+        <Action variant="ghost" size="sm" onClick={onClose} disabled={isDeleting}>
+          Keep it
+        </Action>
+        <Action size="sm" onClick={() => void onConfirm()} disabled={isDeleting}>
+          {isDeleting ? 'Deleting' : 'Delete address'}
+        </Action>
+      </>
+    }
+  >
+    <p className="text-sm leading-relaxed text-graphite">
+      <span className="text-ink">{address.label}</span> will be removed from your address book.
+      Orders already placed keep their own copy of it.
+    </p>
+    {address.isDefault && (
+      <p className="mt-3 text-sm leading-relaxed text-graphite">
+        It is your default, so another address takes that place.
+      </p>
+    )}
+  </Modal>
+)
 
 type AddressCardProps = {
   address: Address
