@@ -23,6 +23,8 @@ export const ADDRESS_LIMITS = {
   addressLine2: 255,
   city: 100,
   stateProvince: 100,
+  district: 100,
+  commune: 100,
   postalCode: 20,
 } as const
 
@@ -62,8 +64,16 @@ export const validateAddress = (values: AddressFormValues): AddressErrors => {
   assign('phone', required(values.phone, 'A phone number', ADDRESS_LIMITS.phone))
   assign('addressLine1', required(values.addressLine1, 'A street address', ADDRESS_LIMITS.addressLine1))
   assign('addressLine2', optional(values.addressLine2, 'A second line', ADDRESS_LIMITS.addressLine2))
-  assign('city', required(values.city, 'A city', ADDRESS_LIMITS.city))
-  assign('stateProvince', optional(values.stateProvince, 'A state or province', ADDRESS_LIMITS.stateProvince))
+  if (values.countryCode.trim().toUpperCase() === 'KH') {
+    if (!/^KH[0-9]{2}$/.test(values.provincePcode)) {
+      errors.provincePcode = 'Select a province or municipality'
+    }
+    assign('district', required(values.district, 'A district', ADDRESS_LIMITS.district))
+    assign('commune', required(values.commune, 'A commune', ADDRESS_LIMITS.commune))
+  } else {
+    assign('city', required(values.city, 'A city', ADDRESS_LIMITS.city))
+    assign('stateProvince', optional(values.stateProvince, 'A state or province', ADDRESS_LIMITS.stateProvince))
+  }
   assign('postalCode', optional(values.postalCode, 'A postal code', ADDRESS_LIMITS.postalCode))
 
   if (!COUNTRY_CODE_PATTERN.test(values.countryCode.trim().toUpperCase())) {

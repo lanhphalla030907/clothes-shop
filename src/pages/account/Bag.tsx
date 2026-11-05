@@ -71,19 +71,19 @@ export default function Bag() {
         action={
           confirmingClear ? (
             <span className="flex flex-wrap items-center gap-3">
-              <span className="text-xs text-graphite">Empty the whole bag?</span>
+              <span className="text-[13px] text-graphite">Empty the whole bag?</span>
               <button
                 type="button"
                 disabled={cart.isClearing}
                 onClick={() => void cart.clear()}
-                className="label-micro border border-signal px-3 py-1.5 text-signal transition-colors hover:bg-signal hover:text-paper disabled:opacity-40"
+                className="inline-flex min-h-10 items-center border border-signal px-3 text-[13px] font-medium text-signal transition-colors hover:bg-signal hover:text-paper disabled:opacity-40"
               >
                 Confirm
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmingClear(false)}
-                className="label-micro text-graphite transition-colors hover:text-ink"
+                className="inline-flex min-h-10 items-center px-2 text-[13px] font-medium text-graphite transition-colors hover:text-ink"
               >
                 Cancel
               </button>
@@ -92,7 +92,7 @@ export default function Bag() {
             <button
               type="button"
               onClick={() => setConfirmingClear(true)}
-              className="label-micro border border-line px-3 py-1.5 text-graphite transition-colors hover:border-ink hover:text-ink"
+              className="inline-flex min-h-10 items-center border border-line px-3 text-[13px] font-medium text-graphite transition-colors hover:border-ink hover:text-ink"
             >
               Empty bag
             </button>
@@ -169,7 +169,7 @@ export default function Bag() {
           </Panel>
 
           <Panel className="p-6">
-            <p className="label-micro text-ink">Stock is checked again at checkout</p>
+            <p className="eyebrow text-ink">Stock is checked again at checkout</p>
             <p className="mt-3 text-sm leading-relaxed text-graphite">
               A bag records what you want; it does not hold anything. If a line sells out before
               you order, checkout refuses it rather than charging you for something unavailable.
@@ -215,7 +215,7 @@ const CartRow = ({ line, currency, isPending, onQuantity, onRemove }: CartRowPro
             {variant.options.map((option) => (
               <li
                 key={`${option.optionName}-${option.optionValue}`}
-                className="label-micro border border-line px-2 py-1 text-graphite"
+                className="border border-line bg-bone px-2 py-1 text-[12px] text-graphite"
               >
                 {option.optionName}: {option.optionValue}
               </li>
@@ -260,7 +260,7 @@ const CartRow = ({ line, currency, isPending, onQuantity, onRemove }: CartRowPro
       </div>
 
       <div className="shrink-0 text-left sm:text-right">
-        <p className="label-micro text-ash">Line total</p>
+        <p className="text-[12px] font-medium text-graphite">Line total</p>
         <Money
           amount={line.lineTotal}
           currency={currency}

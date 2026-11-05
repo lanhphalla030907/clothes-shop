@@ -15,16 +15,15 @@ import type {
  * wrong and why, at the moment focus lands on it — a colour change alone tells a
  * sighted user and nobody else.
  *
- * Errors are only rendered when the field is invalid; the messages come from
- * `features/addresses/rules.ts` on the client and can still be overridden by the
- * server, which remains the authority.
+ * Labels are sentence case and 13px. The editorial mono micro-label is kept for
+ * the storefront's chrome; forms are read repeatedly and need a normal face.
  */
 
 const controlClasses = (invalid: boolean): string =>
-  `w-full border bg-paper-pure px-4 text-sm text-ink placeholder:text-ash transition-colors duration-200 focus:outline-none focus-visible:ring-1 ${
+  `w-full border bg-paper-pure px-3.5 text-[15px] text-ink placeholder:text-ash transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
     invalid
-      ? 'border-signal focus-visible:border-signal focus-visible:ring-signal'
-      : 'border-line focus-visible:border-ink focus-visible:ring-ink'
+      ? 'border-signal focus-visible:border-signal focus-visible:ring-signal/30'
+      : 'border-line hover:border-graphite/60 focus-visible:border-ink focus-visible:ring-ink/15'
   }`
 
 type FieldShellProps = {
@@ -37,18 +36,22 @@ type FieldShellProps = {
 }
 
 const FieldShell = ({ id, label, error, hint, required, children }: FieldShellProps) => (
-  <div className="space-y-2">
-    <label htmlFor={id} className="label-micro block text-graphite">
+  <div className="space-y-1.5">
+    <label htmlFor={id} className="block text-[13px] font-medium text-ink">
       {label}
-      {required && <span className="ml-1 text-signal">*</span>}
+      {required && (
+        <span className="ml-1 text-signal" aria-hidden>
+          *
+        </span>
+      )}
     </label>
     {children}
     {error ? (
-      <p id={`${id}-error`} className="text-xs leading-relaxed text-signal">
+      <p id={`${id}-error`} className="text-[13px] leading-relaxed font-medium text-signal">
         {error}
       </p>
     ) : hint ? (
-      <p id={`${id}-hint`} className="text-xs leading-relaxed text-graphite">
+      <p id={`${id}-hint`} className="text-[13px] leading-relaxed text-graphite">
         {hint}
       </p>
     ) : null}
@@ -72,7 +75,7 @@ export const TextField = ({ label, error, hint, required, className = '', ...res
         required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-        className={`${controlClasses(Boolean(error))} h-12 ${className}`}
+        className={`${controlClasses(Boolean(error))} h-11 ${className}`}
         {...rest}
       />
     </FieldShell>
@@ -105,7 +108,7 @@ export const SelectField = ({
         required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-        className={`${controlClasses(Boolean(error))} h-12 ${className}`}
+        className={`${controlClasses(Boolean(error))} h-11 cursor-pointer pr-9 ${className}`}
         {...rest}
       >
         {children}
@@ -152,7 +155,7 @@ type FormErrorProps = {
 export const FormError = ({ message }: FormErrorProps) => (
   <p
     role="alert"
-    className="border border-signal/30 bg-signal-soft px-4 py-3 text-sm leading-relaxed text-ink"
+    className="border-l-2 border-signal bg-signal-soft px-4 py-3 text-sm leading-relaxed text-ink"
   >
     {message}
   </p>

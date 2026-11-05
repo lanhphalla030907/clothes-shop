@@ -22,21 +22,15 @@ type MoneyProps = {
 
 export const Money = ({ amount, currency = 'USD', className = '', emphasis = 'default' }: MoneyProps) => (
   <span
-    className={`${emphasis === 'total' ? 'font-mono text-lg font-semibold tabular-nums text-ink' : 'text-ink'} ${className}`}
+    className={`${
+      emphasis === 'total'
+        ? 'font-mono text-lg font-semibold tabular-nums text-ink'
+        : 'text-[14px] tabular-nums text-ink'
+    } ${className}`}
   >
     {formatMoney(amount, currency)}
   </span>
 )
-
-/** Tone per status: only the ones that need attention are given a colour. */
-const statusTone: Record<OrderStatus, string> = {
-  [ORDER_STATUS.PENDING]: 'border-ink/20 bg-bone text-ink',
-  [ORDER_STATUS.CONFIRMED]: 'border-ink/20 bg-bone text-ink',
-  [ORDER_STATUS.PROCESSING]: 'border-ink/20 bg-bone text-ink',
-  [ORDER_STATUS.SHIPPED]: 'border-ink/20 bg-ink text-paper',
-  [ORDER_STATUS.DELIVERED]: 'border-ink/20 bg-ink text-paper',
-  [ORDER_STATUS.CANCELLED]: 'border-signal/30 bg-signal-soft text-signal',
-}
 
 const statusLabel: Record<OrderStatus, string> = {
   [ORDER_STATUS.PENDING]: 'Awaiting payment',
@@ -47,10 +41,32 @@ const statusLabel: Record<OrderStatus, string> = {
   [ORDER_STATUS.CANCELLED]: 'Cancelled',
 }
 
+/** Tone per status: only the ones that need attention are given a colour. */
+const statusTone: Record<OrderStatus, string> = {
+  [ORDER_STATUS.PENDING]: 'border-line bg-bone text-ink',
+  [ORDER_STATUS.CONFIRMED]: 'border-line bg-bone text-ink',
+  [ORDER_STATUS.PROCESSING]: 'border-line bg-bone text-ink',
+  [ORDER_STATUS.SHIPPED]: 'border-info/25 bg-info-soft text-info',
+  [ORDER_STATUS.DELIVERED]: 'border-success/25 bg-success-soft text-success',
+  [ORDER_STATUS.CANCELLED]: 'border-signal/25 bg-signal-soft text-signal',
+}
+
 export const StatusBadge = ({ status }: { status: OrderStatus }) => (
   <span
-    className={`label-micro inline-flex h-7 items-center border px-3 ${statusTone[status]}`}
+    className={`inline-flex w-fit items-center gap-1.5 border px-2.5 py-1 text-xs font-medium whitespace-nowrap ${statusTone[status]}`}
   >
+    <span
+      aria-hidden
+      className={`size-1.5 rounded-full ${
+        status === ORDER_STATUS.CANCELLED
+          ? 'bg-signal'
+          : status === ORDER_STATUS.SHIPPED
+            ? 'bg-info'
+            : status === ORDER_STATUS.DELIVERED
+              ? 'bg-success'
+            : 'bg-graphite'
+      }`}
+    />
     {statusLabel[status] ?? status}
   </span>
 )
@@ -100,7 +116,7 @@ export const QuantityStepper = ({
         onClick={() => onChange(Math.max(min, value - 1))}
         className="grid size-11 place-items-center text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:text-ash disabled:hover:bg-transparent"
       >
-        <Minus size={13} strokeWidth={1.5} />
+        <Minus size={14} strokeWidth={1.6} />
       </button>
 
       {editable ? (
@@ -124,7 +140,7 @@ export const QuantityStepper = ({
         onClick={() => onChange(Math.min(ceiling, value + 1))}
         className="grid size-11 place-items-center text-ink transition-colors hover:bg-bone disabled:cursor-not-allowed disabled:text-ash disabled:hover:bg-transparent"
       >
-        <Plus size={13} strokeWidth={1.5} />
+        <Plus size={14} strokeWidth={1.6} />
       </button>
     </div>
   )
@@ -196,7 +212,7 @@ type DefinitionRowProps = {
 
 export const DefinitionRow = ({ label, children }: DefinitionRowProps) => (
   <div className="flex items-baseline justify-between gap-6 border-b border-line-soft py-3 last:border-b-0">
-    <dt className="label-micro text-ash">{label}</dt>
-    <dd className="text-right text-sm text-ink">{children}</dd>
+    <dt className="text-[13px] text-graphite">{label}</dt>
+    <dd className="text-right text-[14px] text-ink">{children}</dd>
   </div>
 )

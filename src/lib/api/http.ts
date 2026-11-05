@@ -16,11 +16,19 @@ export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
 export interface RequestOptions {
   method?: HttpMethod
-  /** Serialised as JSON. Omit for GET/DELETE with no payload. */
+  /**
+   * Serialised as JSON, except `FormData`, which is sent as multipart and lets
+   * the browser choose its own boundary. Omit for GET/DELETE with no payload.
+   */
   body?: unknown
   signal?: AbortSignal
   /** Overrides {@link REQUEST_TIMEOUT_MS} for a call known to be slow. */
   timeoutMs?: number
+  /**
+   * How to read the response body. `json` parses JSON; `blob` returns the raw
+   * bytes for binary payloads such as a receipt PDF.
+   */
+  responseType?: 'json' | 'blob'
   /**
    * Extra headers merged last, so a caller-supplied header wins over a default.
    * This is how the session layer attaches `Authorization` without the transport
@@ -86,6 +94,14 @@ const messagesFrom = (payload: unknown): string[] => {
   return payload.filter((entry): entry is string => typeof entry === 'string')
 }
 
+/**
+ * `FormData` must be handed to `fetch` untouched: serialising it to JSON would
+ * discard the file, and setting `Content-Type: application/json` would remove
+ * the multipart boundary the server needs.
+ */
+const isFormData = (value: unknown): value is FormData =>
+  typeof FormData !== 'undefined' && value instanceof FormData
+
 const composeUrl = (path: string, query?: Record<string, string | number | undefined>): string => {
   const suffix = path.startsWith('/') ? path : `/${path}`
   const search = new URLSearchParams()
@@ -98,8 +114,13 @@ const composeUrl = (path: string, query?: Record<string, string | number | undef
   return `${API_BASE_URL}${suffix}${queryString ? `?${queryString}` : ''}`
 }
 
-const parseBody = async (response: Response): Promise<unknown> => {
+const parseBody = async (
+  response: Response,
+  responseType: 'json' | 'blob',
+): Promise<unknown> => {
   if (response.status === 204 || response.status === 205) return undefined
+
+  if (responseType === 'blob') return await response.blob()
 
   const text = await response.text()
   if (text.length === 0) return undefined
@@ -124,21 +145,39 @@ const parseBody = async (response: Response): Promise<unknown> => {
  */
 export const request = async <T>(
   path: string,
-  { method = 'GET', body, signal, timeoutMs = REQUEST_TIMEOUT_MS, query, requestHeaders }: RequestOptions = {},
+  {
+    method = 'GET',
+    body,
+    signal,
+    timeoutMs = REQUEST_TIMEOUT_MS,
+    query,
+    requestHeaders,
+    responseType = 'json',
+  }: RequestOptions = {},
 ): Promise<ResponseBody<T>> => {
   const deadline = withDeadline(signal, timeoutMs)
 
-  const headers: Record<string, string> = { Accept: 'application/json', ...requestHeaders }
-  // The API runs `forbidNonWhitelisted`, so a request with a body must say so
-  // and must not send `Content-Type` for the bodiless verbs.
-  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  const multipartBody = isFormData(body) ? body : undefined
+  const headers: Record<string, string> = {
+    Accept: responseType === 'blob' ? 'application/pdf' : 'application/json',
+    ...requestHeaders,
+  }
+  // The API runs `forbidNonWhitelisted`, so a JSON request with a body must say
+  // so and must not send `Content-Type` for the bodiless verbs. Multipart is the
+  // exception: the browser sets the header, including the boundary.
+  if (body !== undefined && multipartBody === undefined) {
+    headers['Content-Type'] = 'application/json'
+  }
 
   let response: Response
   try {
     response = await fetch(composeUrl(path, query), {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body:
+        body === undefined
+          ? undefined
+          : multipartBody ?? JSON.stringify(body),
       signal: deadline.signal,
       credentials: 'omit',
       mode: 'cors',
@@ -156,7 +195,7 @@ export const request = async <T>(
     deadline.dispose()
   }
 
-  const payload = await parseBody(response)
+  const payload = await parseBody(response, responseType)
 
   if (!response.ok) {
     const errorBody = (payload ?? {}) as ErrorBody

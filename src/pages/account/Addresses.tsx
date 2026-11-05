@@ -7,6 +7,7 @@ import { EmptyState, ErrorState, InlineNotice } from '@/components/account/State
 import { Modal } from '@/components/account/Modal'
 import { SkeletonCard } from '@/components/account/Skeleton'
 import { useAddressActions } from '@/features/addresses/useAddressActions'
+import { fetchCambodiaLocations } from '@/features/locations/api'
 import {
   ADDRESS_LIMITS,
   COUNTRY_OPTIONS,
@@ -15,6 +16,7 @@ import {
   type AddressErrors,
 } from '@/features/addresses/rules'
 import { toUserMessage } from '@/lib/api/errors'
+import { useAsyncResource } from '@/hooks/useAsyncResource'
 import {
   addressFormValuesToRequest,
   addressToFormValues,
@@ -172,19 +174,19 @@ type AddressCardProps = {
 }
 
 const AddressCard = ({ address, isPending, onEdit, onMakeDefault, onDelete }: AddressCardProps) => (
-  <Panel className={`flex h-full flex-col p-6 ${isPending ? 'opacity-50' : ''}`}>
+  <Panel className={`flex h-full flex-col p-5 sm:p-6 ${isPending ? 'opacity-50' : ''}`}>
     <div className="flex items-start justify-between gap-4">
-      <h2 className="label-micro text-ink">{address.label}</h2>
+      <h2 className="text-[15px] font-semibold text-ink">{address.label}</h2>
       {address.isDefault && (
-        <span className="label-micro inline-flex items-center gap-1.5 border border-ink bg-ink px-2.5 py-1.5 text-paper">
+        <span className="inline-flex items-center gap-1.5 border border-ink bg-ink px-2.5 py-1 text-[11px] font-semibold tracking-[0.06em] text-paper uppercase">
           <Check size={11} strokeWidth={2} aria-hidden />
           Default
         </span>
       )}
     </div>
 
-    <address className="mt-5 space-y-1 text-sm not-italic leading-relaxed text-graphite">
-      <span className="block text-ink">{address.recipientName}</span>
+    <address className="mt-4 space-y-0.5 text-[13.5px] leading-relaxed text-graphite not-italic">
+      <span className="block font-medium text-ink">{address.recipientName}</span>
       <span className="block">{address.phone}</span>
       {formatAddressLines(address).map((line) => (
         <span key={line} className="block">
@@ -193,14 +195,14 @@ const AddressCard = ({ address, isPending, onEdit, onMakeDefault, onDelete }: Ad
       ))}
     </address>
 
-    <div className="mt-auto flex flex-wrap items-center gap-4 pt-6">
+    <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-1 pt-6">
       <button
         type="button"
         onClick={onEdit}
         disabled={isPending}
-        className="label-micro inline-flex items-center gap-1.5 text-graphite transition-colors hover:text-ink disabled:opacity-40"
+        className="inline-flex min-h-9 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-ink disabled:opacity-40"
       >
-        <Pencil size={11} strokeWidth={1.5} aria-hidden />
+        <Pencil size={13} strokeWidth={1.6} aria-hidden />
         Edit
       </button>
 
@@ -211,9 +213,9 @@ const AddressCard = ({ address, isPending, onEdit, onMakeDefault, onDelete }: Ad
           type="button"
           onClick={onMakeDefault}
           disabled={isPending}
-          className="label-micro inline-flex items-center gap-1.5 text-graphite transition-colors hover:text-ink disabled:opacity-40"
+          className="inline-flex min-h-9 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-ink disabled:opacity-40"
         >
-          <Star size={11} strokeWidth={1.5} aria-hidden />
+          <Star size={13} strokeWidth={1.6} aria-hidden />
           Make default
         </button>
       )}
@@ -222,9 +224,9 @@ const AddressCard = ({ address, isPending, onEdit, onMakeDefault, onDelete }: Ad
         type="button"
         onClick={onDelete}
         disabled={isPending}
-        className="label-micro ml-auto inline-flex items-center gap-1.5 text-graphite transition-colors hover:text-signal disabled:opacity-40"
+        className="ml-auto inline-flex min-h-9 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-signal disabled:opacity-40"
       >
-        <Trash2 size={11} strokeWidth={1.5} aria-hidden />
+        <Trash2 size={13} strokeWidth={1.6} aria-hidden />
         Delete
       </button>
     </div>
@@ -258,6 +260,14 @@ const AddressFormModal = ({
     address ? addressToFormValues(address) : EMPTY_ADDRESS_FORM,
   )
   const [errors, setErrors] = useState<AddressErrors>({})
+  const isCambodia = values.countryCode.trim().toUpperCase() === 'KH'
+  const provinces = useAsyncResource(
+    (signal) => isCambodia ? fetchCambodiaLocations(undefined, signal) : Promise.resolve([]),
+    [isCambodia],
+  )
+  const locationsBusy =
+    isCambodia && (provinces.isLoading || provinces.isRefreshing)
+  const locationsFailed = isCambodia && provinces.error !== undefined
 
   const set = (field: keyof AddressFormValues) => (value: string) => {
     setValues((current) => ({ ...current, [field]: value }))
@@ -267,6 +277,7 @@ const AddressFormModal = ({
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (locationsBusy || locationsFailed) return
 
     const found = validateAddress(values)
     setErrors(found)
@@ -293,7 +304,7 @@ const AddressFormModal = ({
           {/* `form=` rather than an onClick that fakes a submit event: this is a
               real submit button for the form below, so Enter and the button take
               the same validated path. */}
-          <Action size="sm" type="submit" form={ADDRESS_FORM_ID} disabled={isSaving}>
+          <Action size="sm" type="submit" form={ADDRESS_FORM_ID} disabled={isSaving || locationsBusy || locationsFailed}>
             {isSaving ? 'Saving' : address ? 'Save changes' : 'Add address'}
           </Action>
         </>
@@ -358,27 +369,117 @@ const AddressFormModal = ({
           autoComplete="address-line2"
         />
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <TextField
-            name="city"
-            label="City"
-            value={values.city}
-            onChange={(event) => set('city')(event.target.value)}
-            error={errors.city}
-            maxLength={ADDRESS_LIMITS.city}
-            required
-            autoComplete="address-level2"
-          />
-          <TextField
-            name="stateProvince"
-            label="State or province (optional)"
-            value={values.stateProvince}
-            onChange={(event) => set('stateProvince')(event.target.value)}
-            error={errors.stateProvince}
-            maxLength={ADDRESS_LIMITS.stateProvince}
-            autoComplete="address-level1"
-          />
-        </div>
+        <SelectField
+          name="countryCode"
+          label="Country"
+          value={values.countryCode}
+          onChange={(event) => {
+            const countryCode = event.target.value
+            setValues((current) => ({
+              ...current,
+              countryCode,
+              provincePcode: '',
+              district: '',
+              commune: '',
+              ...(countryCode.toUpperCase() === 'KH'
+                ? { city: '', stateProvince: '' }
+                : {}),
+            }))
+            setErrors({})
+          }}
+          error={errors.countryCode}
+          required
+          autoComplete="country"
+        >
+          {COUNTRY_OPTIONS.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.label}
+            </option>
+          ))}
+          {!COUNTRY_OPTIONS.some((option) => option.code === normalizeCountryCode(values.countryCode)) && (
+            <option value={normalizeCountryCode(values.countryCode)}>
+              {normalizeCountryCode(values.countryCode)}
+            </option>
+          )}
+        </SelectField>
+
+        {isCambodia ? (
+          <div className="space-y-4">
+            <p className="text-sm leading-relaxed text-graphite">
+              Select a province or municipality. Enter the district and commune as written locally; existing free-text addresses are not assigned a province automatically.
+            </p>
+            {address?.countryCode === 'KH' &&
+              address.administrativeLocationPcode === null && (
+                <p className="text-sm leading-relaxed text-graphite">
+                  Previously saved location: {[address.stateProvince, address.city].filter(Boolean).join(', ') || 'not provided'}. Re-enter the district and commune below after choosing the correct province.
+                </p>
+              )}
+            {provinces.error !== undefined ? (
+              <div className="space-y-2">
+                <FormError message={toUserMessage(provinces.error)} />
+                <button type="button" className="text-sm underline" onClick={provinces.refetch}>Retry provinces</button>
+              </div>
+            ) : null}
+            <SelectField
+              name="provincePcode"
+              label="Province / municipality"
+              value={values.provincePcode}
+              onChange={(event) => set('provincePcode')(event.target.value)}
+              error={errors.provincePcode}
+              required
+              disabled={isSaving || provinces.isLoading || provinces.isRefreshing || provinces.error !== undefined}
+            >
+              <option value="">Select a province or municipality</option>
+              {(provinces.data ?? []).map((location) => (
+                <option key={location.pcode} value={location.pcode}>
+                  {location.nameKm ? `${location.nameEn} / ${location.nameKm}` : location.nameEn}
+                </option>
+              ))}
+            </SelectField>
+            <TextField
+              name="district"
+              label="District / Khan"
+              value={values.district}
+              onChange={(event) => set('district')(event.target.value)}
+              error={errors.district}
+              maxLength={ADDRESS_LIMITS.district}
+              required
+              autoComplete="address-level2"
+            />
+            <TextField
+              name="commune"
+              label="Commune / Sangkat"
+              value={values.commune}
+              onChange={(event) => set('commune')(event.target.value)}
+              error={errors.commune}
+              maxLength={ADDRESS_LIMITS.commune}
+              required
+              autoComplete="address-level3"
+            />
+          </div>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2">
+            <TextField
+              name="city"
+              label="City"
+              value={values.city}
+              onChange={(event) => set('city')(event.target.value)}
+              error={errors.city}
+              maxLength={ADDRESS_LIMITS.city}
+              required
+              autoComplete="address-level2"
+            />
+            <TextField
+              name="stateProvince"
+              label="State or province (optional)"
+              value={values.stateProvince}
+              onChange={(event) => set('stateProvince')(event.target.value)}
+              error={errors.stateProvince}
+              maxLength={ADDRESS_LIMITS.stateProvince}
+              autoComplete="address-level1"
+            />
+          </div>
+        )}
 
         <div className="grid gap-5 sm:grid-cols-2">
           <TextField
@@ -390,28 +491,6 @@ const AddressFormModal = ({
             maxLength={ADDRESS_LIMITS.postalCode}
             autoComplete="postal-code"
           />
-          <SelectField
-            name="countryCode"
-            label="Country"
-            value={values.countryCode}
-            onChange={(event) => set('countryCode')(event.target.value)}
-            error={errors.countryCode}
-            required
-            autoComplete="country"
-          >
-            {COUNTRY_OPTIONS.map((option) => (
-              <option key={option.code} value={option.code}>
-                {option.label}
-              </option>
-            ))}
-            {/* Keeps a code the form does not list selectable rather than silently
-                resetting the field when the page re-renders it. */}
-            {!COUNTRY_OPTIONS.some((option) => option.code === normalizeCountryCode(values.countryCode)) && (
-              <option value={normalizeCountryCode(values.countryCode)}>
-                {normalizeCountryCode(values.countryCode)}
-              </option>
-            )}
-          </SelectField>
         </div>
       </form>
     </Modal>

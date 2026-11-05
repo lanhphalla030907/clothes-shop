@@ -1,30 +1,66 @@
+import { useEffect } from 'react'
 import { useLocation, useParams, Link } from 'react-router-dom'
+import { XCircle } from 'lucide-react'
 import { Action } from '@/components/ui/Action'
 import { BackLink, PageHeader, Panel, PanelHeader } from '@/components/account/PageHeader'
 import { DefinitionRow, Money, StatusBadge } from '@/components/account/Bits'
-import { EmptyState, ErrorState } from '@/components/account/States'
+import { EmptyState, ErrorState, InlineNotice } from '@/components/account/States'
 import { SkeletonCard, Skeleton } from '@/components/account/Skeleton'
+import { cancelOrder, downloadReceipt } from '@/features/orders/api'
+import { canCancelCustomerOrder } from '@/features/orders/rules'
 import { useOrder } from '@/features/orders/useOrders'
-import { formatOrderAddressLines } from '@/types/api'
+import { useMutation } from '@/hooks/useMutation'
+import { useFeedback } from '@/context/feedbackContext'
+import { formatOrderAddressLines, ORDER_STATUS, PAYABLE_ORDER_STATUS } from '@/types/api'
 import { toUserMessage } from '@/lib/api/errors'
 
-/**
- * One order in full.
- *
- * Everything here comes from the stored snapshot — the product name, the price
- * paid, the variant options, the delivery address — so editing an address later
- * cannot change this screen.
- *
- * `justPlaced` and `justPaid` are hints set by the screens that sent the customer
- * here, so the page can greet them. Both are read-only as far as this page is
- * concerned: what it shows is what the API says.
- */
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>()
   const order = useOrder(id)
   const location = useLocation()
+  const { showFeedback, confirmFeedback } = useFeedback()
   const justPlaced = (location.state as { justPlaced?: boolean } | null)?.justPlaced === true
-  const justPaid = (location.state as { justPaid?: boolean } | null)?.justPaid === true
+  const { refetch: refetchOrder } = order
+
+  const downloadMutation = useMutation((orderId: string) => downloadReceipt(orderId), {
+    onError: (error) => {
+      showFeedback({
+        type: 'error',
+        title: 'Receipt not downloaded',
+        message: toUserMessage(error),
+      })
+    },
+  })
+
+  const cancelMutation = useMutation((orderId: string) => cancelOrder(orderId), {
+    onSuccess: () => {
+      refetchOrder()
+      showFeedback({
+        type: 'success',
+        title: 'Order cancelled',
+        message: 'The order is cancelled and its reserved stock has been released.',
+      })
+    },
+    onError: (error) => {
+      showFeedback({
+        type: 'error',
+        title: 'Order not cancelled',
+        message: toUserMessage(error),
+      })
+    },
+  })
+
+  useEffect(() => {
+    if (!order.data) return undefined
+
+  
+    if (order.data.status !== PAYABLE_ORDER_STATUS) return undefined
+
+    const timer = window.setInterval(() => {
+      void refetchOrder()
+    }, 10_000)
+    return () => window.clearInterval(timer)
+  }, [order.data, refetchOrder])
 
   if (order.isLoading) {
     return (
@@ -67,6 +103,37 @@ export default function OrderDetail() {
   }
 
   const { data } = order
+  const cancelAllowed = canCancelCustomerOrder(data)
+  const cancelBusy = cancelMutation.isPending || order.isRefreshing
+
+  const requestDownload = async () => {
+    const blob = await downloadMutation.run(data.id)
+    if (!blob) return
+
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `receipt-${data.orderNumber}.pdf`
+    document.body.appendChild(anchor)
+    anchor.click()
+    document.body.removeChild(anchor)
+    URL.revokeObjectURL(url)
+  }
+
+  const requestCancel = async () => {
+    if (!cancelAllowed || cancelBusy) return
+
+    const confirmed = await confirmFeedback({
+      type: 'warning',
+      title: 'Cancel this order?',
+      message: `Cancel ${data.orderNumber}? Its reserved stock will be released and the order cannot be resumed.`,
+      confirmLabel: 'Cancel order',
+      cancelLabel: 'Keep order',
+    })
+    if (!confirmed) return
+
+    await cancelMutation.run(data.id)
+  }
 
   return (
     <div className="space-y-8">
@@ -80,26 +147,55 @@ export default function OrderDetail() {
           month: 'long',
           year: 'numeric',
         })}`}
-        action={<StatusBadge status={data.status} />}
+        action={
+          <div className="flex items-center gap-2">
+            <StatusBadge status={data.status} />
+            <Action
+              variant="outline"
+              size="sm"
+              disabled={downloadMutation.isPending}
+              onClick={() => void requestDownload()}
+            >
+              {downloadMutation.isPending ? 'Downloading receipt…' : 'Download receipt'}
+            </Action>
+          </div>
+        }
       />
 
-      {justPaid ? (
-        <div role="status" className="border border-ink bg-ink px-6 py-5 text-sm leading-relaxed text-paper">
-          <p className="font-medium">Payment received.</p>
-          <p className="mt-2 opacity-80">
-            PayWay confirmed the payment and the studio has accepted this order. Everything below is
-            the record it now holds.
+      {downloadMutation.error !== undefined && (
+        <InlineNotice
+          message={toUserMessage(downloadMutation.error)}
+          onDismiss={downloadMutation.reset}
+        />
+      )}
+
+      {data.status === ORDER_STATUS.CONFIRMED ? (
+        <div role="status" className="border border-success/25 bg-success-soft px-6 py-5 text-sm leading-relaxed text-ink">
+          <p className="font-medium text-success">
+            {data.paymentMethod === 'ABA_PAYWAY' || data.paymentMethod === null
+              ? 'Payment received.'
+              : 'Order confirmed.'}
+          </p>
+          <p className="mt-2 text-graphite">
+            {data.paymentMethod === 'COD'
+              ? 'This order uses Cash on Delivery. Payment collection has not been recorded here. Everything below is the order record.'
+              : data.paymentMethod !== 'ABA_PAYWAY' && data.paymentMethod !== null
+                ? 'The studio has accepted this order, but this page cannot confirm payment for its unsupported payment method.'
+                : 'PayWay confirmed the payment and the studio has accepted this order. Everything below is the record it now holds.'}
           </p>
         </div>
       ) : justPlaced ? (
         <div
           role="status"
-          className="border border-ink bg-bone px-6 py-5 text-sm leading-relaxed text-ink"
+          className="border border-info/25 bg-info-soft px-6 py-5 text-sm leading-relaxed text-ink"
         >
           <p className="font-medium">Your order is placed.</p>
           <p className="mt-2 text-graphite">
-            Nothing has been charged yet — it stays pending until it is paid for. The address below
-            is the copy stored with the order.
+            {data.paymentMethod === 'COD'
+              ? 'This order was created with Cash on Delivery. Payment has not yet been collected. The address below is the copy stored with the order.'
+              : data.paymentMethod !== 'ABA_PAYWAY' && data.paymentMethod !== null
+                ? 'The order was created, but its payment method is not supported on this page. No payment has been started. The address below is the copy stored with the order.'
+                : 'Nothing has been charged yet — it stays pending until it is paid for. The address below is the copy stored with the order.'}
           </p>
         </div>
       ) : null}
@@ -120,7 +216,7 @@ export default function OrderDetail() {
                       {line.variantOptionsSnapshot.map((option) => (
                         <li
                           key={`${option.optionName}-${option.optionValue}`}
-                          className="label-micro border border-line px-2 py-1 text-graphite"
+                          className="border border-line bg-bone px-2 py-1 text-[12px] text-graphite"
                         >
                           {option.optionName}: {option.optionValue}
                         </li>
@@ -179,22 +275,69 @@ export default function OrderDetail() {
             </address>
           </Panel>
 
+          {cancelAllowed && (
+            <Panel className="p-6">
+              <p className="eyebrow text-ink">Need to cancel?</p>
+              <p className="mt-3 text-sm leading-relaxed text-graphite">
+                You can cancel while the order is pending and unpaid. Its reserved stock will be
+                released. The studio checks the order and payment again before cancelling.
+              </p>
+              <Action
+                variant="outline"
+                size="sm"
+                className="mt-6 w-full"
+                disabled={cancelBusy}
+                onClick={() => void requestCancel()}
+              >
+                <XCircle size={15} strokeWidth={1.7} aria-hidden />
+                {cancelMutation.isPending ? 'Cancelling' : 'Cancel this order'}
+              </Action>
+
+              {cancelMutation.error !== undefined && (
+                <InlineNotice
+                  className="mt-4"
+                  message={toUserMessage(cancelMutation.error)}
+                  onDismiss={cancelMutation.reset}
+                />
+              )}
+            </Panel>
+          )}
+
           {data.status === 'PENDING' && (
             <Panel className="p-6">
-              <p className="label-micro text-ink">Awaiting payment</p>
-              <p className="mt-3 text-sm leading-relaxed text-graphite">
-                This order has not been paid yet. The payment screen issues an ABA PayWay QR for it —
-                the code expires, so a new one is needed after a while.
-              </p>
-              <Action to={`/dashboard/checkout/${data.id}`} size="sm" className="mt-6" withArrow>
-                Pay this order
-              </Action>
+              {data.paymentMethod === 'COD' ? (
+                <>
+                  <p className="eyebrow text-ink">Cash on Delivery</p>
+                  <p className="mt-3 text-sm leading-relaxed text-graphite">
+                    This order was created with Cash on Delivery. Payment has not yet been collected.
+                  </p>
+                </>
+              ) : data.paymentMethod !== 'ABA_PAYWAY' && data.paymentMethod !== null ? (
+                <>
+                  <p className="eyebrow text-ink">Payment method unavailable</p>
+                  <p className="mt-3 text-sm leading-relaxed text-graphite">
+                    This order uses a payment method this page cannot process. No PayWay payment was
+                    started. Please contact the studio for help.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="eyebrow text-ink">Awaiting payment</p>
+                  <p className="mt-3 text-sm leading-relaxed text-graphite">
+                    This order has not been paid yet. The payment screen issues an ABA PayWay QR for
+                    it — the code expires, so a new one is needed after a while.
+                  </p>
+                  <Action to={`/dashboard/checkout/${data.id}`} size="sm" className="mt-6" withArrow>
+                    Pay this order
+                  </Action>
+                </>
+              )}
             </Panel>
           )}
 
           <Link
             to="/dashboard/orders"
-            className="label-micro link-wipe inline-flex text-graphite transition-colors hover:text-ink"
+            className="link-wipe inline-flex text-[13px] font-medium text-graphite transition-colors hover:text-ink"
           >
             All orders
           </Link>

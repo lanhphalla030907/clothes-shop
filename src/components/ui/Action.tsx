@@ -2,19 +2,29 @@ import { Link } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ComponentProps, ReactNode } from 'react'
 
+/**
+ * The single action primitive for the whole store.
+ *
+ * The geometry — square, wipe-up fill, inverting label — is the home page's.
+ * What changed is the label: it is now set in 13px sans rather than 11px mono
+ * uppercase. The same control has to work in a hero and in a settings form, and
+ * the mono micro-label was the reason dashboard actions were hard to read.
+ */
 const base =
-  'group relative inline-flex select-none items-center justify-center gap-2 overflow-hidden label-micro ease-editorial transition-colors duration-500 disabled:cursor-not-allowed disabled:opacity-40'
+  'group relative inline-flex select-none items-center justify-center gap-2 overflow-hidden text-[13px] font-semibold tracking-[0.04em] uppercase ease-editorial transition-colors duration-500 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40'
 
 const variants = {
   solid: 'bg-ink text-paper hover:text-ink',
   outline: 'border border-ink text-ink hover:text-paper',
   ghost: 'text-ink hover:text-graphite',
+  soft: 'border border-line bg-bone text-ink hover:text-paper',
+  warning: 'bg-warning text-white hover:text-warning',
 } as const
 
 const sizes = {
-  sm: 'h-10 px-5',
-  md: 'h-12 px-7',
-  lg: 'h-14 px-8 sm:h-16 sm:px-12',
+  sm: 'h-11 px-4',
+  md: 'h-12 px-6',
+  lg: 'h-14 px-8 sm:h-16 sm:px-10',
 } as const
 
 /** Colour of the wipe that rises from the base on hover. */
@@ -22,6 +32,8 @@ const fill = {
   solid: 'bg-paper',
   outline: 'bg-ink',
   ghost: 'bg-ink/5',
+  soft: 'bg-ink',
+  warning: 'bg-white',
 } as const
 
 type ActionProps = {
@@ -44,10 +56,6 @@ type ActionProps = {
     >)
 )
 
-/**
- * The single action primitive for the whole store: a wipe rises from the base
- * on hover and the label inverts, giving every button the same tactile feel.
- */
 export function Action({
   children,
   variant = 'solid',

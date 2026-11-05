@@ -28,8 +28,7 @@ export default function Cart() {
                 is empty
               </h1>
               <p className="mt-6 max-w-sm text-sm leading-relaxed text-graphite">
-                Nothing selected yet. Ten pieces make up the release — start with the one that
-                keeps pulling you back.
+                Nothing selected yet. Start with the piece that keeps pulling you back.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -66,7 +65,7 @@ export default function Cart() {
             <button
               type="button"
               onClick={clearCart}
-              className="label-micro mt-3 text-ash transition-colors duration-400 ease-editorial hover:text-ink"
+              className="label-micro mt-3 text-graphite transition-colors duration-400 ease-editorial hover:text-ink"
             >
               Clear bag
             </button>
@@ -97,14 +96,14 @@ export default function Cart() {
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
-                          <p className="label-micro text-ash">{item.category}</p>
+                          <p className="text-[12px] font-medium text-graphite">{item.category}</p>
                           <Link
                             to={`/product/${item.productId}`}
-                            className="mt-1.5 block truncate text-[13px] font-bold tracking-[-0.01em] uppercase transition-colors hover:text-graphite sm:text-[15px]"
+                            className="mt-1.5 block truncate text-[14px] font-semibold tracking-[-0.01em] uppercase transition-colors hover:text-graphite sm:text-[15px]"
                           >
                             {item.name}
                           </Link>
-                          <p className="mt-1.5 font-mono text-[10px] tracking-[0.1em] text-graphite uppercase">
+                          <p className="mt-1.5 text-[12px] text-graphite">
                             {item.size} / {item.color}
                           </p>
                         </div>
@@ -138,9 +137,9 @@ export default function Cart() {
 
           <Link
             to="/shop"
-            className="group label-micro mt-8 inline-flex items-center gap-2 text-graphite transition-colors hover:text-ink"
+            className="group mt-8 inline-flex min-h-10 items-center gap-2 text-[13px] font-medium text-graphite transition-colors hover:text-ink"
           >
-            <ArrowLeft size={12} strokeWidth={1.5} className="transition-transform duration-500 group-hover:-translate-x-1" />
+            <ArrowLeft size={14} strokeWidth={1.5} className="transition-transform duration-500 group-hover:-translate-x-1" />
             Continue shopping
           </Link>
         </div>
@@ -151,25 +150,25 @@ export default function Cart() {
             <div className="border border-line bg-bone/45 p-6 sm:p-8">
               <h2 className="type-display text-2xl">Summary</h2>
 
-              <dl className="mt-7 flex flex-col gap-3.5 border-t border-line pt-6 font-mono text-[11px] tracking-[0.06em]">
+              <dl className="mt-7 flex flex-col gap-3.5 border-t border-line pt-6 text-[13px]">
                 <div className="flex items-baseline justify-between">
-                  <dt className="text-graphite uppercase">Subtotal</dt>
-                  <dd className="tabular-nums">{formatPrice(subtotal)}</dd>
+                  <dt className="text-graphite">Subtotal</dt>
+                  <dd className="font-mono tabular-nums">{formatPrice(subtotal)}</dd>
                 </div>
                 <div className="flex items-baseline justify-between">
-                  <dt className="text-graphite uppercase">Shipping</dt>
-                  <dd className="tabular-nums">
+                  <dt className="text-graphite">Shipping</dt>
+                  <dd className="font-mono tabular-nums">
                     {shipping === 0 ? 'Complimentary' : formatPrice(shipping)}
                   </dd>
                 </div>
-                <div className="mt-2 flex items-baseline justify-between border-t border-line pt-4 text-base">
-                  <dt className="uppercase">Total</dt>
-                  <dd className="tabular-nums">{formatPrice(total)}</dd>
+                <div className="mt-2 flex items-baseline justify-between border-t border-line pt-4 text-[15px]">
+                  <dt className="font-semibold">Total</dt>
+                  <dd className="font-mono font-semibold tabular-nums">{formatPrice(total)}</dd>
                 </div>
               </dl>
 
               {remaining > 0 && (
-                <p className="mt-5 font-mono text-[10px] leading-relaxed tracking-[0.1em] text-graphite uppercase">
+                <p className="mt-5 text-[12px] leading-relaxed text-graphite">
                   Add {formatPrice(remaining)} for complimentary express shipping
                 </p>
               )}
@@ -178,14 +177,14 @@ export default function Cart() {
                 Proceed to checkout
               </Action>
 
-              <p className="mt-4 text-center font-mono text-[9px] leading-relaxed tracking-[0.14em] text-ash uppercase">
-                Encrypted checkout — taxes calculated at the next step
+              <p className="mt-4 text-center text-[11.5px] leading-relaxed text-graphite">
+                Taxes are calculated at the next step.
               </p>
             </div>
 
             <ul className="mt-6 flex flex-col gap-px border border-line bg-line">
               {['Free express over $500', '30-day returns', 'Archive-only releases'].map((label) => (
-                <li key={label} className="bg-paper px-5 py-3.5 font-mono text-[10px] tracking-[0.12em] text-graphite uppercase">
+                <li key={label} className="bg-paper px-5 py-3.5 text-[12.5px] text-graphite">
                   {label}
                 </li>
               ))}

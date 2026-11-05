@@ -79,7 +79,7 @@ export function SaveToWishlist({ productId, productName, variant = 'plate' }: Sa
               : `Save ${productName} to your wishlist`
       }
       title={label}
-      className={`absolute top-3 right-3 z-20 grid size-9 place-items-center rounded-full backdrop-blur-sm transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${
+      className={`absolute top-3 right-3 z-20 grid size-10 place-items-center rounded-full backdrop-blur-sm transition-colors duration-200 after:absolute after:-inset-0.5 after:content-[''] disabled:cursor-not-allowed disabled:opacity-60 ${
         failed ? 'bg-signal text-paper' : 'bg-paper/85 text-ink hover:bg-paper'
       }`}
     >

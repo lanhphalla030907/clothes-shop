@@ -1,60 +1,127 @@
-import { useCallback, useState } from 'react'
-import { useMutation } from '@/hooks/useMutation'
-import { placeOrder } from './api'
-import type { CheckoutRequest, Order, UUID } from '@/types/api'
+import { useCallback, useRef, useState } from 'react'
+import { useFeedback } from '@/context/feedbackContext'
+import { isAbortError, isApiError } from '@/lib/api/errors'
+import { createCheckoutQuote, placeOrder as submitCheckout } from './api'
+import { useAsyncResource } from '@/hooks/useAsyncResource'
+import type {
+  CheckoutQuote,
+  CheckoutRequest,
+  CreateCheckoutQuoteRequest,
+  Order,
+  UUID,
+} from '@/types/api'
 
-/**
- * Placing an order, once.
- *
- * Two things make this safe to put behind a button:
- *
- * - `useMutation` refuses a second run while one is in flight, so a
- *   double-tapped "Place order" cannot create two orders.
- * - `placedOrder` keeps the created order in component state, so a re-render
- *   cannot re-submit and a page refresh cannot replay the purchase. Checkout is
- *   the one flow with no idempotency key available, so the client must be the
- *   thing that guarantees it is only sent once.
- *
- * The cart and any prices it showed are left alone here. Checkout empties the
- * server cart server-side; the cart page re-reads and finds that out for itself,
- * which is better than being told about it by a mutation's return value.
- */
+export type CheckoutSubmission =
+  | { kind: 'success'; order: Order }
+  | { kind: 'failure'; error: unknown; ambiguous: boolean }
+  | { kind: 'busy' }
 
 export interface CheckoutFlow {
-  placeOrder: (body: CheckoutRequest) => Promise<Order | undefined>
+  placeOrder: (body: CheckoutRequest) => Promise<CheckoutSubmission>
   isPlacing: boolean
   error: unknown
-  /** The order this session created, or `undefined` before a successful submit. */
   placedOrder: Order | undefined
   reset: () => void
 }
 
 export const useCheckout = (): CheckoutFlow => {
   const [placedOrder, setPlacedOrder] = useState<Order | undefined>(undefined)
-
-  const mutation = useMutation<[CheckoutRequest], Order>((body) => placeOrder(body), {
-    onSuccess: (order) => setPlacedOrder(order),
-  })
+  const [isPlacing, setIsPlacing] = useState(false)
+  const [error, setError] = useState<unknown>(undefined)
+  const inFlight = useRef(false)
+  const { showFeedback } = useFeedback()
 
   const submit = useCallback(
-    async (body: CheckoutRequest) => {
-      setPlacedOrder(undefined)
-      return mutation.run(body)
+    async (body: CheckoutRequest): Promise<CheckoutSubmission> => {
+      if (inFlight.current) return { kind: 'busy' }
+
+      inFlight.current = true
+      setIsPlacing(true)
+      setError(undefined)
+
+      try {
+        const order = await submitCheckout(body)
+        setPlacedOrder(order)
+        showFeedback({
+          type: 'success',
+          title: 'Order placed',
+          message: `Order ${order.orderNumber} was created.`,
+        })
+        return { kind: 'success', order }
+      } catch (cause) {
+        setError(cause)
+        const ambiguous =
+          !isApiError(cause) ||
+          !['validation', 'unauthorized', 'notFound', 'conflict'].includes(cause.kind)
+        return { kind: 'failure', error: cause, ambiguous }
+      } finally {
+        inFlight.current = false
+        setIsPlacing(false)
+      }
     },
-    [mutation],
+    [showFeedback],
   )
 
   const reset = useCallback(() => {
     setPlacedOrder(undefined)
-    mutation.reset()
-  }, [mutation])
+    setError(undefined)
+  }, [])
 
   return {
     placeOrder: submit,
-    isPlacing: mutation.isPending,
-    error: mutation.error,
+    isPlacing,
+    error,
     placedOrder,
     reset,
+  }
+}
+
+export interface CheckoutQuoteState {
+  requestKey: string
+  quote: CheckoutQuote | undefined
+  error: unknown
+  isLoading: boolean
+  refetch: () => void
+}
+
+export const useCheckoutQuote = (
+  request: CreateCheckoutQuoteRequest | undefined,
+  requestKey: string,
+): CheckoutQuoteState => {
+  const [revision, setRevision] = useState(0)
+  const resource = useAsyncResource<{
+    requestKey: string
+    quote: CheckoutQuote | undefined
+    error: unknown
+  } | undefined>(
+    async (signal) => {
+      if (!request) return undefined
+      try {
+        return {
+          requestKey,
+          quote: await createCheckoutQuote(request, signal),
+          error: undefined,
+        }
+      } catch (cause) {
+        if (isAbortError(cause)) throw cause
+        return { requestKey, quote: undefined, error: cause }
+      }
+    },
+    [request, requestKey, revision],
+  )
+
+  const refetch = useCallback(() => setRevision((value) => value + 1), [])
+  const isPending = resource.isLoading || resource.isRefreshing
+  const hasCurrentResult = resource.data?.requestKey === requestKey
+
+  return {
+    requestKey,
+    quote:
+      !isPending && hasCurrentResult ? resource.data?.quote : undefined,
+    error:
+      !isPending && hasCurrentResult ? resource.data?.error : undefined,
+    isLoading: request !== undefined && (isPending || !hasCurrentResult),
+    refetch,
   }
 }
 

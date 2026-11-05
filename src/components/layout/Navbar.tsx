@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Menu, ShoppingBag, X } from 'lucide-react'
+import { ArrowRight, LogOut, Menu, ShieldCheck, ShoppingBag, X } from 'lucide-react'
 import { navLinks } from '@/data/navigation'
-import { useAuth } from '@/features/auth/useAuth'
+import { accountNavigation } from '@/data/accountNavigation'
+import { AccountMenu } from '@/components/layout/AccountMenu'
+import { displayName, useAuth } from '@/features/auth/useAuth'
 import { useCartActions } from '@/features/cart/useCartActions'
+import { useWishlistActions } from '@/features/wishlist/useWishlistActions'
 import { useUI } from '@/hooks/useUI'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
-
-const EASE = [0.16, 1, 0.3, 1] as const
 
 /** The CTRL mark — a struck-through square, echoing the brand's restraint. */
 const Mark = ({ className = '' }: { className?: string }) => (
@@ -21,12 +22,12 @@ const Mark = ({ className = '' }: { className?: string }) => (
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const { isMenuOpen, openMenu } = useUI()
-  // The bag is the server's cart, so the count moves the moment a quick add
-  // lands and the link goes where those lines actually are.
   const { itemCount } = useCartActions()
+  const { itemCount: wishlistCount } = useWishlistActions()
   const { isAuthenticated, isInitializing, logout } = useAuth()
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const menuTrigger = useRef<HTMLButtonElement>(null)
 
   useLockBodyScroll(isMenuOpen)
 
@@ -57,127 +58,161 @@ export function Navbar() {
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-80 transition-all duration-600 ease-editorial focus-within:pointer-events-auto focus-within:opacity-100 ${
+        className={`fixed inset-x-0 top-0 z-80 transition-all duration-400 ease-editorial focus-within:pointer-events-auto focus-within:opacity-100 ${
           docked
-            ? 'border-b border-line bg-canvas/85 opacity-100 backdrop-blur-xl'
+            ? 'border-b border-line bg-paper/95 opacity-100 backdrop-blur-md'
             : 'pointer-events-none border-b border-transparent opacity-0'
         }`}
       >
-        <div className="container-editorial flex h-16 items-center justify-between gap-6 sm:h-20">
+        <div className="container-editorial flex h-16 items-center justify-between gap-4 sm:h-[4.5rem]">
           {/* Wordmark */}
-          <Link
-            to="/"
-            className="group flex items-center gap-2.5"
-            aria-label="CTRL — home"
-          >
+          <Link to="/" className="group flex min-h-11 shrink-0 items-center gap-2.5" aria-label="CTRL — home">
             <Mark className="size-4 text-ink transition-transform duration-700 ease-editorial group-hover:rotate-90 sm:size-[18px]" />
             <span className="text-[15px] font-extrabold tracking-[-0.03em] uppercase sm:text-base">
               CTRL
             </span>
           </Link>
 
-          {/* Desktop nav — centred, editorial, hairline underlines */}
-          <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-9 lg:flex">
+          {/* Desktop nav — centred, plain labels, a rule under the active route */}
+          <nav aria-label="Primary" className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 lg:flex">
             {navLinks.map((link) => (
               <NavLink
                 key={link.to}
                 to={link.to}
                 end={link.to === '/'}
-                className="label-micro link-wipe text-graphite transition-colors duration-400 ease-editorial hover:text-ink"
-                data-active={pathname === link.to ? 'true' : undefined}
+                className={({ isActive }) =>
+                  `relative flex min-h-11 items-center px-3.5 text-[12px] font-semibold tracking-[0.12em] uppercase transition-colors ${
+                    isActive ? 'text-ink' : 'text-graphite hover:text-ink'
+                  }`
+                }
               >
-                {link.label}
+                {({ isActive }) => (
+                  <>
+                    {link.label}
+                    <span
+                      aria-hidden
+                      className={`absolute inset-x-3.5 bottom-1.5 h-px origin-left bg-ink transition-transform duration-300 ${
+                        isActive ? 'scale-x-100' : 'scale-x-0'
+                      }`}
+                    />
+                  </>
+                )}
               </NavLink>
             ))}
           </nav>
 
-          {/* Right cluster */}
-          <div className="flex items-center gap-1 sm:gap-4">
-            <Link
-              to="/about"
-              className="label-micro link-wipe hidden text-graphite transition-colors duration-400 ease-editorial hover:text-ink md:inline-flex"
-              data-active={pathname === '/about' ? 'true' : undefined}
-            >
-              Studio
-            </Link>
-
-            {/* The session, and the only doorway into the dashboard from here.
-                Nothing is rendered while a stored token is still being checked:
-                showing "Sign in" for the length of one request would read as
-                having been signed out by the reload. */}
+          {/* Right cluster: session, bag, menu */}
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             {!isInitializing &&
               (isAuthenticated ? (
-                <>
-                  <Link
-                    to="/dashboard"
-                    className="label-micro link-wipe hidden text-graphite transition-colors duration-400 ease-editorial hover:text-ink sm:inline-flex"
-                    data-active={pathname.startsWith('/dashboard') ? 'true' : undefined}
-                  >
-                    Account
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={signOut}
-                    className="label-micro link-wipe hidden text-graphite transition-colors duration-400 ease-editorial hover:text-ink sm:inline-flex"
-                  >
-                    Sign out
-                  </button>
-                </>
+                <AccountMenu
+                  onSignOut={signOut}
+                  bagCount={itemCount}
+                  wishlistCount={wishlistCount}
+                />
               ) : (
-                <Link
-                  to="/login"
-                  className="label-micro link-wipe hidden text-graphite transition-colors duration-400 ease-editorial hover:text-ink sm:inline-flex"
-                  data-active={pathname === '/login' ? 'true' : undefined}
-                >
-                  Sign in
-                </Link>
+                <div className="hidden items-center gap-1 sm:flex">
+                  <Link
+                    to="/login"
+                    className="flex min-h-11 items-center px-2.5 text-[13px] font-medium text-ink transition-colors hover:text-graphite"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="hidden min-h-11 items-center border border-ink px-3.5 text-[12px] font-semibold tracking-[0.08em] uppercase transition-colors hover:bg-ink hover:text-paper md:flex"
+                  >
+                    Create account
+                  </Link>
+                </div>
               ))}
 
             <Link
               to="/dashboard/bag"
-              data-active={pathname.startsWith('/dashboard/bag') ? 'true' : undefined}
-              className="group relative flex items-center gap-2 py-2 pl-3 text-ink"
               aria-label={`Your bag, ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
+              className="group flex min-h-11 min-w-11 items-center justify-center gap-2 px-2 text-ink transition-colors hover:text-graphite"
             >
-              <ShoppingBag size={17} strokeWidth={1.4} className="transition-transform duration-500 ease-editorial group-hover:-translate-y-0.5" />
-              <span className="label-micro tabular-nums">
-                <span className="hidden sm:inline">Bag&nbsp;</span>
-                {String(itemCount).padStart(2, '0')}
+              <span className="relative">
+                <ShoppingBag size={18} strokeWidth={1.5} aria-hidden />
+                {itemCount > 0 && (
+                  <span
+                    aria-hidden
+                    className="absolute -top-1 -right-1.5 grid min-w-4 place-items-center bg-ink px-1 font-mono text-[9px] leading-4 text-paper"
+                  >
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </span>
+                )}
               </span>
-              <span
-                className={`pointer-events-none absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-ink transition-transform duration-500 ease-editorial group-hover:scale-x-100 ${
-                  itemCount > 0 ? 'scale-x-100' : ''
-                }`}
-              />
+              <span className="hidden text-[12px] font-semibold tracking-[0.1em] uppercase md:inline">
+                Bag
+              </span>
             </Link>
 
             <button
+              ref={menuTrigger}
               type="button"
               onClick={openMenu}
               aria-label="Open menu"
-              className="grid size-9 place-items-center lg:hidden"
+              className="grid size-11 place-items-center text-ink transition-colors hover:bg-bone lg:hidden"
             >
-              <Menu size={19} strokeWidth={1.4} />
+              <Menu size={20} strokeWidth={1.6} />
             </button>
           </div>
         </div>
       </header>
 
-      <MobileMenu />
+      <MobileMenu
+        isAuthenticated={isAuthenticated}
+        bagCount={itemCount}
+        wishlistCount={wishlistCount}
+        onSignOut={signOut}
+        triggerRef={menuTrigger}
+      />
     </>
   )
 }
 
 /** Full-bleed overlay menu — a page, not a dropdown. */
-function MobileMenu() {
+function MobileMenu({
+  isAuthenticated,
+  bagCount,
+  wishlistCount,
+  onSignOut,
+  triggerRef,
+}: {
+  isAuthenticated: boolean
+  bagCount: number
+  wishlistCount: number
+  onSignOut: () => void
+  triggerRef: RefObject<HTMLButtonElement | null>
+}) {
   const { isMenuOpen, closeMenu } = useUI()
+  const { user, isInitializing } = useAuth()
+  const { pathname } = useLocation()
 
-  // Local toggle lives here so the header button can stay declarative.
+  /**
+   * Dismissing the menu (Escape or the close button) should put the keyboard
+   * back on the control that opened it. Following a link is different: the
+   * route change owns the next focus position.
+   */
+  const dismiss = () => {
+    closeMenu()
+    triggerRef.current?.focus()
+  }
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeMenu()
+    if (!isMenuOpen) return undefined
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      closeMenu()
+      triggerRef.current?.focus()
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [closeMenu])
+  }, [isMenuOpen, closeMenu, triggerRef])
+
+  const countFor = (key: 'bag' | 'wishlist' | undefined) =>
+    key === 'bag' ? bagCount : key === 'wishlist' ? wishlistCount : 0
 
   return (
     <AnimatePresence>
@@ -187,53 +222,153 @@ function MobileMenu() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.35 }}
-          className="fixed inset-0 z-[85] bg-paper lg:hidden"
+          transition={{ duration: 0.25 }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Site menu"
+          className="fixed inset-0 z-[85] flex flex-col overflow-hidden bg-paper lg:hidden"
         >
-          <div className="container-editorial flex h-16 items-center justify-between sm:h-20">
-            <Link to="/" onClick={closeMenu} className="flex items-center gap-2.5">
+          <div className="flex h-16 shrink-0 items-center justify-between border-b border-line px-5 sm:h-[4.5rem]">
+            <Link to="/" onClick={closeMenu} className="flex items-center gap-2.5" aria-label="CTRL — home">
               <Mark className="size-4" />
               <span className="text-[15px] font-extrabold tracking-[-0.03em] uppercase">CTRL</span>
             </Link>
             <button
               type="button"
-              onClick={closeMenu}
+              autoFocus
+              onClick={dismiss}
               aria-label="Close menu"
-              className="grid size-9 place-items-center"
+              className="grid size-11 place-items-center text-ink transition-colors hover:bg-bone"
             >
-              <X size={20} strokeWidth={1.4} />
+              <X size={21} strokeWidth={1.5} />
             </button>
           </div>
 
-          <nav className="container-editorial flex flex-1 flex-col justify-center gap-2">
-            {[...navLinks, { label: 'Bag', to: '/dashboard/bag' }, { label: 'Account', to: '/dashboard' }].map((link, index) => (
-              <motion.div
-                key={link.to}
-                initial={{ opacity: 0, y: 28 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.06 * index, ease: EASE }}
-              >
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6">
+            {isInitializing ? null : isAuthenticated ? (
+              <div className="mb-7 flex items-center gap-3 border border-line bg-bone/60 px-3.5 py-3">
+                <span
+                  aria-hidden
+                  className="grid size-10 shrink-0 place-items-center bg-ink font-mono text-[12px] text-paper"
+                >
+                  {(user?.firstName?.[0] ?? '') + (user?.lastName?.[0] ?? '') || '—'}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-[14px] font-semibold text-ink">
+                    {displayName(user) || 'Your account'}
+                  </p>
+                  {user?.email && <p className="truncate text-[12.5px] text-graphite">{user.email}</p>}
+                </div>
+              </div>
+            ) : null}
+
+            <nav aria-label="Shop" className="flex flex-col">
+              <p className="eyebrow mb-2 text-graphite">Shop</p>
+              {navLinks.map((link) => (
                 <Link
+                  key={link.to}
                   to={link.to}
                   onClick={closeMenu}
-                  className="type-display block border-b border-line py-4 text-[13vw] leading-[0.9] transition-colors duration-400 ease-editorial hover:text-graphite sm:text-[11vw]"
+                  className={`flex min-h-12 items-center justify-between border-b border-line-soft text-[17px] font-medium transition-colors ${
+                    pathname === link.to ? 'text-ink' : 'text-ink/85 hover:text-ink'
+                  }`}
                 >
                   {link.label}
+                  <ArrowRight size={16} strokeWidth={1.5} aria-hidden className="text-ash" />
                 </Link>
-              </motion.div>
-            ))}
-          </nav>
+              ))}
+              <Link
+                to="/dashboard/bag"
+                onClick={closeMenu}
+                className="flex min-h-12 items-center justify-between border-b border-line-soft text-[17px] font-medium text-ink/85 transition-colors hover:text-ink"
+              >
+                <span className="flex items-center gap-2.5">
+                  <ShoppingBag size={17} strokeWidth={1.5} aria-hidden className="text-graphite" />
+                  Bag
+                </span>
+                <span className="font-mono text-[12px] tabular-nums text-graphite">{bagCount}</span>
+              </Link>
+            </nav>
 
-          <div className="container-editorial flex items-end justify-between gap-6 border-t border-line py-6">
-            <p className="font-mono text-[10px] leading-relaxed tracking-[0.14em] text-graphite uppercase">
-              June 2026
-              <br />
-              Release 01
-            </p>
-            <p className="text-right font-mono text-[10px] leading-relaxed tracking-[0.14em] text-ash uppercase">
-              Designed for those
-              <br />
-              who never follow the crowd
+            {isAuthenticated && (
+              <div className="mt-7">
+                {accountNavigation.map((group) => (
+                  <div key={group.title} className="mb-6">
+                    <p className="eyebrow mb-2 text-graphite">{group.title}</p>
+                    <div className="flex flex-col">
+                      {group.items.map(({ label, to, icon: Icon, countKey }) => {
+                        const count = countFor(countKey)
+                        return (
+                          <Link
+                            key={to}
+                            to={to}
+                            onClick={closeMenu}
+                            className="flex min-h-11 items-center gap-3 border-b border-line-soft text-[15px] text-ink transition-colors hover:text-graphite"
+                          >
+                            <Icon size={16} strokeWidth={1.6} aria-hidden className="text-graphite" />
+                            <span className="flex-1">{label}</span>
+                            {count > 0 && (
+                              <span className="font-mono text-[11px] tabular-nums text-graphite">
+                                {count}
+                              </span>
+                            )}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                {user?.role === 'ADMIN' && (
+                  <Link
+                    to="/admin"
+                    onClick={closeMenu}
+                    className="mb-6 flex min-h-11 items-center gap-3 border border-line px-3 text-[14px] font-medium text-ink transition-colors hover:bg-bone"
+                  >
+                    <ShieldCheck size={16} strokeWidth={1.6} aria-hidden className="text-graphite" />
+                    Admin studio
+                  </Link>
+                )}
+              </div>
+            )}
+
+            {!isInitializing && !isAuthenticated && (
+              <div className="mt-8 grid gap-2.5">
+                <Link
+                  to="/login"
+                  onClick={closeMenu}
+                  className="flex h-12 items-center justify-center bg-ink text-[13px] font-semibold tracking-[0.06em] text-paper uppercase"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={closeMenu}
+                  className="flex h-12 items-center justify-center border border-ink text-[13px] font-semibold tracking-[0.06em] text-ink uppercase"
+                >
+                  Create account
+                </Link>
+              </div>
+            )}
+
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={() => {
+                  closeMenu()
+                  onSignOut()
+                }}
+                className="mt-2 flex min-h-11 items-center gap-3 text-[14px] text-graphite transition-colors hover:text-ink"
+              >
+                <LogOut size={16} strokeWidth={1.6} aria-hidden />
+                Sign out
+              </button>
+            )}
+          </div>
+
+          <div className="shrink-0 border-t border-line px-5 py-4">
+            <p className="font-mono text-[10px] leading-relaxed tracking-[0.12em] text-graphite uppercase">
+              Release 01 · June 2026
             </p>
           </div>
         </motion.div>

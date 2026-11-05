@@ -136,9 +136,9 @@ export default function Checkout() {
       <Reveal>
         <Link
           to="/cart"
-          className="group label-micro inline-flex items-center gap-2 text-graphite transition-colors hover:text-ink"
+          className="group inline-flex min-h-10 items-center gap-2 text-[13px] font-medium text-graphite transition-colors hover:text-ink"
         >
-          <ArrowLeft size={12} strokeWidth={1.5} className="transition-transform duration-500 group-hover:-translate-x-1" />
+          <ArrowLeft size={14} strokeWidth={1.5} className="transition-transform duration-500 group-hover:-translate-x-1" />
           Back to bag
         </Link>
 
@@ -157,7 +157,7 @@ export default function Checkout() {
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate className="lg:col-span-7 xl:col-span-8">
           <fieldset className="border-0 p-0">
-            <legend className="label-micro mb-6 text-graphite">Contact</legend>
+            <legend className="mb-6 text-[12px] font-semibold tracking-[0.1em] text-graphite uppercase">Contact</legend>
             <Field
               id="email"
               label="Email address"
@@ -171,7 +171,7 @@ export default function Checkout() {
           </fieldset>
 
           <fieldset className="mt-10 border-0 p-0">
-            <legend className="label-micro mb-6 text-graphite">Delivery</legend>
+            <legend className="mb-6 text-[12px] font-semibold tracking-[0.1em] text-graphite uppercase">Delivery</legend>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <Field
@@ -216,7 +216,7 @@ export default function Checkout() {
               <div className="sm:col-span-2">
                 <label
                   htmlFor="country"
-                  className="label-micro mb-3 block text-graphite"
+                  className="mb-2 block text-[13px] font-medium text-ink"
                 >
                   Country
                 </label>
@@ -239,7 +239,7 @@ export default function Checkout() {
           </fieldset>
 
           <fieldset className="mt-10 border-0 p-0">
-            <legend className="label-micro mb-6 text-graphite">Shipping method</legend>
+            <legend className="mb-6 text-[12px] font-semibold tracking-[0.1em] text-graphite uppercase">Shipping method</legend>
             <div className="flex flex-col gap-px border border-line bg-line">
               {SHIPPING_METHODS.map((option) => (
                 <label
@@ -262,14 +262,14 @@ export default function Checkout() {
                     {method === option.id && <span className="size-2 rounded-full bg-ink" />}
                   </span>
                   <span className="flex-1">
-                    <span className="block text-[13px] font-semibold tracking-[-0.01em] uppercase">
+                    <span className="block text-[13.5px] font-semibold tracking-[-0.01em]">
                       {option.label}
                     </span>
-                    <span className="mt-0.5 block font-mono text-[10px] tracking-[0.1em] text-graphite uppercase">
+                    <span className="mt-0.5 block text-[12px] text-graphite">
                       {option.detail}
                     </span>
                   </span>
-                  <span className="font-mono text-[11px] tabular-nums">
+                  <span className="font-mono text-[13px] tabular-nums">
                     {option.price === 0 ? 'Free' : formatPrice(option.price)}
                   </span>
                 </label>
@@ -278,7 +278,7 @@ export default function Checkout() {
           </fieldset>
 
           <fieldset className="mt-10 border-0 p-0">
-            <legend className="label-micro mb-6 text-graphite">Payment</legend>
+            <legend className="mb-6 text-[12px] font-semibold tracking-[0.1em] text-graphite uppercase">Payment</legend>
             <Field
               id="card"
               label="Card number"
@@ -290,8 +290,8 @@ export default function Checkout() {
               placeholder="4242 4242 4242 4242"
               mono
             />
-            <p className="mt-4 flex items-center gap-2 font-mono text-[10px] tracking-[0.12em] text-ash uppercase">
-              <Lock size={12} strokeWidth={1.4} />
+            <p className="mt-4 flex items-center gap-2 text-[12px] text-graphite">
+              <Lock size={13} strokeWidth={1.5} />
               Demo checkout — no card is charged
             </p>
           </fieldset>
@@ -299,7 +299,7 @@ export default function Checkout() {
           <motion.button
             type="submit"
             whileTap={{ scale: 0.99 }}
-            className="group relative mt-10 flex h-15 w-full items-center justify-center gap-3 overflow-hidden bg-ink text-paper label-micro transition-colors duration-500 ease-editorial hover:text-ink sm:h-16"
+            className="group relative mt-10 flex h-14 w-full items-center justify-center gap-3 overflow-hidden bg-ink text-[13px] font-semibold tracking-[0.04em] text-paper uppercase transition-colors duration-500 ease-editorial hover:text-ink sm:h-16"
           >
             <span
               aria-hidden
@@ -328,34 +328,34 @@ export default function Checkout() {
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[12px] font-semibold tracking-[0.01em] uppercase">
+                      <p className="truncate text-[13px] font-semibold tracking-[0.01em]">
                         {item.name}
                       </p>
-                      <p className="mt-1 font-mono text-[10px] tracking-[0.1em] text-graphite uppercase">
+                      <p className="mt-1 text-[12px] text-graphite">
                         {item.size} / {item.color}
                       </p>
                     </div>
-                    <p className="shrink-0 font-mono text-[11px] tabular-nums">
+                    <p className="shrink-0 font-mono text-[12px] tabular-nums">
                       {formatPrice(item.price * item.quantity)}
                     </p>
                   </li>
                 ))}
               </ul>
 
-              <dl className="mt-7 flex flex-col gap-3 border-t border-line pt-6 font-mono text-[11px] tracking-[0.06em]">
+              <dl className="mt-7 flex flex-col gap-3 border-t border-line pt-6 text-[13px]">
                 <div className="flex items-baseline justify-between">
-                  <dt className="text-graphite uppercase">Subtotal</dt>
-                  <dd className="tabular-nums">{formatPrice(subtotal)}</dd>
+                  <dt className="text-graphite">Subtotal</dt>
+                  <dd className="font-mono tabular-nums">{formatPrice(subtotal)}</dd>
                 </div>
                 <div className="flex items-baseline justify-between">
-                  <dt className="text-graphite uppercase">Shipping</dt>
-                  <dd className="tabular-nums">
+                  <dt className="text-graphite">Shipping</dt>
+                  <dd className="font-mono tabular-nums">
                     {shippingTotal === 0 ? 'Complimentary' : formatPrice(shippingTotal)}
                   </dd>
                 </div>
-                <div className="mt-2 flex items-baseline justify-between border-t border-line pt-4 text-base">
-                  <dt className="uppercase">Total</dt>
-                  <dd className="tabular-nums">{formatPrice(grandTotal)}</dd>
+                <div className="mt-2 flex items-baseline justify-between border-t border-line pt-4 text-[15px]">
+                  <dt className="font-semibold">Total</dt>
+                  <dd className="font-mono font-semibold tabular-nums">{formatPrice(grandTotal)}</dd>
                 </div>
               </dl>
             </div>
@@ -393,7 +393,7 @@ function Field({
 }: FieldProps) {
   return (
     <div>
-      <label htmlFor={id} className="label-micro mb-3 block text-graphite">
+      <label htmlFor={id} className="mb-2 block text-[13px] font-medium text-ink">
         {label}
       </label>
       <input
@@ -407,15 +407,15 @@ function Field({
         aria-invalid={Boolean(error)}
         data-invalid={error ? 'true' : undefined}
         onChange={(e) => onChange(e.target.value)}
-        className={`h-12 w-full border-b bg-transparent transition-colors duration-400 ease-editorial placeholder:text-ash focus:outline-none ${
-          error ? 'border-ink' : 'border-line focus:border-ink'
-        } ${mono ? 'font-mono text-[13px] tracking-[0.12em] tabular-nums' : 'text-sm'}`}
+        className={`h-12 w-full border-b bg-transparent text-[15px] transition-colors duration-400 ease-editorial placeholder:text-ash focus:outline-none ${
+          error ? 'border-signal' : 'border-line focus:border-ink'
+        } ${mono ? 'font-mono tracking-[0.08em] tabular-nums' : ''}`}
       />
       {error && (
         <motion.p
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-2 font-mono text-[10px] tracking-[0.12em] text-ink uppercase"
+          className="mt-2 text-[13px] font-medium text-signal"
         >
           {error}
         </motion.p>

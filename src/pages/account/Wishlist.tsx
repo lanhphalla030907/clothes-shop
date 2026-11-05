@@ -38,19 +38,19 @@ export default function Wishlist() {
       action={
         confirmingClear ? (
           <span className="flex flex-wrap items-center gap-3">
-            <span className="text-xs text-graphite">Remove everything saved?</span>
+            <span className="text-[13px] text-graphite">Remove everything saved?</span>
             <button
               type="button"
               disabled={wishlist.isClearing}
               onClick={() => void wishlist.clear()}
-              className="label-micro border border-signal px-3 py-1.5 text-signal transition-colors hover:bg-signal hover:text-paper disabled:opacity-40"
+              className="inline-flex min-h-10 items-center border border-signal px-3 text-[13px] font-medium text-signal transition-colors hover:bg-signal hover:text-paper disabled:opacity-40"
             >
               Confirm
             </button>
             <button
               type="button"
               onClick={() => setConfirmingClear(false)}
-              className="label-micro text-graphite transition-colors hover:text-ink"
+              className="inline-flex min-h-10 items-center px-2 text-[13px] font-medium text-graphite transition-colors hover:text-ink"
             >
               Cancel
             </button>
@@ -59,7 +59,7 @@ export default function Wishlist() {
           <button
             type="button"
             onClick={() => setConfirmingClear(true)}
-            className="label-micro text-graphite transition-colors hover:text-signal"
+            className="inline-flex min-h-10 items-center px-2 text-[13px] font-medium text-graphite transition-colors hover:text-signal"
           >
             Clear wishlist
           </button>
@@ -127,36 +127,36 @@ export default function Wishlist() {
                 <Panel className="flex h-full flex-col">
                   <Link
                     to={`/product/${item.product.id}`}
-                    className="relative block aspect-4/5 overflow-hidden bg-bone"
+                    className="group relative block aspect-4/5 overflow-hidden bg-bone"
                     aria-label={item.product.name}
                   >
                     {item.product.image ? (
                       <SmartImage
                         src={item.product.image.imageUrl}
                         alt={item.product.image.altText ?? item.product.name}
-                        className="size-full object-cover"
+                        className="size-full object-cover transition-transform duration-700 ease-editorial group-hover:scale-[1.03]"
                       />
                     ) : (
                       <div className="grid size-full place-items-center">
-                        <span className="label-micro text-ash">No image</span>
+                        <span className="text-[12px] text-graphite">No image</span>
                       </div>
                     )}
 
                     {!item.product.isActive && (
-                      <span className="label-micro absolute top-3 left-3 bg-paper px-2.5 py-1.5 text-ink">
+                      <span className="eyebrow absolute top-3 left-3 bg-paper px-2.5 py-1.5 text-ink">
                         No longer sold
                       </span>
                     )}
 
                     {item.product.isActive && !item.product.inStock && (
-                      <span className="label-micro absolute top-3 left-3 bg-paper px-2.5 py-1.5 text-ink">
+                      <span className="eyebrow absolute top-3 left-3 bg-paper px-2.5 py-1.5 text-ink">
                         Out of stock
                       </span>
                     )}
                   </Link>
 
                   <div className="flex flex-1 flex-col p-5">
-                    <h2 className="text-sm font-medium text-ink">
+                    <h2 className="text-[15px] leading-snug font-semibold text-ink">
                       <Link
                         to={`/product/${item.product.id}`}
                         className="transition-opacity duration-200 hover:opacity-70"
@@ -169,7 +169,7 @@ export default function Wishlist() {
                       {item.product.priceRange ? priceLabel(item.product.priceRange) : '—'}
                     </p>
 
-                    <p className="mt-2 text-xs leading-relaxed text-graphite">
+                    <p className="mt-2 text-[12.5px] leading-relaxed text-graphite">
                       {describeStock(item)}
                     </p>
 
@@ -179,12 +179,12 @@ export default function Wishlist() {
                           type="button"
                           onClick={() => void addToBag(item)}
                           disabled={isAdding || isPending}
-                          className="label-micro h-11 flex-1 border border-ink bg-ink text-paper transition-colors duration-300 hover:bg-paper hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                          className="inline-flex h-11 flex-1 items-center justify-center border border-ink bg-ink px-4 text-[13px] font-semibold tracking-[0.04em] text-paper uppercase transition-colors duration-300 hover:bg-paper hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           {isAdding ? 'Adding' : added === item.id ? 'Added' : 'Add to bag'}
                         </button>
                       ) : (
-                        <span className="label-micro flex h-11 flex-1 items-center justify-center border border-line text-ash">
+                        <span className="inline-flex h-11 flex-1 items-center justify-center border border-line px-4 text-[13px] font-medium text-graphite">
                           Unavailable
                         </span>
                       )}
@@ -201,7 +201,7 @@ export default function Wishlist() {
                     </div>
 
                     {variant && (
-                      <p className="mt-3 text-xs leading-relaxed text-graphite">
+                      <p className="mt-3 text-[12px] leading-relaxed text-graphite">
                         Adds {variant.sku}
                         {added === item.id ? ' — open your bag to check out.' : '.'}
                       </p>

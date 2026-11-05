@@ -25,7 +25,13 @@ export interface Mutation<TArgs extends unknown[], TResult> {
 
 export const useMutation = <TArgs extends unknown[], TResult>(
   action: (...args: TArgs) => Promise<TResult>,
-  { onSuccess }: { onSuccess?: (result: TResult) => void } = {},
+  {
+    onSuccess,
+    onError,
+  }: {
+    onSuccess?: (result: TResult) => void
+    onError?: (error: unknown) => void
+  } = {},
 ): Mutation<TArgs, TResult> => {
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState<unknown>(undefined)
@@ -35,6 +41,7 @@ export const useMutation = <TArgs extends unknown[], TResult>(
 
   const actionRef = useRef(action)
   const onSuccessRef = useRef(onSuccess)
+  const onErrorRef = useRef(onError)
 
   // Kept current from an effect rather than during render: `run` is only ever
   // called from an event handler, by which point these have been refreshed, and a
@@ -42,6 +49,7 @@ export const useMutation = <TArgs extends unknown[], TResult>(
   useEffect(() => {
     actionRef.current = action
     onSuccessRef.current = onSuccess
+    onErrorRef.current = onError
   })
 
   useEffect(() => {
@@ -63,7 +71,10 @@ export const useMutation = <TArgs extends unknown[], TResult>(
       return result
     } catch (cause) {
       // A cancellation is a caller decision, not a failure to report.
-      if (mounted.current && !isAbortError(cause)) setError(cause)
+      if (mounted.current && !isAbortError(cause)) {
+        setError(cause)
+        onErrorRef.current?.(cause)
+      }
       return undefined
     } finally {
       inFlight.current = false

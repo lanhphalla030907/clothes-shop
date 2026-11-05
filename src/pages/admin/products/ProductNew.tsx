@@ -8,6 +8,7 @@ import { ProductForm } from '@/features/adminProducts/components/ProductForm'
 import { createAdminProduct } from '@/features/adminProducts/api'
 import { useAdminCategories } from '@/features/adminProducts/useAdminProducts'
 import { useMutation } from '@/hooks/useMutation'
+import { useFeedback } from '@/context/feedbackContext'
 import { toUserMessage } from '@/lib/api/errors'
 import { productFormValuesToRequest, type CreateProductRequest } from '@/types/api'
 
@@ -21,6 +22,7 @@ import { productFormValuesToRequest, type CreateProductRequest } from '@/types/a
  */
 export default function ProductNew() {
   const navigate = useNavigate()
+  const { showFeedback } = useFeedback()
   const categories = useAdminCategories()
   const createMutation = useMutation((body: CreateProductRequest) => createAdminProduct(body))
 
@@ -49,8 +51,12 @@ export default function ProductNew() {
             align="left"
             eyebrow="No categories"
             title="A product needs a category"
-            description="Products must belong to a category. Category management arrives in a later phase."
-            action={<Action to="/admin/products" variant="outline" size="sm">Back to products</Action>}
+            description="Products must belong to a category. Create one in Categories first, then come back to this form."
+            action={
+              <Action to="/admin/categories" variant="outline" size="sm">
+                Manage categories
+              </Action>
+            }
           />
         ) : (
           <ProductForm
@@ -60,7 +66,14 @@ export default function ProductNew() {
             serverError={createMutation.error}
             submitLabel="Create product"
             onSubmit={async (values) => createMutation.run(productFormValuesToRequest(values))}
-            onSaved={async (saved) => navigate(`/admin/products/${saved.id}`, { state: { created: true } })}
+            onSaved={async (saved) => {
+              showFeedback({
+                type: 'success',
+                title: 'Product created',
+                message: `${saved.name} was added to the catalogue.`,
+              })
+              navigate(`/admin/products/${saved.id}`)
+            }}
           />
         )}
       </div>

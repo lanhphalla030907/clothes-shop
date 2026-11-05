@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Check, Package, Truck } from 'lucide-react'
 import { useCart } from '@/hooks/useCart'
@@ -85,7 +85,7 @@ export default function Success() {
                 <span className="flex-1 text-[13px] font-semibold tracking-[-0.01em] uppercase">
                   {label}
                 </span>
-                <span className="font-mono text-[10px] tracking-[0.12em] text-graphite uppercase">
+                <span className="font-mono text-[11px] tracking-[0.1em] text-graphite uppercase">
                   {detail}
                 </span>
               </li>
@@ -127,7 +127,7 @@ export default function Success() {
                     <p className="truncate text-[12px] font-semibold tracking-[0.01em] uppercase">
                       {item.name}
                     </p>
-                    <p className="mt-1 font-mono text-[10px] tracking-[0.1em] text-graphite uppercase">
+                    <p className="mt-1 font-mono text-[11px] tracking-[0.08em] text-graphite uppercase">
                       {item.size} / {item.color} · ×{item.quantity}
                     </p>
                   </div>
@@ -156,20 +156,13 @@ export default function Success() {
             </dl>
 
             <div className="mt-7 border-t border-line pt-5">
-              <p className="label-micro text-graphite">Delivering to</p>
+              <p className="eyebrow text-graphite">Delivering to</p>
               <address className="mt-3 text-[13px] leading-relaxed text-graphite not-italic">
                 {order.name}
                 <br />
                 {order.address}
               </address>
             </div>
-
-            <Link
-              to="/shop"
-              className="label-micro link-wipe mt-7 inline-block text-graphite transition-colors hover:text-ink"
-            >
-              Archive notice
-            </Link>
           </div>
         </motion.div>
       </div>

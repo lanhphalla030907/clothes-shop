@@ -12,6 +12,7 @@ import { ProductActiveBadge, ProductStatusBadge } from '@/features/adminProducts
 import { deleteAdminProduct } from '@/features/adminProducts/api'
 import { useAdminCategories, useAdminProducts } from '@/features/adminProducts/useAdminProducts'
 import { useMutation } from '@/hooks/useMutation'
+import { useFeedback } from '@/context/feedbackContext'
 import { toUserMessage } from '@/lib/api/errors'
 import type {
   AdminProductQuery,
@@ -44,6 +45,7 @@ const formatUpdated = (value: ISODateTime): string => {
 }
 
 export default function ProductsIndex() {
+  const { showFeedback } = useFeedback()
   const [params, setParams] = useSearchParams()
 
   const searchParam = params.get('search') ?? ''
@@ -101,7 +103,16 @@ export default function ProductsIndex() {
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null)
   const deleteMutation = useMutation(
     (id: UUID) => deleteAdminProduct(id).then(() => true as const),
-    { onSuccess: () => products.refetch() },
+    {
+      onSuccess: () => {
+        products.refetch()
+        showFeedback({
+          type: 'success',
+          title: 'Product deleted',
+          message: 'The product was removed from the catalogue.',
+        })
+      },
+    },
   )
 
   const requestDelete = (product: Product) => {
@@ -236,7 +247,7 @@ export default function ProductsIndex() {
 
         {!products.isLoading && products.error === undefined && list.length > 0 && (
           <>
-            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ash" aria-live="polite">
+            <p className="text-[12px] text-graphite" aria-live="polite">
               {list.length} {list.length === 1 ? 'product' : 'products'}
             </p>
 
@@ -246,25 +257,25 @@ export default function ProductsIndex() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="border-b border-line">
-                      <th scope="col" className="label-micro px-5 py-3 font-normal text-ash">
+                      <th scope="col" className="px-5 py-3 text-[12px] font-medium text-graphite">
                         Product
                       </th>
-                      <th scope="col" className="label-micro px-4 py-3 font-normal text-ash">
+                      <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
                         Category
                       </th>
-                      <th scope="col" className="label-micro px-4 py-3 font-normal text-ash">
+                      <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
                         Base price
                       </th>
-                      <th scope="col" className="label-micro px-4 py-3 font-normal text-ash">
+                      <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
                         Status
                       </th>
-                      <th scope="col" className="label-micro px-4 py-3 font-normal text-ash">
+                      <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
                         Enabled
                       </th>
-                      <th scope="col" className="label-micro px-4 py-3 font-normal text-ash">
+                      <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
                         Updated
                       </th>
-                      <th scope="col" className="label-micro px-5 py-3 font-normal text-ash">
+                      <th scope="col" className="px-5 py-3 text-[12px] font-medium text-graphite">
                         <span className="sr-only">Actions</span>
                       </th>
                     </tr>
@@ -275,16 +286,16 @@ export default function ProductsIndex() {
                         <td className="px-5 py-4">
                           <Link
                             to={`/admin/products/${product.id}`}
-                            className="text-sm font-medium text-ink underline-offset-4 hover:underline"
+                            className="text-[13.5px] font-medium text-ink underline-offset-4 hover:underline"
                           >
                             {product.name}
                           </Link>
-                          <span className="mt-0.5 block font-mono text-[11px] text-ash">/{product.slug}</span>
+                          <span className="mt-0.5 block font-mono text-[11px] text-graphite">/{product.slug}</span>
                         </td>
-                        <td className="px-4 py-4 text-sm text-graphite">
+                        <td className="px-4 py-4 text-[13.5px] text-graphite">
                           {categoryName.get(product.categoryId) ?? '—'}
                         </td>
-                        <td className="px-4 py-4 text-sm tabular-nums text-ink">
+                        <td className="px-4 py-4 text-[13.5px] tabular-nums text-ink">
                           <Money amount={product.basePrice} />
                         </td>
                         <td className="px-4 py-4">
@@ -293,23 +304,23 @@ export default function ProductsIndex() {
                         <td className="px-4 py-4">
                           <ProductActiveBadge isActive={product.isActive} />
                         </td>
-                        <td className="px-4 py-4 text-sm text-graphite">{formatUpdated(product.updatedAt)}</td>
+                        <td className="px-4 py-4 text-[13px] text-graphite">{formatUpdated(product.updatedAt)}</td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-4">
                             <Link
                               to={`/admin/products/${product.id}`}
-                              className="label-micro inline-flex items-center gap-1.5 text-graphite transition-colors hover:text-ink"
+                              className="inline-flex min-h-9 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-ink"
                             >
-                              <Pencil size={11} strokeWidth={1.5} aria-hidden />
+                              <Pencil size={13} strokeWidth={1.6} aria-hidden />
                               Edit
                             </Link>
                             <button
                               type="button"
                               onClick={() => requestDelete(product)}
                               aria-label={`Delete ${product.name}`}
-                              className="label-micro inline-flex items-center gap-1.5 text-graphite transition-colors hover:text-signal"
+                              className="inline-flex min-h-9 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-signal"
                             >
-                              <Trash2 size={11} strokeWidth={1.5} aria-hidden />
+                              <Trash2 size={13} strokeWidth={1.6} aria-hidden />
                               Delete
                             </button>
                           </div>
@@ -328,36 +339,36 @@ export default function ProductsIndex() {
                       <div className="flex items-start justify-between gap-4">
                         <Link
                           to={`/admin/products/${product.id}`}
-                          className="text-sm font-medium text-ink underline-offset-4 hover:underline"
+                          className="inline-flex min-h-11 items-center text-sm font-medium text-ink underline-offset-4 hover:underline"
                         >
                           {product.name}
                         </Link>
                         <Money amount={product.basePrice} />
                       </div>
-                      <span className="mt-0.5 block font-mono text-[11px] text-ash">/{product.slug}</span>
+                      <span className="mt-0.5 block font-mono text-[11px] text-graphite">/{product.slug}</span>
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         <ProductStatusBadge status={product.status} />
                         <ProductActiveBadge isActive={product.isActive} />
                       </div>
                       <p className="mt-3 text-sm text-graphite">
                         {categoryName.get(product.categoryId) ?? 'Unknown category'}
-                        <span className="text-ash"> · updated {formatUpdated(product.updatedAt)}</span>
+                        <span className="text-graphite"> · updated {formatUpdated(product.updatedAt)}</span>
                       </p>
                       <div className="mt-4 flex items-center gap-4 border-t border-line-soft pt-4">
                         <Link
                           to={`/admin/products/${product.id}`}
-                          className="label-micro inline-flex items-center gap-1.5 text-graphite transition-colors hover:text-ink"
+                          className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-ink"
                         >
-                          <Pencil size={11} strokeWidth={1.5} aria-hidden />
+                          <Pencil size={13} strokeWidth={1.6} aria-hidden />
                           Edit
                         </Link>
                         <button
                           type="button"
                           onClick={() => requestDelete(product)}
                           aria-label={`Delete ${product.name}`}
-                          className="label-micro ml-auto inline-flex items-center gap-1.5 text-graphite transition-colors hover:text-signal"
+                          className="ml-auto inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-signal"
                         >
-                          <Trash2 size={11} strokeWidth={1.5} aria-hidden />
+                          <Trash2 size={13} strokeWidth={1.6} aria-hidden />
                           Delete
                         </button>
                       </div>

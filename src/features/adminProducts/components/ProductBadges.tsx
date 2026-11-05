@@ -14,14 +14,16 @@ const statusTone: Record<ProductStatus, string> = {
 }
 
 export const ProductStatusBadge = ({ status }: { status: ProductStatus }) => (
-  <span className={`label-micro inline-flex h-7 items-center border px-3 ${statusTone[status]}`}>
+  <span
+    className={`inline-flex h-7 items-center border px-2.5 text-[11px] font-semibold tracking-[0.06em] uppercase ${statusTone[status]}`}
+  >
     {status}
   </span>
 )
 
 export const ProductActiveBadge = ({ isActive }: { isActive: boolean }) => (
   <span
-    className={`label-micro inline-flex h-7 items-center border px-3 ${
+    className={`inline-flex h-7 items-center border px-2.5 text-[11px] font-semibold tracking-[0.06em] uppercase ${
       isActive ? 'border-line bg-bone text-ink' : 'border-line bg-bone/60 text-ash'
     }`}
   >

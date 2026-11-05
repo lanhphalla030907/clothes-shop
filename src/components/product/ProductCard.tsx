@@ -37,7 +37,6 @@ export function ProductCard({ piece, index = 0, variant = 'grid', priority = fal
       <Link
         to={`/product/${piece.id}`}
         className="block focus-visible:outline-offset-4"
-        aria-label={`${piece.name} — ${formatMoney(piece.price, STORE_CURRENCY)}`}
       >
         <div className={`relative overflow-hidden bg-bone ${isRail ? 'aspect-[3/4]' : 'aspect-[4/5]'}`}>
           <Plate
@@ -59,10 +58,10 @@ export function ProductCard({ piece, index = 0, variant = 'grid', priority = fal
 
         <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-line pt-3">
           <div className="min-w-0">
-            <h3 className="truncate text-[13px] font-semibold tracking-[-0.01em] text-ink uppercase sm:text-sm">
+            <h3 className="truncate text-[13px] tracking-[-0.01em] text-ink uppercase sm:text-sm">
               {piece.name}
             </h3>
-            <p className="mt-1 truncate font-mono text-[10px] tracking-[0.12em] text-graphite uppercase">
+            <p className="mt-1 truncate font-mono text-[11px] tracking-[0.1em] text-graphite uppercase">
               {piece.category}
             </p>
           </div>
@@ -123,7 +122,7 @@ function QuickAdd({ piece }: { piece: CataloguePiece }) {
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 translate-y-full transition-transform duration-500 ease-editorial group-hover/card:pointer-events-auto group-hover/card:translate-y-0">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 translate-y-full transition-transform duration-500 ease-editorial group-hover/card:pointer-events-auto group-hover/card:translate-y-0 group-focus-within/card:pointer-events-auto group-focus-within/card:translate-y-0">
       <button
         type="button"
         disabled={pending}
@@ -133,7 +132,7 @@ function QuickAdd({ piece }: { piece: CataloguePiece }) {
           void handleQuickAdd()
         }}
         aria-busy={pending}
-        className="flex w-full items-center justify-between bg-ink px-4 py-3.5 text-paper label-micro transition-colors duration-300 hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex min-h-11 w-full items-center justify-between bg-ink px-4 py-3.5 text-paper label-micro transition-colors duration-300 hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-60"
       >
         <span className="truncate">
           {pending ? 'Adding' : justAdded ? 'Added' : failed ? 'Try again' : 'Quick add'}

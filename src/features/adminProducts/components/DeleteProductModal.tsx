@@ -39,7 +39,7 @@ export function DeleteProductModal({
           <Action variant="ghost" size="sm" onClick={onClose} disabled={isDeleting}>
             Keep it
           </Action>
-          <Action size="sm" onClick={() => void onConfirm()} disabled={isDeleting}>
+          <Action variant="warning" size="sm" onClick={() => void onConfirm()} disabled={isDeleting}>
             {isDeleting ? 'Deleting' : 'Delete product'}
           </Action>
         </>

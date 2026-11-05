@@ -35,7 +35,7 @@ export const Plate = ({
       aria-label={alt}
       className={`grid h-full w-full place-items-center bg-bone px-6 text-center ${className}`}
     >
-      <span className="label-micro text-ash">{alt}</span>
+      <span className="label-micro text-graphite">{alt}</span>
     </span>
   )
 }

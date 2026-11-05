@@ -20,24 +20,26 @@ type PageHeaderProps = {
 }
 
 export const PageHeader = ({ eyebrow, title, description, action }: PageHeaderProps) => (
-  <header className="flex flex-col gap-6 border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between">
+  <header className="flex flex-col gap-5 border-b border-line pb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
     <div className="max-w-2xl">
-      <p className="label-micro text-ash">{eyebrow}</p>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">{title}</h1>
+      <p className="eyebrow text-graphite">{eyebrow}</p>
+      <h1 className="mt-2.5 text-[1.65rem] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[2rem]">
+        {title}
+      </h1>
       {description && (
-        <p className="mt-4 text-sm leading-relaxed text-graphite">{description}</p>
+        <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-graphite">{description}</p>
       )}
     </div>
-    {action && <div className="flex shrink-0 items-center gap-3">{action}</div>}
+    {action && <div className="flex shrink-0 flex-wrap items-center gap-2.5">{action}</div>}
   </header>
 )
 
 export const BackLink = ({ to, children }: { to: string; children: ReactNode }) => (
   <Link
     to={to}
-    className="label-micro inline-flex items-center gap-2 text-graphite transition-colors duration-300 hover:text-ink"
+    className="inline-flex min-h-9 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors duration-200 hover:text-ink"
   >
-    <ArrowLeft size={12} strokeWidth={1.5} />
+    <ArrowLeft size={14} strokeWidth={1.6} aria-hidden />
     {children}
   </Link>
 )
@@ -59,10 +61,10 @@ type PanelHeaderProps = {
 }
 
 export const PanelHeader = ({ title, hint, action }: PanelHeaderProps) => (
-  <div className="flex items-center justify-between gap-4 border-b border-line px-6 py-4">
+  <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-line px-5 py-4 sm:px-6">
     <div className="min-w-0">
-      <h2 className="label-micro text-ink">{title}</h2>
-      {hint && <p className="mt-2 text-xs leading-relaxed text-graphite">{hint}</p>}
+      <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-ink">{title}</h2>
+      {hint && <p className="mt-1 text-[13px] leading-relaxed text-graphite">{hint}</p>}
     </div>
     {action && <div className="shrink-0">{action}</div>}
   </div>

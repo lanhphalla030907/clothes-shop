@@ -104,7 +104,7 @@ export default function About() {
             <div className="pointer-events-none absolute inset-0 border border-line" />
           </div>
           <div className="mt-4 flex items-start justify-between gap-6 border-t border-line pt-4">
-            <p className="max-w-xs font-mono text-[10px] leading-relaxed tracking-[0.1em] text-graphite uppercase">
+            <p className="max-w-xs font-mono text-[11px] leading-relaxed tracking-[0.08em] text-graphite uppercase">
               Studio 04 — Rail study, natural light only
             </p>
             <span className="label-micro shrink-0 text-ash">Fig. 02</span>
@@ -147,7 +147,7 @@ export default function About() {
           {stats.map((stat, index) => (
             <Reveal key={stat.label} delay={index * 0.06} className="py-10 sm:py-14">
               <p className="type-display text-[16vw] leading-none sm:text-[4.5rem]">{stat.value}</p>
-              <p className="mt-4 font-mono text-[10px] tracking-[0.14em] text-graphite uppercase">
+              <p className="mt-4 font-mono text-[11px] tracking-[0.12em] text-graphite uppercase">
                 {stat.label}
               </p>
             </Reveal>

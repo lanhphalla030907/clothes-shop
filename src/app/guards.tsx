@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import type { Location } from 'react-router-dom'
 import { RouteFallback } from '@/app/RouteFallback'
 import { useAuth } from '@/features/auth/useAuth'
+import { landingPathFor } from '@/features/auth/returnTo'
 
 /** Where to sign in, and how to get back to what was being looked at. */
 const signInPath = (location: Location): string =>
@@ -20,6 +21,20 @@ export function RequireAuth() {
 
   if (isInitializing) return <RouteFallback />
   if (!isAuthenticated) return <Navigate to={signInPath(location)} replace />
+
+  return <Outlet />
+}
+
+/** Only active delivery staff may enter the delivery workspace. */
+export function RequireDeliveryStaffRoute() {
+  const { isInitializing, isAuthenticated, user } = useAuth()
+  const location = useLocation()
+
+  if (isInitializing) return <RouteFallback />
+  if (!isAuthenticated) return <Navigate to={signInPath(location)} replace />
+  if (user?.role !== 'DELIVERY_STAFF') {
+    return <Navigate to={landingPathFor(user?.role)} replace />
+  }
 
   return <Outlet />
 }

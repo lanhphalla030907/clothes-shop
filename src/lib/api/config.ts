@@ -26,6 +26,13 @@ export const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '')
 export const REQUEST_TIMEOUT_MS = 20_000
 
 /**
+ * Image uploads read the file, send it to Cloudinary and write the row, so the
+ * normal request deadline is too tight. Still bounded, so a stalled upload ends
+ * as an error instead of a spinner that never resolves.
+ */
+export const UPLOAD_TIMEOUT_MS = 60_000
+
+/**
  * The currency to label cart figures with.
  *
  * `GET /cart` returns bare two-decimal strings with **no** currency of its own,
@@ -39,10 +46,29 @@ export const STORE_CURRENCY = 'USD'
 export const API = {
   login: '/auth/login',
   me: '/auth/me',
+  register: '/users',
   products: '/products',
+  newArrivals: '/products/new-arrivals',
+  bestSellers: '/products/best-sellers',
+  adminBestSellers: '/admin/products/best-sellers',
   categories: '/categories',
+  posters: '/posters',
+  collections: '/collections',
   adminProducts: '/admin/products',
   adminCategories: '/admin/categories',
+  adminPosters: '/admin/posters',
+  adminCollections: '/admin/collections',
+  adminShippingProviders: '/admin/shipping-providers',
+  shippingProviders: '/shipping/providers',
+  adminCodAreas: '/admin/cod-areas',
+  adminCodEligibility: '/admin/cod-eligibility',
+  codAreas: '/cod-areas',
+  cambodiaLocations: '/locations/cambodia',
+  adminUsers: '/admin/users',
+  adminOrders: '/admin/orders',
+  deliveryManager: '/delivery/manager',
+  deliveryStaff: '/delivery/staff',
+  adminCodReconciliation: '/admin/cod-reconciliation',
   cart: '/cart',
   cartItems: '/cart/items',
   wishlist: '/wishlist',

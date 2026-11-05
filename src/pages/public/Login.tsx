@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { RouteFallback } from '@/app/RouteFallback'
 import { Action } from '@/components/ui/Action'
+import { AuthLink, AuthShell } from '@/components/auth/AuthShell'
 import { FormError, TextField } from '@/components/account/Field'
 import { useAuth } from '@/features/auth/useAuth'
 import { safeReturnTo } from '@/features/auth/returnTo'
@@ -33,19 +34,24 @@ const validate = ({ email, password }: Values): Errors => {
 /**
  * Sign in.
  *
- * A single centred column rather than a marketing split: there is one thing to
- * do here, and the form is it. On success the provider has already fetched
- * `/auth/me`, so this page hands over to `?from=` with a session that is
- * actually established rather than a token waiting to be proven.
+ * On success the provider has already fetched `/auth/me`, so this page hands
+ * over to `?from=` with a session that is actually established rather than a
+ * token waiting to be proven.
+ *
+ * The fallback destination is chosen from the role `/auth/me` reported: an
+ * administrator lands on the studio, a customer on the account dashboard. A
+ * stored token is checked before either decision is made, so a slow bootstrap
+ * cannot show the form or send an admin to the customer landing screen first.
  */
 export default function Login() {
-  const { login, isLoginPending, loginError, isAuthenticated } = useAuth()
+  const { login, isLoginPending, loginError, isAuthenticated, isInitializing, user } = useAuth()
   const [searchParams] = useSearchParams()
-  const returnTo = safeReturnTo(searchParams.get('from'))
+  const returnTo = safeReturnTo(searchParams.get('from'), user?.role)
 
   const [values, setValues] = useState<Values>({ email: '', password: '' })
   const [errors, setErrors] = useState<Errors>({})
 
+  if (isInitializing) return <RouteFallback />
   if (isAuthenticated) return <Navigate to={returnTo} replace />
 
   const update = (field: keyof Values) => (value: string) => {
@@ -64,65 +70,48 @@ export default function Login() {
   }
 
   return (
-    <section className="container-editorial pt-28 pb-24 sm:pt-40 sm:pb-32">
-      <div className="mx-auto w-full max-w-md">
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center gap-4"
-        >
-          <span className="h-px w-8 bg-line" aria-hidden />
-          <span className="label-micro text-graphite">Account</span>
-        </motion.div>
+    <AuthShell
+      eyebrow="Sign in"
+      title="Welcome back"
+      description="Your orders, saved pieces and bag are kept against your account on the studio server."
+      footer={
+        <>
+          New to the studio? <AuthLink to="/register">Create an account</AuthLink>
+        </>
+      }
+    >
+      <form onSubmit={onSubmit} noValidate className="space-y-5">
+        <TextField
+          label="Email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          required
+          value={values.email}
+          error={errors.email}
+          onChange={(event) => update('email')(event.target.value)}
+        />
 
-        <motion.h1
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
-          className="type-display mt-6 text-5xl leading-[0.88] sm:text-6xl"
-        >
-          Sign in
-        </motion.h1>
+        <TextField
+          label="Password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+          value={values.password}
+          error={errors.password}
+          onChange={(event) => update('password')(event.target.value)}
+        />
 
-        <p className="mt-5 max-w-sm text-sm leading-relaxed text-graphite">
-          Your orders, your saved pieces and your bag are kept against your account on
-          the studio server.
-        </p>
+        {loginError !== null && <FormError message={loginError} />}
 
-        <form onSubmit={onSubmit} noValidate className="mt-10 space-y-5">
-          <TextField
-            label="Email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            inputMode="email"
-            autoCapitalize="none"
-            spellCheck={false}
-            required
-            value={values.email}
-            error={errors.email}
-            onChange={(event) => update('email')(event.target.value)}
-          />
-
-          <TextField
-            label="Password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={values.password}
-            error={errors.password}
-            onChange={(event) => update('password')(event.target.value)}
-          />
-
-          {loginError !== null && <FormError message={loginError} />}
-
-          <Action type="submit" size="lg" className="w-full" disabled={isLoginPending}>
-            {isLoginPending ? 'Signing in…' : 'Sign in'}
-          </Action>
-        </form>
-      </div>
-    </section>
+        <Action type="submit" size="lg" className="w-full" disabled={isLoginPending}>
+          {isLoginPending ? 'Signing in…' : 'Sign in'}
+        </Action>
+      </form>
+    </AuthShell>
   )
 }

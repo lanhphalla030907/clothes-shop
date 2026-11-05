@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { Action } from '@/components/ui/Action'
 import { PageHeader, Panel, PanelHeader } from '@/components/account/PageHeader'
 import { Skeleton } from '@/components/account/Skeleton'
@@ -7,20 +8,15 @@ import { useOrders } from '@/features/orders/useOrders'
 import { useWishlistActions } from '@/features/wishlist/useWishlistActions'
 import { useAddressActions } from '@/features/addresses/useAddressActions'
 
-
 /**
  * What this account actually is.
  *
  * ## Why there is no edit form
  *
- * The API has no `GET /users/me` and no update endpoint — the only user route this
- * app may call is `POST /users`, and only to provision an identity. So there is
- * nothing to edit *to*, and an editable form with no save button behind it would be
- * a lie.
- *
- * What is shown instead is the real provisional identity: a first and last name and
- * an email that were generated on this device. They are labelled as provisional on
- * purpose — presenting them as details the shopper chose would be untrue.
+ * The API exposes `POST /users` for registration and `GET /auth/me` for the
+ * session, but no update endpoint. There is nothing to edit *to*, so an editable
+ * form with no save button behind it would be a lie. What is shown is the real
+ * identity the server returns.
  *
  * ## Why the aggregates are counted per request
  *
@@ -29,10 +25,16 @@ import { useAddressActions } from '@/features/addresses/useAddressActions'
  * page failing if one is down.
  */
 export default function Profile() {
-  const { user, isInitializing } = useAuth()
+  const { user, isInitializing, logout } = useAuth()
   const orders = useOrders()
   const wishlist = useWishlistActions()
   const addresses = useAddressActions()
+  const navigate = useNavigate()
+
+  const handleSignOut = () => {
+    logout()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div className="space-y-8">
@@ -40,32 +42,35 @@ export default function Profile() {
         eyebrow="Account"
         title="Profile"
         description="Your account as the studio server knows it."
+        action={
+          <Action variant="ghost" size="sm" onClick={handleSignOut}>
+            Sign out
+          </Action>
+        }
       />
-
-
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Panel className="lg:col-span-2">
           <PanelHeader
             title="Identity"
-            hint="Provisional for this phase. Sign-in is not implemented, so these details were generated rather than chosen."
+            hint="These details are set when the account is registered."
           />
 
-          <dl className="px-6 py-5">
+          <dl className="px-5 py-4 sm:px-6 sm:py-5">
             <DefinitionRow label="Name">
-              {!isInitializing ? displayName(user) : <Skeleton className="h-3 w-32" />}
+              {!isInitializing ? displayName(user) || '—' : <Skeleton className="h-3 w-32" />}
             </DefinitionRow>
             <DefinitionRow label="Email">
               {!isInitializing ? user?.email : <Skeleton className="h-3 w-48" />}
             </DefinitionRow>
-            <DefinitionRow label="User id">
+            <DefinitionRow label="Account id">
               {!isInitializing ? (
-                <span className="font-mono text-xs break-all">{user?.id}</span>
+                <span className="font-mono text-[12px] break-all">{user?.id}</span>
               ) : (
                 <Skeleton className="h-3 w-64" />
               )}
             </DefinitionRow>
-            <DefinitionRow label="Since">
+            <DefinitionRow label="Member since">
               {!isInitializing && user ? (
                 new Date(user.createdAt).toLocaleDateString('en-GB', {
                   day: '2-digit',
@@ -78,30 +83,36 @@ export default function Profile() {
             </DefinitionRow>
           </dl>
 
-          <div className="border-t border-line px-6 py-5">
-            <p className="label-micro text-ink">What you can change</p>
-            <p className="mt-3 max-w-prose text-sm leading-relaxed text-graphite">
-              Nothing here yet. The API exposes no endpoint to read or update a profile, so this
-              screen shows what is stored and stops there. Names, email and password arrive with
-              sign-in.
+          <div className="border-t border-line px-5 py-5 sm:px-6">
+            <p className="eyebrow text-ink">Changing these details</p>
+            <p className="mt-3 max-w-prose text-[13.5px] leading-relaxed text-graphite">
+              This build has no endpoint for updating a profile, so the screen is read-only. Your
+              bag, wishlist, addresses and orders are all stored against this account.
             </p>
           </div>
         </Panel>
 
-        <Panel>
+        <Panel className="flex flex-col">
           <PanelHeader title="At a glance" />
-          <dl className="px-6 py-5">
+          <dl className="px-5 py-4 sm:px-6 sm:py-5">
             <DefinitionRow label="Orders">{count(orders, orders.data?.length)}</DefinitionRow>
-            <DefinitionRow label="Saved pieces">{count(wishlist, wishlist.items.length)}</DefinitionRow>
-            <DefinitionRow label="Addresses">{count(addresses, addresses.addresses.length)}</DefinitionRow>
+            <DefinitionRow label="Saved pieces">
+              {count(wishlist, wishlist.items.length)}
+            </DefinitionRow>
+            <DefinitionRow label="Addresses">
+              {count(addresses, addresses.addresses.length)}
+            </DefinitionRow>
           </dl>
 
-          <div className="space-y-3 border-t border-line px-6 py-5">
+          <div className="mt-auto space-y-2 border-t border-line px-5 py-5 sm:px-6">
             <Action to="/dashboard/orders" variant="outline" size="sm" className="w-full">
               Your orders
             </Action>
             <Action to="/dashboard/addresses" variant="outline" size="sm" className="w-full">
               Your addresses
+            </Action>
+            <Action to="/dashboard/wishlist" variant="ghost" size="sm" className="w-full">
+              Saved pieces
             </Action>
           </div>
         </Panel>

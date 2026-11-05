@@ -10,7 +10,7 @@
  * make.
  */
 
-export type Role = 'CUSTOMER' | 'ADMIN'
+export type Role = 'CUSTOMER' | 'ADMIN' | 'DELIVERY_STAFF'
 
 /** `UserResponseDto`. Carries no password hash by construction. */
 export interface AuthUser {
@@ -30,6 +30,14 @@ export interface AuthUser {
 export interface Credentials {
   email: string
   password: string
+}
+
+export interface RegisterInput {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  phone?: string
 }
 
 /** `LoginResponseDto`: the credential, its lifetime, and who it identifies. */

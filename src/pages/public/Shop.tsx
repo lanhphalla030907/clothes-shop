@@ -59,7 +59,7 @@ export default function Shop() {
             initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.95, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-            className="type-display text-[15vw] leading-[0.82] sm:text-[10vw] lg:col-span-8 lg:text-[9rem]"
+            className="type-display text-[13vw] leading-[0.82] sm:text-[10vw] lg:col-span-8 lg:text-[9rem]"
           >
             {active?.name ?? 'The Collection'}
           </motion.h1>
@@ -71,10 +71,9 @@ export default function Shop() {
             className="lg:col-span-4 lg:pb-3"
           >
             <p className="max-w-sm text-sm leading-[1.8] text-graphite sm:text-[15px]">
-              Essentials for the new era. Ten pieces, drafted once and archived when the run
-              ends.
+              Essentials for the new era. Pieces drafted once and archived when the run ends.
             </p>
-            <p className="mt-5 font-mono text-[10px] tracking-[0.14em] text-ash uppercase">
+            <p className="mt-5 font-mono text-[11px] tracking-[0.14em] text-graphite uppercase">
               {collection.isLoading ? 'Loading' : pieces.length} pieces / Free shipping over $500
             </p>
           </motion.div>
@@ -128,7 +127,7 @@ export default function Shop() {
       {/* Closing note */}
       <section className="container-editorial pt-20 pb-4 sm:pt-28">
         <div className="flex flex-col gap-4 border-t border-line pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-md font-mono text-[10px] leading-relaxed tracking-[0.12em] text-ash uppercase">
+          <p className="max-w-md font-mono text-[11px] leading-relaxed tracking-[0.12em] text-graphite uppercase">
             Every piece is cut in limited numbers. Once a run closes it moves to the archive.
           </p>
           <span className="label-micro text-graphite">End of release</span>

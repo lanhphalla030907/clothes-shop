@@ -10,11 +10,19 @@ import { Action } from '@/components/ui/Action'
 import { SmartImage } from '@/components/ui/SmartImage'
 import { useProductDetail, useRelatedPieces } from '@/features/catalogue/useCatalogue'
 import { initialSelection, isBuyable, reachableAxes, variantFor } from '@/features/catalogue/present'
+import { fetchProductAttributes } from '@/features/productAttributes/api'
 import { useCartActions } from '@/features/cart/useCartActions'
+import { useAsyncResource } from '@/hooks/useAsyncResource'
 import { STORE_CURRENCY } from '@/lib/api/config'
 import { isApiError, toUserMessage } from '@/lib/api/errors'
 import { formatMoney } from '@/lib/money'
-import type { CatalogueAxis, CatalogueDetail, CatalogueAxisValue, OptionSelection } from '@/types'
+import type {
+  CatalogueAxis,
+  CatalogueDetail,
+  CatalogueAxisValue,
+  OptionSelection,
+} from '@/types'
+import type { ProductAttribute } from '@/types/api'
 
 const EASE = [0.16, 1, 0.3, 1] as const
 
@@ -68,6 +76,10 @@ export default function ProductDetails() {
 function Piece({ detail }: { detail: CatalogueDetail }) {
   const { add, isPendingVariant, actionError } = useCartActions()
   const related = useRelatedPieces(detail.categoryId, detail.id)
+  const attributes = useAsyncResource<ProductAttribute[]>(
+    (signal) => fetchProductAttributes(detail.id, signal),
+    [detail.id],
+  )
 
   const [selection, setSelection] = useState<OptionSelection>(() =>
     initialSelection(detail.variants, detail.axes),
@@ -115,7 +127,7 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
       <div className="container-editorial pt-24 sm:pt-32">
         <nav
           aria-label="Breadcrumb"
-          className="flex flex-wrap items-center gap-2 font-mono text-[10px] tracking-[0.14em] text-ash uppercase"
+          className="flex flex-wrap items-center gap-2 font-mono text-[11px] tracking-[0.12em] text-graphite uppercase"
         >
           <Link to="/shop" className="transition-colors hover:text-ink">
             Collection
@@ -146,8 +158,8 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
               transition={{ duration: 0.85, delay: 0.05, ease: EASE }}
             >
               <div className="flex items-center justify-between gap-4">
-                <span className="label-micro text-graphite">{detail.category}</span>
-                <span className="label-micro text-ash">{stockLabel(stock)}</span>
+                <span className="eyebrow text-graphite">{detail.category}</span>
+                <span className="text-[12px] font-medium text-graphite">{stockLabel(stock)}</span>
               </div>
 
               <h1 className="type-display mt-5 text-[11vw] leading-[0.86] sm:text-[7vw] lg:text-[3.4rem]">
@@ -209,7 +221,7 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
                 onClick={() => void handleAdd()}
                 disabled={!buyable || pending}
                 aria-busy={pending}
-                className="group relative flex h-12 flex-1 items-center justify-center gap-3 overflow-hidden bg-ink py-0 text-paper label-micro transition-colors duration-500 ease-editorial hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+                className="group relative flex h-12 flex-1 items-center justify-center gap-3 overflow-hidden bg-ink py-0 text-[13px] font-semibold tracking-[0.04em] text-paper uppercase transition-colors duration-500 ease-editorial hover:text-ink disabled:pointer-events-none disabled:opacity-40"
               >
                 <span
                   aria-hidden
@@ -243,7 +255,7 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
                 <span className="text-sm text-ink">Added to your bag.</span>
                 <Link
                   to="/dashboard/bag"
-                  className="label-micro inline-flex items-center gap-2 text-ink transition-opacity hover:opacity-70"
+                  className="inline-flex items-center gap-2 text-[13px] font-medium text-ink transition-opacity hover:opacity-70"
                 >
                   View bag
                   <ArrowRight size={12} strokeWidth={1.5} />
@@ -255,8 +267,8 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
             <ul className="mt-8 flex flex-col gap-px border border-line bg-line">
               {ASSURANCES.map(({ icon: Icon, label }) => (
                 <li key={label} className="flex items-center gap-3 bg-paper px-4 py-3.5">
-                  <Icon size={14} strokeWidth={1.3} className="text-graphite" />
-                  <span className="font-mono text-[10px] tracking-[0.12em] text-graphite uppercase">
+                  <Icon size={15} strokeWidth={1.4} className="text-graphite" />
+                  <span className="text-[12.5px] font-medium text-graphite">
                     {label}
                   </span>
                 </li>
@@ -264,13 +276,68 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
             </ul>
 
             {selected && (
-              <p className="mt-6 font-mono text-[10px] tracking-[0.12em] text-ash uppercase">
+              <p className="mt-6 font-mono text-[11px] tracking-[0.1em] text-graphite uppercase">
                 {selected.sku}
               </p>
             )}
           </div>
         </div>
       </div>
+
+      {attributes.isLoading && (
+        <section
+          aria-label="Product attributes"
+          role="status"
+          aria-busy="true"
+          className="container-editorial border-t border-line py-10 sm:py-14"
+        >
+          <p className="eyebrow text-graphite">Details &amp; care</p>
+          <p className="mt-4 text-sm text-graphite">Loading product details…</p>
+        </section>
+      )}
+
+      {attributes.error !== undefined && (
+        <section
+          aria-label="Product attributes"
+          className="container-editorial border-t border-line py-10 sm:py-14"
+        >
+          <p className="eyebrow text-graphite">Details &amp; care</p>
+          <p role="alert" className="mt-4 text-sm text-graphite">
+            Product details could not be loaded. {toUserMessage(attributes.error)}
+          </p>
+          <button
+            type="button"
+            onClick={attributes.refetch}
+            className="mt-3 text-[13px] font-medium text-ink underline underline-offset-4"
+          >
+            Try again
+          </button>
+        </section>
+      )}
+
+      {attributes.data !== undefined && attributes.data.length > 0 && (
+        <section
+          aria-label="Product attributes"
+          className="container-editorial border-t border-line py-10 sm:py-14"
+        >
+          <Reveal>
+            <h2 className="type-display text-3xl leading-tight sm:text-4xl">Details &amp; care</h2>
+          </Reveal>
+          <dl className="mt-6 grid max-w-3xl gap-0 border-y border-line sm:grid-cols-2 sm:gap-x-10">
+            {attributes.data.map((attribute) => (
+              <div
+                key={`${attribute.attributeName}:${attribute.attributeValue}`}
+                className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-4 border-b border-line py-3 last:border-b-0 sm:even:border-b-0"
+              >
+                <dt className="text-[13px] font-medium text-graphite">
+                  {attribute.attributeName}
+                </dt>
+                <dd className="break-words text-[13px] text-ink">{attribute.attributeValue}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
 
       {/* Related */}
       {related.data !== undefined && related.data.length > 0 && (
@@ -280,7 +347,7 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
               <h2 className="type-display text-[10vw] leading-none sm:text-[5vw]">Pairs with</h2>
               <Link
                 to="/shop"
-                className="label-micro link-wipe text-graphite transition-colors hover:text-ink"
+                className="link-wipe text-[13px] font-medium text-graphite transition-colors hover:text-ink"
               >
                 All pieces
               </Link>
@@ -416,13 +483,11 @@ const AxisRow = ({
       className="mt-7 border-t border-line pt-7 first:border-t-0"
     >
       <div className="flex items-center justify-between gap-4">
-        <span className="label-micro text-graphite">{axis.name}</span>
+        <span className="eyebrow text-graphite">{axis.name}</span>
         {isSize ? (
-          <span className="font-mono text-[10px] tracking-[0.12em] text-ash uppercase">
-            True to size
-          </span>
+          <span className="text-[12px] font-medium text-graphite">True to size</span>
         ) : (
-          <span className="font-mono text-[11px] text-ink">{selected}</span>
+          <span className="text-[12px] font-medium text-ink">{selected}</span>
         )}
       </div>
 
@@ -465,7 +530,7 @@ const Chip = ({
     disabled={!entry.isAvailable}
     aria-pressed={isSelected}
     title={entry.isAvailable ? undefined : 'Sold out'}
-    className={`h-11 min-w-13 border px-4 font-mono text-[11px] tracking-[0.08em] uppercase transition-all duration-400 ease-editorial ${
+    className={`h-11 min-w-13 border px-4 text-[13px] font-medium tracking-[0.02em] transition-all duration-400 ease-editorial ${
       isSelected
         ? 'border-ink bg-ink text-paper'
         : 'border-line text-ink hover:border-ink disabled:pointer-events-none disabled:text-ash'
@@ -527,9 +592,8 @@ const isLight = (hex: string): boolean => {
   return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2] > 0.45
 }
 
-/** `null` is unknown stock, so it makes no claim at all. */
 const stockLabel = (stock: number | null): string => {
-  if (stock === null) return 'Availability on request'
+  if (stock === null) return 'Unavailable'
   if (stock === 0) return 'Sold out'
   if (stock <= 3) return `Only ${stock} left`
   return 'In stock'

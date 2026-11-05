@@ -1,10 +1,16 @@
 import type { CountryCode, ISODateTime, MoneyString, UUID, VariantOption } from './common'
+import {
+  administrativeLocationName,
+  type AdministrativeLocationSnapshotEntry,
+} from './administrativeLocations'
 
 /**
- * `GET /orders` and `GET /orders/:id`.
+ * `GET /orders`, `GET /orders/:id` and customer cancellation.
  *
- * Both read-only: the API exposes no way to change an order's status, prices,
- * totals, items or address, so nothing here advertises a mutation.
+ * The reads expose the order's stored snapshot; the only customer write is
+ * cancelling a pending, unpaid order. No type advertises arbitrary status or price
+ * changes, and the server re-checks ownership and payment regardless of what the
+ * UI offers.
  *
  * ## The two shapes are deliberately different types
  *
@@ -87,7 +93,8 @@ export interface OrderSummary {
   lineCount: number
   /** From the order's immutable snapshot, never from a live address row. */
   shippingRecipientName: string
-  shippingCity: string
+  shippingCity: string | null
+  shippingLocationPath: AdministrativeLocationSnapshotEntry[] | null
   shippingCountryCode: CountryCode
   createdAt: ISODateTime
   updatedAt: ISODateTime
@@ -108,6 +115,7 @@ export interface Order {
   userId: UUID
   orderNumber: string
   status: OrderStatus
+  paymentMethod: string | null
   subtotal: MoneyString
   shippingFee: MoneyString
   discountAmount: MoneyString
@@ -119,7 +127,8 @@ export interface Order {
   shippingPhone: string
   shippingAddressLine1: string
   shippingAddressLine2: string | null
-  shippingCity: string
+  shippingCity: string | null
+  shippingLocationPath: AdministrativeLocationSnapshotEntry[] | null
   shippingStateProvince: string | null
   shippingPostalCode: string | null
   shippingCountryCode: CountryCode
@@ -139,19 +148,36 @@ export const formatOrderAddressLines = (order: Order): string[] =>
   [
     order.shippingAddressLine1,
     order.shippingAddressLine2,
-    order.shippingCity,
-    [order.shippingStateProvince, order.shippingPostalCode].filter(Boolean).join(' '),
+    ...(order.shippingLocationPath
+      ? [
+          ...order.shippingLocationPath.map((location) => {
+            const label =
+              location.adminLevel === 1
+                ? 'Province/Municipality'
+                : location.adminLevel === 2
+                  ? 'District'
+                  : 'Commune'
+            return `${label}: ${administrativeLocationName(location)}`
+          }),
+          ...(order.shippingCountryCode === 'KH' &&
+          order.shippingLocationPath.length === 1
+            ? [
+                ...(order.shippingStateProvince
+                  ? [`District: ${order.shippingStateProvince}`]
+                  : []),
+                ...(order.shippingCity ? [`Commune: ${order.shippingCity}`] : []),
+              ]
+            : []),
+        ]
+      : [order.shippingCity]),
+    [
+      ...(order.shippingCountryCode === 'KH' &&
+      order.shippingLocationPath?.length === 1
+        ? []
+        : [order.shippingStateProvince]),
+      order.shippingPostalCode,
+    ]
+      .filter(Boolean)
+      .join(' '),
     order.shippingCountryCode,
   ].filter((line): line is string => Boolean(line && line.trim() !== ''))
-
-/**
- * `POST /checkout` — the entire body is one field, by design.
- *
- * What to buy comes from the cart, what it costs comes from the catalogue at
- * commit time, and where it goes is an address this user owns. A body carrying a
- * price, a total or a status is rejected by the server, so this type cannot
- * express one.
- */
-export interface CheckoutRequest {
-  addressId: UUID
-}

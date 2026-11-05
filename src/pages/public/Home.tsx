@@ -1,31 +1,62 @@
 import { Hero } from '@/components/home/Hero'
 import { Marquee } from '@/components/home/Marquee'
+import { CategorySection } from '@/components/home/CategorySection'
+import { PosterCarousel } from '@/components/home/PosterCarousel'
+import { CollectionsSection } from '@/components/home/CollectionsSection'
 import { Manifesto } from '@/components/home/Manifesto'
 import { EditorialGrid } from '@/components/home/EditorialGrid'
 import { Statement } from '@/components/home/Statement'
 import { ProductRail } from '@/components/product/ProductRail'
 import { Reveal } from '@/components/ui/Reveal'
 import { Action } from '@/components/ui/Action'
-import { useCollection } from '@/features/catalogue/useCatalogue'
+import { useNewArrivals, useBestSellers } from '@/features/catalogue/useCatalogue'
 
 export default function Home() {
-  const collection = useCollection()
-  // The rail shows the first eight the catalogue returns, in its own order.
-  const railPieces = (collection.data ?? []).slice(0, 8)
+  const newArrivals = useNewArrivals(8)
+  const bestSellers = useBestSellers(8)
 
   return (
     <>
       <Hero />
 
-      <div id="rail" className="scroll-mt-24">
+      <CategorySection />
+
+      <PosterCarousel />
+
+      <div id="new-arrivals" className="scroll-mt-24">
         <Marquee />
         <ProductRail
-          pieces={railPieces}
-          label="The Rail — Release 01"
-          isLoading={collection.isLoading}
-          className="py-16 sm:py-24"
+          pieces={newArrivals.data ?? []}
+          label="New Arrivals"
+          isLoading={newArrivals.isLoading}
+          action={
+            (newArrivals.data?.length ?? 0) > 0 ? (
+              <Action to="/shop" variant="ghost" size="sm" withArrow>
+                View All
+              </Action>
+            ) : null
+          }
+          className="py-10 sm:py-14"
         />
       </div>
+
+      <div id="best-sellers" className="scroll-mt-24">
+        <ProductRail
+          pieces={bestSellers.data ?? []}
+          label="Best Sellers"
+          isLoading={bestSellers.isLoading}
+          action={
+            (bestSellers.data?.length ?? 0) > 0 ? (
+              <Action to="/shop" variant="ghost" size="sm" withArrow>
+                View All
+              </Action>
+            ) : null
+          }
+          className="py-10 sm:py-14"
+        />
+      </div>
+
+      <CollectionsSection />
 
       <Manifesto />
       <Statement />

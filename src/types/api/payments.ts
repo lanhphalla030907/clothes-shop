@@ -15,6 +15,8 @@ import type { ISODateTime, MoneyString, UUID } from './common'
 
 /** A payment *attempt*, not a payment method. An order may have several. */
 export const PAYMENT_STATUS = {
+  /** A UI-only state: the order was placed COD and no attempt has been recorded yet. */
+  UNPAID: 'UNPAID',
   PENDING: 'PENDING',
   PAID: 'PAID',
   FAILED: 'FAILED',

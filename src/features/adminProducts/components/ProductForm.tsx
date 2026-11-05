@@ -172,7 +172,7 @@ export function ProductForm({
           ))}
         </SelectField>
 
-        <label className="flex cursor-pointer items-start gap-3 border border-line bg-paper-pure px-4 py-3.5">
+        <label className="flex min-h-12 cursor-pointer items-start gap-3 border border-line bg-paper-pure px-4 py-3.5">
           <input
             type="checkbox"
             checked={values.isActive}
@@ -181,8 +181,8 @@ export function ProductForm({
             className="mt-0.5 size-4 cursor-pointer accent-ink"
           />
           <span>
-            <span className="block text-sm font-medium text-ink">Active</span>
-            <span id="field-isActive-hint" className="mt-1 block text-xs leading-relaxed text-graphite">
+            <span className="block text-[13px] font-medium text-ink">Active</span>
+            <span id="field-isActive-hint" className="mt-1 block text-[13px] leading-relaxed text-graphite">
               Whether the record is enabled at all — independent of Status.
             </span>
           </span>
@@ -194,7 +194,7 @@ export function ProductForm({
           {isSaving ? 'Saving' : submitLabel}
         </Action>
         {isSaving && (
-          <span className="label-micro text-ash" role="status">
+          <span className="text-[12px] text-graphite" role="status">
             Working…
           </span>
         )}

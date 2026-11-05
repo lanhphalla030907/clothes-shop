@@ -1,7 +1,7 @@
 import { apiGetOne, apiPost } from '@/lib/api/client'
 import { API } from '@/lib/api/config'
 import { ApiError, isApiError, toUserMessage } from '@/lib/api/errors'
-import type { AuthSession, AuthUser, Credentials } from './authTypes'
+import type { AuthSession, AuthUser, Credentials, RegisterInput } from './authTypes'
 
 /**
  * The two calls sign-in is made of.
@@ -22,6 +22,14 @@ export const loginUser = async (credentials: Credentials): Promise<AuthSession> 
   }
 
   return session
+}
+
+export const registerUser = async (input: RegisterInput): Promise<AuthUser> => {
+  const user = await apiPost<AuthUser>(API.register, input)
+  if (user === undefined) {
+    throw new ApiError('Registration could not be completed.', { kind: 'unknown' })
+  }
+  return user
 }
 
 /**
@@ -56,6 +64,20 @@ export const loginErrorMessage = (error: unknown): string => {
       return 'Too many attempts just now. Give it a moment, then try again.'
     if (error.kind === 'validation')
       return error.details[0] ?? 'Check your email address and password and try again.'
+  }
+
+  return toUserMessage(error)
+}
+
+export const registerErrorMessage = (error: unknown): string => {
+  if (isApiError(error)) {
+    if (error.kind === 'conflict') {
+      return error.details[0] ?? 'An account with this email already exists.'
+    }
+    if (error.kind === 'rateLimited')
+      return 'Too many attempts just now. Give it a moment, then try again.'
+    if (error.kind === 'validation')
+      return error.details[0] ?? 'Check the details you entered and try again.'
   }
 
   return toUserMessage(error)

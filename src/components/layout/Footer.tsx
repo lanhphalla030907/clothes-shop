@@ -47,12 +47,12 @@ export function Footer() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="EMAIL ADDRESS"
-                    className="label-micro w-full bg-transparent text-ink placeholder:text-ash focus:outline-none"
+                    className="label-micro h-11 w-full bg-transparent text-ink placeholder:text-ash focus:outline-none"
                   />
                   <button
                     type="submit"
                     aria-label="Subscribe"
-                    className="shrink-0 text-ink transition-transform duration-500 ease-editorial hover:translate-x-1"
+                    className="grid size-11 shrink-0 place-items-center text-ink transition-transform duration-500 ease-editorial hover:translate-x-1"
                   >
                     {subscribed ? (
                       <motion.span
@@ -99,14 +99,20 @@ export function Footer() {
 
               <FooterColumn title="Studio">
                 <FooterLink to="/about">Manifesto</FooterLink>
-                <a
-                  href="mailto:studio@ctrl.example"
-                  className="link-wipe text-left text-sm text-graphite transition-colors duration-400 ease-editorial hover:text-ink"
-                >
-                  Contact
-                </a>
-                <span className="text-sm text-graphite">Shipping</span>
-                <span className="text-sm text-graphite">Returns</span>
+                <li>
+                  <a
+                    href="mailto:studio@ctrl.example"
+                    className="link-wipe inline-block text-left text-sm text-graphite transition-colors duration-400 ease-editorial hover:text-ink"
+                  >
+                    Contact
+                  </a>
+                </li>
+                <li>
+                  <span className="text-sm text-graphite">Shipping</span>
+                </li>
+                <li>
+                  <span className="text-sm text-graphite">Returns</span>
+                </li>
               </FooterColumn>
             </div>
           </div>
@@ -120,8 +126,10 @@ export function Footer() {
 
 const FooterColumn = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div>
-    <h3 className="label-micro mb-5 text-ash">{title}</h3>
-    <ul className="flex flex-col gap-3">{children}</ul>
+    <h3 className="label-micro mb-5 text-graphite">{title}</h3>
+    <ul className="flex flex-col gap-3">
+      {children}
+    </ul>
   </div>
 )
 

@@ -4,6 +4,8 @@ import {
   fetchBuyableVariants,
   fetchCategories,
   fetchImagesForProducts,
+  fetchNewArrivals,
+  fetchBestSellers,
   fetchProduct,
   fetchProductImages,
   fetchProducts,
@@ -42,6 +44,20 @@ export const useCollection = () =>
     const images = await fetchImagesForProducts(products, signal)
     return toPieces(products, categories, images)
   }, [])
+
+export const useNewArrivals = (limit = 8) =>
+  useAsyncResource<CataloguePiece[]>(async (signal) => {
+    const [products, categories] = await Promise.all([fetchNewArrivals(signal, limit), fetchCategories(signal)])
+    const images = await fetchImagesForProducts(products, signal)
+    return toPieces(products, categories, images)
+  }, [limit])
+
+export const useBestSellers = (limit = 8) =>
+  useAsyncResource<CataloguePiece[]>(async (signal) => {
+    const [products, categories] = await Promise.all([fetchBestSellers(signal, limit), fetchCategories(signal)])
+    const images = await fetchImagesForProducts(products, signal)
+    return toPieces(products, categories, images)
+  }, [limit])
 
 /**
  * One product with everything needed to buy it.

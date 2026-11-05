@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import { Action } from '@/components/ui/Action'
@@ -7,16 +7,21 @@ import { Money, StatusBadge } from '@/components/account/Bits'
 import { EmptyState, ErrorState } from '@/components/account/States'
 import { SkeletonCard } from '@/components/account/Skeleton'
 import { useOrders } from '@/features/orders/useOrders'
-import { ORDER_STATUS, type OrderSummary, type OrderStatus } from '@/types/api'
+import {
+  administrativeLocationName,
+  ORDER_STATUS,
+  PAYABLE_ORDER_STATUS,
+  type OrderSummary,
+  type OrderStatus,
+} from '@/types/api'
 import { toUserMessage } from '@/lib/api/errors'
 
 /**
  * Every order this account has placed.
  *
- * Read-only, because the API has no way to change an order — so there is no
- * cancel button, no reorder and no "pay now" here. An order awaiting payment is
- * finished from the checkout screen, and offering the action in two places would
- * mean two places to keep correct.
+ * The listing is for finding an order, not acting on one: cancellation lives on
+ * the detail screen where the full state and its feedback are visible. There is no
+ * reorder and no "pay now" here, so an action is never offered in two places.
  */
 
 const FILTERS = [
@@ -41,10 +46,21 @@ const matches = (status: OrderStatus, filter: Filter): boolean => {
 }
 
 export default function Orders() {
-  const orders = useOrders()
+  const { data: ordersData, error: ordersError, isLoading: ordersLoading, refetch: refetchOrders } = useOrders()
   const [filter, setFilter] = useState<Filter>('ALL')
 
-  const visible = (orders.data ?? []).filter((order) => matches(order.status, filter))
+  const visible = (ordersData ?? []).filter((order) => matches(order.status, filter))
+
+  const hasPending = ordersData?.some((order) => order.status === PAYABLE_ORDER_STATUS) ?? false
+
+  useEffect(() => {
+    if (!hasPending) return undefined
+
+    const timer = window.setInterval(() => {
+      void refetchOrders()
+    }, 10_000)
+    return () => window.clearInterval(timer)
+  }, [hasPending, refetchOrders])
 
   return (
     <div className="space-y-8">
@@ -54,14 +70,14 @@ export default function Orders() {
         description="Each order is a snapshot: the pieces, the prices you paid and the address are exactly as they were when you placed it."
       />
 
-      {orders.isLoading ? (
+      {ordersLoading ? (
         <div className="space-y-4">
           <SkeletonCard rows={3} />
           <SkeletonCard rows={3} />
         </div>
-      ) : orders.error ? (
-        <ErrorState message={toUserMessage(orders.error)} onRetry={orders.refetch} />
-      ) : (orders.data?.length ?? 0) === 0 ? (
+      ) : ordersError ? (
+        <ErrorState message={toUserMessage(ordersError)} onRetry={refetchOrders} />
+      ) : (ordersData?.length ?? 0) === 0 ? (
         <EmptyState
           eyebrow="No orders"
           title="You have not ordered anything yet"
@@ -76,7 +92,7 @@ export default function Orders() {
         <>
           {/* Only offered when there is something to narrow — a filter row over
               one result is just noise. */}
-          {(orders.data?.length ?? 0) > 1 && (
+          {(ordersData?.length ?? 0) > 1 && (
             <div className="flex flex-wrap items-center gap-2">
               {FILTERS.map((option) => {
                 const isActive = option.value === filter
@@ -86,7 +102,7 @@ export default function Orders() {
                     type="button"
                     onClick={() => setFilter(option.value)}
                     aria-pressed={isActive}
-                    className={`label-micro h-9 border px-4 transition-colors duration-200 ${
+                    className={`inline-flex min-h-10 items-center border px-4 text-[13px] font-medium transition-colors duration-200 ${
                       isActive
                         ? 'border-ink bg-ink text-paper'
                         : 'border-line bg-paper text-graphite hover:border-ink hover:text-ink'
@@ -148,27 +164,30 @@ const OrderRow = ({ order }: { order: OrderSummary }) => (
     <div className="flex flex-wrap items-end justify-between gap-6 px-6 py-5">
       <dl className="flex flex-wrap gap-x-10 gap-y-4">
         <div>
-          <dt className="label-micro text-ash">Items</dt>
-          <dd className="mt-2 font-mono text-sm text-ink">
+          <dt className="text-[12px] font-medium text-graphite">Items</dt>
+          <dd className="mt-1.5 font-mono text-sm text-ink">
             {order.itemCount} across {order.lineCount} {order.lineCount === 1 ? 'line' : 'lines'}
           </dd>
         </div>
         <div>
-          <dt className="label-micro text-ash">Delivering to</dt>
-          <dd className="mt-2 text-sm text-ink">
-            {order.shippingRecipientName}, {order.shippingCity}
+          <dt className="text-[12px] font-medium text-graphite">Delivering to</dt>
+          <dd className="mt-1.5 text-sm text-ink">
+            {order.shippingRecipientName},{' '}
+            {order.shippingLocationPath?.map(administrativeLocationName).join(', ') ??
+              order.shippingCity ??
+              order.shippingCountryCode}
           </dd>
         </div>
         <div>
-          <dt className="label-micro text-ash">Total</dt>
-          <dd className="mt-2">
+          <dt className="text-[12px] font-medium text-graphite">Total</dt>
+          <dd className="mt-1.5">
             <Money amount={order.totalAmount} currency={order.currency} />
           </dd>
         </div>
       </dl>
 
-      <span className="label-micro inline-flex items-center gap-2 text-graphite transition-colors duration-300 group-hover:text-ink">
-        View
+      <span className="inline-flex items-center gap-2 text-[13px] font-medium text-graphite transition-colors duration-300 group-hover:text-ink">
+        View order
         <ArrowUpRight
           size={13}
           strokeWidth={1.5}

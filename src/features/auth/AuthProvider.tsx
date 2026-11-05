@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { isApiError } from '@/lib/api/errors'
+import { useFeedback } from '@/context/feedbackContext'
 import {
   clearAccessToken,
   onUnauthorized,
@@ -39,6 +40,7 @@ import type { AuthUser } from './authTypes'
  * the full extent of what logout can honestly do — so nothing is faked.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { showFeedback } = useFeedback()
   const [user, setUser] = useState<AuthUser | null>(null)
   // A stored token means there is something to check, so the guards wait rather
   // than treating "not yet loaded" as "signed out".
@@ -120,6 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // `/auth/me` has agreed, so a redirect never lands on a half-built one.
       try {
         setUser(await fetchCurrentUser())
+        showFeedback({
+          type: 'success',
+          title: 'Signed in',
+          message: 'You are signed in and your account is ready.',
+        })
         return true
       } catch (identityError: unknown) {
         // Only an authentication failure invalidates what was just issued. A
@@ -141,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loginInFlight.current = false
       setIsLoginPending(false)
     }
-  }, [])
+  }, [showFeedback])
 
   const logout = useCallback(() => {
     clearAccessToken()

@@ -1,37 +1,14 @@
-import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import {
-  ArrowUpRight,
-  Heart,
-  LayoutGrid,
-  MapPin,
-  PanelLeft,
-  Receipt,
-  ShoppingBag,
-  UserRound,
-  X,
-} from 'lucide-react'
+import { ArrowUpRight, LogOut, Menu, Store, X } from 'lucide-react'
+import { accountNavigation } from '@/data/accountNavigation'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
-import { displayName, useAuth } from '@/features/auth/useAuth'
+import { useAuth } from '@/features/auth/useAuth'
+import { useCartActions } from '@/features/cart/useCartActions'
 import { useWishlistActions } from '@/features/wishlist/useWishlistActions'
 
 const EASE = [0.16, 1, 0.3, 1] as const
-
-/**
- * The account's navigation. Every entry is a screen that exists and reads real
- * data — there is no placeholder entry, because a disabled link is a promise the
- * phase does not keep.
- */
-const NAV = [
-  { label: 'Overview', to: '/dashboard', icon: LayoutGrid },
-  { label: 'Orders', to: '/dashboard/orders', icon: Receipt },
-  { label: 'Wishlist', to: '/dashboard/wishlist', icon: Heart },
-  { label: 'Bag', to: '/dashboard/bag', icon: ShoppingBag },
-  { label: 'Addresses', to: '/dashboard/addresses', icon: MapPin },
-  { label: 'Checkout', to: '/dashboard/checkout', icon: ArrowUpRight },
-  { label: 'Profile', to: '/dashboard/profile', icon: UserRound },
-] as const
 
 const Mark = ({ className = '' }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
@@ -58,29 +35,71 @@ const ScrollToTop = () => {
  */
 const navLinkClasses = (isActive: boolean) =>
   [
-    'group relative flex items-center gap-3 px-3 py-2.5 transition-colors duration-200',
+    'group relative flex min-h-11 items-center gap-2.5 px-3 text-[13.5px] font-medium transition-colors duration-200',
     isActive
       ? 'bg-bone text-ink before:absolute before:top-2 before:bottom-2 before:left-0 before:w-0.5 before:bg-ink'
       : 'text-graphite hover:bg-bone/60 hover:text-ink',
   ].join(' ')
 
+/** The signed-in identity card repeated in the rail and the mobile drawer. */
+const IdentityCard = ({
+  firstName,
+  lastName,
+  email,
+  onNavigate,
+}: {
+  firstName?: string
+  lastName?: string
+  email?: string
+  onNavigate?: () => void
+}) => (
+  <Link
+    to="/dashboard/profile"
+    onClick={onNavigate}
+    className="group flex items-center gap-3 px-2 py-2 transition-colors duration-200 hover:bg-bone"
+  >
+    <span
+      aria-hidden
+      className="grid size-9 shrink-0 place-items-center bg-ink font-mono text-[11px] tracking-wide text-paper"
+    >
+      {initials(firstName, lastName)}
+    </span>
+    <span className="min-w-0 flex-1">
+      <span className="block truncate text-[13.5px] font-semibold text-ink">
+        {`${firstName ?? ''} ${lastName ?? ''}`.trim() || 'Your account'}
+      </span>
+      {email && <span className="mt-0.5 block truncate text-[12px] text-graphite">{email}</span>}
+    </span>
+    <ArrowUpRight
+      size={14}
+      strokeWidth={1.6}
+      aria-hidden
+      className="shrink-0 text-ash transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+    />
+  </Link>
+)
+
 /**
- * The account shell — a 240px left rail, a sticky topbar carrying the active
- * route and the account's own identity, and a slide-in drawer below `lg`.
+ * The account shell — a grouped left rail, a sticky breadcrumb bar, and a
+ * slide-in drawer below `lg`.
  *
  * Deliberately does not reuse the storefront layout: no nav bar, no footer and no
  * bag drawer. The bag in the storefront is a local prototype with no relationship
  * to the server cart this shell is built around, and putting both in the same
  * chrome would invite exactly the confusion the two are kept apart to avoid.
- *
- * There is no notification bell here. Nothing in the API can produce a
- * notification, so the control would be a button that does nothing.
  */
 export function AccountLayout() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+
+  const menuButton = useRef<HTMLButtonElement>(null)
+  const closeButton = useRef<HTMLButtonElement>(null)
+
+  const bagCount = useCartActions().cart?.itemCount ?? 0
+  const wishlistCount = useWishlistActions().itemCount
 
   useLockBodyScroll(mobileOpen)
 
@@ -91,11 +110,61 @@ export function AccountLayout() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const active =
-    NAV.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`)) ?? NAV[0]
+  useEffect(() => {
+    if (!mobileOpen) return undefined
+    closeButton.current?.focus()
 
-  const wishlistCount = useWishlistActions().itemCount
-  const badgeFor = (to: string) => (to === '/dashboard/wishlist' && wishlistCount > 0 ? wishlistCount : undefined)
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      setMobileOpen(false)
+      menuButton.current?.focus()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [mobileOpen])
+
+  const activeItem = accountNavigation
+    .flatMap((group) => group.items)
+    .find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
+
+  const handleSignOut = () => {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
+  const countFor = (key: 'bag' | 'wishlist' | undefined) =>
+    key === 'bag' ? bagCount : key === 'wishlist' ? wishlistCount : 0
+
+  const sectionNav = (onNavigate?: () => void) => (
+    <nav aria-label="Account" className="flex flex-col gap-6">
+      {accountNavigation.map((group) => (
+        <div key={group.title}>
+          <p className="eyebrow px-3 text-graphite">{group.title}</p>
+          <ul className="mt-2 space-y-0.5">
+            {group.items.map(({ label, to, icon: Icon, countKey }) => {
+              const count = countFor(countKey)
+              return (
+                <li key={to}>
+                  <NavLink
+                    to={to}
+                    end={to === '/dashboard'}
+                    onClick={onNavigate}
+                    className={({ isActive }) => navLinkClasses(isActive)}
+                  >
+                    <Icon size={16} strokeWidth={1.6} aria-hidden className="shrink-0" />
+                    <span className="flex-1">{label}</span>
+                    {count > 0 && (
+                      <span className="font-mono text-[11px] text-graphite tabular-nums">{count}</span>
+                    )}
+                  </NavLink>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  )
 
   return (
     <div className="flex min-h-svh bg-canvas">
@@ -103,56 +172,58 @@ export function AccountLayout() {
 
       <a
         href="#main"
-        className="label-micro sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:bg-ink focus:px-4 focus:py-3 focus:text-paper"
+        className="eyebrow sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:bg-ink focus:px-4 focus:py-3 focus:text-paper"
       >
         Skip to content
       </a>
 
       {/* Left rail — desktop */}
-      <aside className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col justify-between border-r border-line bg-paper lg:flex">
+      <aside className="sticky top-0 hidden h-svh w-[16.5rem] shrink-0 flex-col border-r border-line bg-paper lg:flex">
         <div className="flex min-h-0 flex-1 flex-col">
           <Link
             to="/"
             className="group flex h-16 shrink-0 items-center gap-2.5 border-b border-line px-5"
-            aria-label="CTRL — back to storefront"
           >
             <Mark className="size-4 transition-transform duration-500 ease-editorial group-hover:rotate-90" />
             <span className="text-[15px] font-extrabold tracking-[-0.03em] uppercase">CTRL</span>
+            <span className="ml-auto text-[11px] font-semibold tracking-[0.08em] text-graphite uppercase">
+              Account
+            </span>
           </Link>
 
-          <nav aria-label="Account" className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
-            {NAV.map(({ label, to, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === '/dashboard'}
-                className={({ isActive }) => navLinkClasses(isActive)}
-              >
-                <Icon size={16} strokeWidth={1.5} aria-hidden />
-                <span className="text-[13px] font-medium">{label}</span>
-                {badgeFor(to) !== undefined && (
-                  <span className="ml-auto font-mono text-[11px] text-ash tabular-nums">
-                    {badgeFor(to)}
-                  </span>
-                )}
-              </NavLink>
-            ))}
-          </nav>
+          <div className="border-b border-line px-3 py-3">
+            <IdentityCard
+              firstName={user?.firstName}
+              lastName={user?.lastName}
+              email={user?.email}
+            />
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-5">{sectionNav()}</div>
         </div>
 
-        <div className="shrink-0 border-t border-line p-3">
+        <div className="shrink-0 space-y-1 border-t border-line p-3">
           <Link
             to="/"
-            className="group flex items-center justify-between gap-3 px-3 py-2.5 text-graphite transition-colors duration-200 hover:bg-bone/60 hover:text-ink"
+            className="group flex min-h-11 items-center gap-2.5 px-3 text-[13px] text-graphite transition-colors duration-200 hover:bg-bone/60 hover:text-ink"
           >
-            <span className="text-[13px]">View storefront</span>
+            <Store size={15} strokeWidth={1.6} aria-hidden />
+            <span className="flex-1">Storefront</span>
             <ArrowUpRight
               size={14}
-              strokeWidth={1.5}
+              strokeWidth={1.6}
               aria-hidden
-              className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+              className="text-ash transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
             />
           </Link>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="group flex min-h-11 w-full items-center gap-2.5 px-3 text-left text-[13px] text-graphite transition-colors duration-200 hover:bg-bone/60 hover:text-ink"
+          >
+            <LogOut size={15} strokeWidth={1.6} aria-hidden />
+            Sign out
+          </button>
         </div>
       </aside>
 
@@ -163,40 +234,49 @@ export function AccountLayout() {
             scrolled ? 'bg-canvas/90' : 'bg-canvas'
           }`}
         >
-          <div className="container-editorial flex h-16 items-center justify-between gap-4">
+          <div className="container-account flex h-16 items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <button
+                ref={menuButton}
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                aria-label="Open navigation"
+                aria-label="Open account navigation"
+                aria-expanded={mobileOpen}
                 className="grid size-11 shrink-0 place-items-center border border-line bg-paper text-ink transition-colors duration-200 hover:border-ink hover:bg-ink hover:text-paper lg:hidden"
               >
-                <PanelLeft size={18} strokeWidth={1.5} />
+                <Menu size={18} strokeWidth={1.6} />
               </button>
 
-              <span className="truncate text-[13px] font-medium">{active.label}</span>
+              <p className="min-w-0 truncate text-[13px] text-graphite">
+                <span className="hidden sm:inline">Account </span>
+                <span aria-hidden className="hidden text-ash sm:inline">
+                  /{' '}
+                </span>
+                <span className="font-medium text-ink">{activeItem?.label ?? 'Overview'}</span>
+              </p>
             </div>
 
-            {/* The real provisional identity, not an invented initials avatar. */}
-            <Link
-              to="/dashboard/profile"
-              className="flex min-w-0 items-center gap-2.5 border border-line bg-paper py-1.5 pr-3 pl-1.5 transition-colors duration-200 hover:border-ink"
-            >
-              <span
-                aria-hidden
-                className="grid size-8 shrink-0 place-items-center bg-ink font-mono text-[11px] text-paper"
+            <div className="flex shrink-0 items-center gap-2">
+              <Link
+                to="/"
+                className="hidden min-h-11 items-center gap-2 border border-line bg-paper px-3 text-[13px] text-graphite transition-colors duration-200 hover:border-ink hover:text-ink sm:flex"
               >
-                {initials(user?.firstName, user?.lastName)}
-              </span>
-              <span className="hidden min-w-0 truncate text-[13px] text-ink sm:block">
-                {displayName(user) || 'Your account'}
-              </span>
-            </Link>
+                Storefront
+                <ArrowUpRight size={14} strokeWidth={1.6} aria-hidden />
+              </Link>
+              <Link
+                to="/dashboard/profile"
+                className="grid size-11 place-items-center bg-ink font-mono text-[11px] text-paper transition-colors hover:bg-ink-soft"
+              >
+                <span aria-hidden>{initials(user?.firstName, user?.lastName)}</span>
+                <span className="sr-only">Open your profile</span>
+              </Link>
+            </div>
           </div>
         </header>
 
         <main id="main" className="flex-1">
-          <div className="container-editorial py-8 sm:py-10">
+          <div className="container-account py-7 sm:py-9 lg:py-11">
             <Outlet />
           </div>
         </main>
@@ -215,62 +295,67 @@ export function AccountLayout() {
             onClick={() => setMobileOpen(false)}
           >
             <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Account navigation"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ duration: 0.5, ease: EASE }}
-              className="flex h-full w-[82vw] max-w-[300px] flex-col border-r border-line bg-paper"
+              className="flex h-full w-[86vw] max-w-[320px] flex-col border-r border-line bg-paper"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="flex h-16 shrink-0 items-center justify-between border-b border-line px-4">
-                <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2.5 px-1">
+                <Link
+                  to="/"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2.5 px-1"
+                >
                   <Mark className="size-4" />
                   <span className="text-[15px] font-extrabold tracking-[-0.03em] uppercase">CTRL</span>
                 </Link>
                 <button
+                  ref={closeButton}
                   type="button"
                   onClick={() => setMobileOpen(false)}
-                  aria-label="Close navigation"
-                  className="grid size-11 place-items-center"
+                  aria-label="Close account navigation"
+                  className="grid size-11 place-items-center text-ink"
                 >
-                  <X size={20} strokeWidth={1.4} />
+                  <X size={20} strokeWidth={1.5} />
                 </button>
               </div>
 
-              <nav aria-label="Account" className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
-                {NAV.map(({ label, to, icon: Icon }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    end={to === '/dashboard'}
-                    onClick={() => setMobileOpen(false)}
-                    className={({ isActive }) => navLinkClasses(isActive)}
-                  >
-                    <Icon size={16} strokeWidth={1.5} aria-hidden />
-                    <span className="text-[13px] font-medium">{label}</span>
-                    {badgeFor(to) !== undefined && (
-                      <span className="ml-auto font-mono text-[11px] text-ash tabular-nums">
-                        {badgeFor(to)}
-                      </span>
-                    )}
-                  </NavLink>
-                ))}
-              </nav>
+              <div className="border-b border-line px-3 py-3">
+                <IdentityCard
+                  firstName={user?.firstName}
+                  lastName={user?.lastName}
+                  email={user?.email}
+                  onNavigate={() => setMobileOpen(false)}
+                />
+              </div>
 
-              <div className="shrink-0 border-t border-line p-3">
+              <div className="flex-1 overflow-y-auto px-3 py-5">
+                {sectionNav(() => setMobileOpen(false))}
+              </div>
+
+              <div className="shrink-0 space-y-1 border-t border-line p-3">
                 <Link
                   to="/"
                   onClick={() => setMobileOpen(false)}
-                  className="group flex items-center justify-between gap-3 px-3 py-2.5 text-graphite transition-colors duration-200 hover:bg-bone/60 hover:text-ink"
+                  className="group flex min-h-11 items-center gap-2.5 px-3 text-[13px] text-graphite transition-colors duration-200 hover:bg-bone/60 hover:text-ink"
                 >
-                  <span className="text-[13px]">View storefront</span>
-                  <ArrowUpRight
-                    size={14}
-                    strokeWidth={1.5}
-                    aria-hidden
-                    className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                  />
+                  <Store size={15} strokeWidth={1.6} aria-hidden />
+                  <span className="flex-1">Storefront</span>
+                  <ArrowUpRight size={14} strokeWidth={1.6} aria-hidden />
                 </Link>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="group flex min-h-11 w-full items-center gap-2.5 px-3 text-left text-[13px] text-graphite transition-colors duration-200 hover:bg-bone/60 hover:text-ink"
+                >
+                  <LogOut size={15} strokeWidth={1.6} aria-hidden />
+                  Sign out
+                </button>
               </div>
             </motion.div>
           </motion.div>

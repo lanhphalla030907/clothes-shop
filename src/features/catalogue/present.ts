@@ -36,11 +36,9 @@ export const SELLABLE_STATUS: ProductStatus = 'ACTIVE'
 export const isSellable = (product: ApiProduct): boolean =>
   product.status === SELLABLE_STATUS && product.isActive
 
-/**
- * `null` stock means the catalogue has never said how many exist, which is not
- * the same as none being left — so only a real zero reads as sold out.
- */
-export const isBuyable = (variant: CatalogueVariant): boolean => variant.available !== 0
+/** A variant is purchasable only when it is active and has known positive stock. */
+export const isBuyable = (variant: CatalogueVariant): boolean =>
+  variant.isActive && variant.available !== null && variant.available > 0
 
 /** Primary image first, then declared order. */
 export const imageUrls = (images: readonly ProductImage[]): string[] =>

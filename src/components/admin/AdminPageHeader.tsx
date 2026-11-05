@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react'
 
 /**
- * The admin area's page title block, matching the dashboard's editorial voice:
- * a technical eyebrow, a display headline, an optional description and one
- * primary action opposite the title on wide screens.
+ * The admin area's page title block.
+ *
+ * Functional headings are set in the sans face at a readable size. The poster
+ * display treatment belongs to the storefront; an operator scanning a table
+ * needs the title to be distinct, not enormous.
  */
 
 type AdminPageHeaderProps = {
@@ -15,16 +17,17 @@ type AdminPageHeaderProps = {
 
 export function AdminPageHeader({ eyebrow, title, description, action }: AdminPageHeaderProps) {
   return (
-    <div className="flex flex-col gap-6 border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between">
+    <header className="flex flex-col gap-5 border-b border-line pb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
       <div className="max-w-2xl">
-        <div className="flex items-center gap-4">
-          <span className="h-px w-8 bg-line" aria-hidden />
-          <span className="label-micro text-graphite">{eyebrow}</span>
-        </div>
-        <h1 className="type-display mt-6 text-3xl leading-[0.88] sm:text-5xl">{title}</h1>
-        {description && <p className="mt-4 text-sm leading-relaxed text-graphite">{description}</p>}
+        <p className="eyebrow text-graphite">{eyebrow}</p>
+        <h1 className="mt-2.5 text-[1.65rem] leading-tight font-semibold tracking-[-0.02em] text-ink sm:text-[2rem]">
+          {title}
+        </h1>
+        {description && (
+          <p className="mt-3 max-w-xl text-[14.5px] leading-relaxed text-graphite">{description}</p>
+        )}
       </div>
-      {action && <div className="shrink-0">{action}</div>}
-    </div>
+      {action && <div className="flex shrink-0 flex-wrap items-center gap-2.5">{action}</div>}
+    </header>
   )
 }

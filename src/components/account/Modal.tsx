@@ -59,24 +59,28 @@ export const Modal = ({ title, onClose, children, footer, className = '' }: Moda
         event.preventDefault()
         onClose()
       }}
-      className={`m-auto w-[min(38rem,calc(100vw-2rem))] border border-line bg-paper p-0 backdrop:bg-ink/40 ${className}`}
+      className={`m-auto w-[min(40rem,calc(100vw-1.5rem))] rounded-xl border border-line bg-paper p-0 shadow-[var(--shadow-raised)] backdrop:bg-ink/35 backdrop:backdrop-blur-[2px] ${className}`}
     >
-      <div className="flex items-center justify-between border-b border-line px-6 py-4">
-        <h2 className="text-base font-semibold tracking-tight text-ink">{title}</h2>
+      <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4 sm:px-6">
+        <h2 className="text-[1.0625rem] font-semibold tracking-[-0.015em] text-ink">{title}</h2>
         <button
           type="button"
           data-close
           onClick={onClose}
-          aria-label="Close"
-          className="grid size-8 place-items-center text-graphite transition-colors hover:text-ink"
+          aria-label="Close dialog"
+          className="grid size-10 shrink-0 place-items-center text-graphite transition-colors hover:bg-bone hover:text-ink"
         >
-          <X size={15} strokeWidth={1.5} />
+          <X size={18} strokeWidth={1.6} />
         </button>
       </div>
 
-      <div className="max-h-[70vh] overflow-y-auto px-6 py-6">{children}</div>
+      <div className="max-h-[calc(100svh-13rem)] overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">{children}</div>
 
-      {footer && <div className="flex justify-end gap-3 border-t border-line px-6 py-4">{footer}</div>}
+      {footer && (
+        <div className="flex flex-wrap justify-end gap-2.5 border-t border-line px-5 py-4 sm:px-6">
+          {footer}
+        </div>
+      )}
     </dialog>
   )
 }

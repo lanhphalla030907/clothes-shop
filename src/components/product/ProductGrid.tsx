@@ -60,9 +60,9 @@ export function ProductGrid({
                   type="button"
                   onClick={() => select(filter)}
                   aria-pressed={isActive}
-                  className="label-micro group relative shrink-0 pb-2 transition-colors duration-400 ease-editorial"
+                  className="label-micro group relative flex min-h-11 min-w-11 shrink-0 items-center justify-center pb-2 transition-colors duration-400 ease-editorial"
                 >
-                  <span className={isActive ? 'text-ink' : 'text-ash group-hover:text-graphite'}>
+                  <span className={isActive ? 'text-ink' : 'text-graphite group-hover:text-ink'}>
                     {filter}
                   </span>
                   <span
@@ -87,14 +87,14 @@ export function ProductGrid({
         </motion.div>
 
         {visible.length === 0 && (
-          <p className="py-24 text-center font-mono text-[11px] tracking-[0.16em] text-ash uppercase">
+          <p className="py-24 text-center font-mono text-[11px] tracking-[0.16em] text-graphite uppercase">
             Nothing in this category yet
           </p>
         )}
       </div>
 
       {visible.length > 0 && (
-        <p className="container-editorial mt-14 font-mono text-[10px] tracking-[0.16em] text-ash uppercase">
+        <p className="container-editorial mt-14 font-mono text-[11px] tracking-[0.16em] text-graphite uppercase">
           Showing {padIndex(0)}—{padIndex(visible.length - 1)} / {padIndex(pieces.length)}
         </p>
       )}

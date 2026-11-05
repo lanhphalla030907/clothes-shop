@@ -1,16 +1,10 @@
 import type { CountryCode, ISODateTime, UUID } from './common'
+import {
+  administrativeLocationName,
+  type AdministrativeLocationPath,
+} from './administrativeLocations'
 
-/**
- * `GET/POST/PATCH/DELETE /addresses`, plus `POST /addresses/:id/default`.
- *
- * Nullability is preserved exactly as the server sends it: `addressLine2`,
- * `stateProvince` and `postalCode` are `null` when absent rather than `''`,
- * because "not supplied" and "supplied as blank" are different facts and the
- * forms need to tell them apart.
- *
- * There is no nested `user` object and no email — an address book is the
- * caller's own data.
- */
+
 
 export interface Address {
   id: UUID
@@ -21,8 +15,12 @@ export interface Address {
   phone: string
   addressLine1: string
   addressLine2: string | null
-  city: string
+  city: string | null
   stateProvince: string | null
+  district: string | null
+  commune: string | null
+  administrativeLocationPcode: string | null
+  administrativeLocationPath: AdministrativeLocationPath | null
   postalCode: string | null
   countryCode: CountryCode
   /** At most one address per user is ever `true`. */
@@ -31,35 +29,22 @@ export interface Address {
   updatedAt: ISODateTime
 }
 
-/**
- * `POST /addresses`.
- *
- * `isDefault` is optional and defaults to `false`; the server promotes the first
- * address on its own, so a client never has to know that rule.
- */
+
 export interface CreateAddressRequest {
   label: string
   recipientName: string
   phone: string
   addressLine1: string
   addressLine2?: string | null
-  city: string
+  city?: string
   stateProvince?: string | null
+  district?: string
+  commune?: string
+  administrativeLocationPcode?: string
   postalCode?: string | null
   countryCode: CountryCode
   isDefault?: boolean
 }
-
-/**
- * `PATCH /addresses/:id`.
- *
- * Every field is optional and every field is validated as strictly as on create
- * — an update must not be able to write a value `POST` would have refused.
- *
- * `isDefault` is a request to *move* the single default slot, not a column:
- * `true` demotes the incumbent, `false` is rejected with 409 while this address
- * currently holds it.
- */
 export interface UpdateAddressRequest {
   label?: string
   recipientName?: string
@@ -68,6 +53,9 @@ export interface UpdateAddressRequest {
   addressLine2?: string | null
   city?: string
   stateProvince?: string | null
+  district?: string
+  commune?: string
+  administrativeLocationPcode?: string | null
   postalCode?: string | null
   countryCode?: CountryCode
   isDefault?: boolean
@@ -82,6 +70,9 @@ export interface AddressFormValues {
   addressLine2: string
   city: string
   stateProvince: string
+  provincePcode: string
+  district: string
+  commune: string
   postalCode: string
   countryCode: string
 }
@@ -94,6 +85,9 @@ export const EMPTY_ADDRESS_FORM: AddressFormValues = {
   addressLine2: '',
   city: '',
   stateProvince: '',
+  provincePcode: '',
+  district: '',
+  commune: '',
   postalCode: '',
   countryCode: 'KH',
 }
@@ -105,8 +99,15 @@ export const addressToFormValues = (address: Address): AddressFormValues => ({
   phone: address.phone,
   addressLine1: address.addressLine1,
   addressLine2: address.addressLine2 ?? '',
-  city: address.city,
-  stateProvince: address.stateProvince ?? '',
+  city: address.countryCode === 'KH' ? '' : address.city ?? '',
+  stateProvince: address.countryCode === 'KH' ? '' : address.stateProvince ?? '',
+  provincePcode:
+    address.administrativeLocationPath?.find((location) => location.adminLevel === 1)?.pcode ?? '',
+  // Legacy Cambodia rows may not have a canonical province P-code. Keep their
+  // free-text columns editable, but never infer a P-code from either value.
+  district:
+    address.district ?? (address.countryCode === 'KH' ? address.stateProvince ?? '' : ''),
+  commune: address.commune ?? (address.countryCode === 'KH' ? address.city ?? '' : ''),
   postalCode: address.postalCode ?? '',
   countryCode: address.countryCode,
 })
@@ -120,24 +121,61 @@ export const addressToFormValues = (address: Address): AddressFormValues => ({
  */
 export const addressFormValuesToRequest = (
   values: AddressFormValues,
-): CreateAddressRequest => ({
-  label: values.label,
-  recipientName: values.recipientName,
-  phone: values.phone,
-  addressLine1: values.addressLine1,
-  addressLine2: values.addressLine2.trim() === '' ? null : values.addressLine2,
-  city: values.city,
-  stateProvince: values.stateProvince.trim() === '' ? null : values.stateProvince,
-  postalCode: values.postalCode.trim() === '' ? null : values.postalCode,
-  countryCode: values.countryCode.trim().toUpperCase(),
-})
+): CreateAddressRequest => {
+  const countryCode = values.countryCode.trim().toUpperCase() as CountryCode
+  return {
+    label: values.label,
+    recipientName: values.recipientName,
+    phone: values.phone,
+    addressLine1: values.addressLine1,
+    addressLine2: values.addressLine2.trim() === '' ? null : values.addressLine2,
+    ...(countryCode === 'KH'
+      ? {
+          administrativeLocationPcode: values.provincePcode,
+          district: values.district,
+          commune: values.commune,
+        }
+      : {
+          city: values.city,
+          stateProvince: values.stateProvince.trim() === '' ? null : values.stateProvince,
+        }),
+    postalCode: values.postalCode.trim() === '' ? null : values.postalCode,
+    countryCode,
+  }
+}
 
 /** One line of an address, skipping the parts that are absent. */
-export const formatAddressLines = (address: Address): string[] =>
-  [
+export const formatAddressLines = (address: Address): string[] => {
+  const path = address.administrativeLocationPath
+  const locationLines =
+    path?.length === 1 && address.countryCode === 'KH'
+      ? [
+          ...path.map((location) => `Province/Municipality: ${administrativeLocationName(location)}`),
+          ...(address.district ? [`District: ${address.district}`] : []),
+          ...(address.commune ? [`Commune: ${address.commune}`] : []),
+        ]
+      : path
+        ? path.map((location) => {
+            const label =
+              location.adminLevel === 1
+                ? 'Province/Municipality'
+                : location.adminLevel === 2
+                  ? 'District'
+                  : 'Commune'
+            return `${label}: ${administrativeLocationName(location)}`
+          })
+        : [address.city]
+
+  return [
     address.addressLine1,
     address.addressLine2,
-    address.city,
-    [address.stateProvince, address.postalCode].filter(Boolean).join(' '),
+    ...locationLines,
+    [
+      ...(path?.length === 1 && address.countryCode === 'KH' ? [] : [address.stateProvince]),
+      address.postalCode,
+    ]
+      .filter(Boolean)
+      .join(' '),
     address.countryCode,
   ].filter((line): line is string => Boolean(line && line.trim() !== ''))
+}

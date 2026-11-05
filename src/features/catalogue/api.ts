@@ -34,6 +34,12 @@ export const fetchCategories = (signal?: AbortSignal): Promise<Category[]> =>
 export const fetchProducts = (signal?: AbortSignal): Promise<Product[]> =>
   apiGetList<Product>(API.products, { signal })
 
+export const fetchNewArrivals = (signal?: AbortSignal, limit = 8): Promise<Product[]> =>
+  apiGetList<Product>(API.newArrivals, { signal, query: limit !== 8 ? { limit: String(limit) } : undefined })
+
+export const fetchBestSellers = (signal?: AbortSignal, limit = 8): Promise<Product[]> =>
+  apiGetList<Product>(API.bestSellers, { signal, query: limit !== 8 ? { limit: String(limit) } : undefined })
+
 export const fetchProduct = (id: UUID, signal?: AbortSignal): Promise<Product> =>
   apiGetOne<Product>(`${API.products}/${id}`, { signal })
 

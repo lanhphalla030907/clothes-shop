@@ -1,18 +1,5 @@
 import type { ISODateTime, MoneyString, UUID, VariantOption } from './common'
-
-/**
- * The catalogue reads: `GET /categories`, `GET /products`, `GET /products/:id`,
- * and the three sub-collections hung off a product.
- *
- * Nothing here is joined for us. A product arrives without its images, variants
- * or stock, so a screen that needs all three has to read all three — which is why
- * the mapping from these records to something drawable lives in one place
- * (`features/catalogue`) rather than being re-derived per component.
- */
-
-/** `products.status` is a free-form column, narrowed to its three known values. */
 export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED'
-
 export interface Category {
   id: UUID
   name: string
@@ -20,10 +7,12 @@ export interface Category {
   description: string | null
   parentId: UUID | null
   isActive: boolean
+  imageUrl: string | null
+  publicId: string | null
+  altText: string | null
   createdAt: ISODateTime
   updatedAt: ISODateTime
 }
-
 export interface Product {
   id: UUID
   categoryId: UUID
@@ -37,7 +26,6 @@ export interface Product {
   createdAt: ISODateTime
   updatedAt: ISODateTime
 }
-
 export interface ProductImage {
   id: UUID
   productId: UUID
@@ -49,6 +37,23 @@ export interface ProductImage {
   createdAt: ISODateTime
   updatedAt: ISODateTime
 }
+
+/** `GET /products/:productId/attributes` and its product-scoped write routes. */
+export interface ProductAttribute {
+  id: UUID
+  productId: UUID
+  attributeName: string
+  attributeValue: string
+  createdAt: ISODateTime
+  updatedAt: ISODateTime
+}
+
+export interface CreateProductAttributeRequest {
+  attributeName: string
+  attributeValue: string
+}
+
+export type UpdateProductAttributeRequest = Partial<CreateProductAttributeRequest>
 
 /** `GET /products/:productId/variants/:variantId/options`. */
 export interface VariantOptionRecord {
@@ -81,21 +86,7 @@ export interface Inventory {
   updatedAt: ISODateTime
 }
 
-/**
- * A variant joined with the two things stored beside it.
- *
- * Neither is part of the variant row, so a screen that draws a size picker has to
- * read both sub-collections per variant. They are composed here — once — rather
- * than in every screen that needs a buyable product.
- */
 export interface CatalogueVariant extends ProductVariant {
   options: VariantOption[]
-  /**
-   * Sellable stock, or `null` when the variant has no inventory row.
-   *
-   * `null` and `0` are different facts: not-stocked versus sold-out. Neither is
-   * the last word — the cart endpoint re-checks stock when the line is written.
-   */
   available: number | null
 }
-

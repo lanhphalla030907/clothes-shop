@@ -1,6 +1,7 @@
 import { useAsyncResource } from '@/hooks/useAsyncResource'
-import { fetchAdminCategories, fetchAdminProducts } from './api'
+import { fetchAdminCategories, fetchAdminProducts, fetchAdminBestSellers } from './api'
 import type { AdminProductQuery, Category, Product } from '@/types/api'
+import type { AdminBestSeller } from './api'
 
 /**
  * Read hooks for product management.
@@ -19,3 +20,6 @@ export const useAdminProducts = (query: AdminProductQuery) =>
 
 export const useAdminCategories = () =>
   useAsyncResource<Category[]>(() => fetchAdminCategories(), [])
+
+export const useAdminBestSellers = (limit = 10) =>
+  useAsyncResource<AdminBestSeller[]>(() => fetchAdminBestSellers(limit), [limit])

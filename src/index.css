@@ -14,6 +14,11 @@
   --color-canvas: #ededeb;
   --color-paper: #fbfaf8;
   --color-paper-pure: #ffffff;
+  --color-surface-neutral: #f0efec;
+  --color-border-muted: #e3e1dc;
+  --color-text-muted: #5f5f5b;
+  --color-action-primary: #0b0b0b;
+  --color-action-secondary: #f5f4f1;
 
   /* Type scale — display sizes are fluid, clamped between breakpoints.
      Archivo is variable on two axes: wdth (62-125) and wght (100-900), so the
@@ -26,10 +31,17 @@
   --text-hero: clamp(3.25rem, 15.2vw, 17rem);
   --text-display: clamp(2.5rem, 8.2vw, 8.5rem);
   --text-title: clamp(1.75rem, 3.6vw, 3.25rem);
-  --text-micro: 0.6875rem;
+  /* Editorial micro label. The functional UI uses the `eyebrow` and
+     `ui-label` utilities below instead — 11px mono is a poster type, not a
+     dashboard type. */
+  --text-micro: 0.75rem;
 
   --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-swift: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* One soft elevation, used only for floating overlays. Cards and tables
+     stay flat and rely on hairlines, as the home page does. */
+  --shadow-raised: 0 18px 50px -24px rgb(11 11 11 / 0.28);
 
   /* Signal — the single semantic accent, lifted from the hero's stop button
      (--ctrl-red in components/home/studioTokens.ts). Reserved for states that
@@ -38,6 +50,12 @@
   --color-signal: #c8302a;
   --color-signal-soft: #f7e9e8;
   --color-signal-contrast: #fbfaf8;
+  --color-success: #176b3a;
+  --color-success-soft: #e8f4ec;
+  --color-warning: #8a4b08;
+  --color-warning-soft: #fff3df;
+  --color-info: #14568a;
+  --color-info-soft: #e8f2fb;
 }
 
 @layer base {
@@ -63,6 +81,8 @@
     background-color: var(--color-canvas);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.55;
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -76,12 +96,16 @@
   h3,
   h4 {
     margin: 0;
-    font-weight: 800;
-    font-stretch: var(--font-stretch-expanded);
-    letter-spacing: -0.035em;
-    line-height: 0.92;
+    font-weight: 700;
+    font-stretch: 100%;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
     text-wrap: balance;
   }
+
+  /* The home page's poster headings opt back into the condensed display
+     treatment through `type-display`; functional screens keep readable
+     heading metrics. */
 
   p {
     margin: 0;
@@ -113,7 +137,7 @@
   }
 
   :focus-visible {
-    outline: 1px solid var(--color-ink);
+    outline: 2px solid var(--color-ink);
     outline-offset: 3px;
   }
 
@@ -148,9 +172,73 @@
 @utility label-micro {
   font-family: var(--font-mono);
   font-size: var(--text-micro);
-  line-height: 1;
-  letter-spacing: 0.18em;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+/* Functional UI label — sans, sentence case, readable at a glance. Used for
+   eyebrows, section labels and table headers in the account and admin shells. */
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@utility ui-label {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.005em;
+}
+
+/* Shared content width for the account shell. Slightly narrower than the
+   storefront so long account pages keep a comfortable measure. */
+@utility container-account {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 78rem;
+  padding-inline: 1rem;
+
+  @media (min-width: 640px) {
+    padding-inline: 2rem;
+  }
+  @media (min-width: 1280px) {
+    padding-inline: 2.5rem;
+  }
+}
+
+/* Admin tables need the extra width; the chrome still uses the same spacing. */
+@utility container-admin {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 100rem;
+  padding-inline: 1rem;
+
+  @media (min-width: 640px) {
+    padding-inline: 1.5rem;
+  }
+  @media (min-width: 1280px) {
+    padding-inline: 2.5rem;
+  }
+}
+
+/* A flat surface with a hairline edge — the shared card language. */
+@utility surface {
+  border: 1px solid var(--color-line);
+  background-color: var(--color-paper);
+}
+
+/* Keyboard-only focus ring for controls that already manage their own border. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
 }
 
 /* Massive display type with editorial tracking. Archivo is pushed to its
@@ -207,6 +295,17 @@
   }
   to {
     transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes feedback-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

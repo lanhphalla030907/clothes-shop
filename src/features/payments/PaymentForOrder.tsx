@@ -11,6 +11,7 @@ import { useOrder } from '@/features/orders/useOrders'
 import { isProviderUnavailable } from './api'
 import { formatCountdown, usePayment } from './usePayment'
 import { toUserMessage } from '@/lib/api/errors'
+import { useFeedback } from '@/context/feedbackContext'
 import { formatMoney } from '@/lib/money'
 import {
   ORDER_STATUS,
@@ -42,32 +43,40 @@ const PROVIDER_DOWN_COPY =
 
 export const PaymentForOrder = ({ orderId }: { orderId: UUID }) => {
   const navigate = useNavigate()
+  const { showFeedback } = useFeedback()
   const order = useOrder(orderId)
   const data = order.data
   const { refetch: refetchOrder, isRefreshing } = order
 
   // Auto-adopt once the order is known payable: the endpoint replays the pending
   // attempt, so a refresh recovers the payment instead of losing it.
-  const isPayable = data?.status === PAYABLE_ORDER_STATUS
+  const supportsPayWay = data?.paymentMethod === 'ABA_PAYWAY' || data?.paymentMethod === null
+  const isPayable = supportsPayWay && data?.status === PAYABLE_ORDER_STATUS
   const flow = usePayment(orderId, isPayable === true)
 
-const previousStatus = useRef<OrderStatus | undefined>(undefined)
+  const previousStatus = useRef<OrderStatus | undefined>(undefined)
   useEffect(() => {
     if (!data) return undefined
 
     const before = previousStatus.current
     previousStatus.current = data.status
     if (before !== PAYABLE_ORDER_STATUS || data.status === PAYABLE_ORDER_STATUS) return undefined
+    if (data.paymentMethod !== 'ABA_PAYWAY' && data.paymentMethod !== null) return undefined
 
     // Only a move to a real order state is a payment being confirmed. A cancelled
     // order is not money received, and must never be announced as one.
     if (data.status === ORDER_STATUS.CANCELLED) return undefined
 
+    showFeedback({
+      type: 'success',
+      title: 'Payment received',
+      message: `Payment for order ${data.orderNumber} has been confirmed.`,
+    })
     const timer = window.setTimeout(() => {
       navigate(`/dashboard/orders/${data.id}`, { replace: true, state: { justPaid: true } })
     }, SUCCESS_PAUSE_MS)
     return () => window.clearInterval(timer)
-  }, [data, navigate])
+  }, [data, navigate, showFeedback])
 
   // Poll the order, and only while there is a live QR that could still be paid.
   // Cleanup covers a terminal status, an expiry, and unmount. `refetchOrder` rather
@@ -119,6 +128,8 @@ const previousStatus = useRef<OrderStatus | undefined>(undefined)
   }
 
   const isCancelled = data.status === ORDER_STATUS.CANCELLED
+  const isCod = data.paymentMethod === 'COD'
+  const isUnsupportedMethod = !supportsPayWay && !isCod
 
   return (
     <div className="space-y-8">
@@ -141,7 +152,15 @@ const previousStatus = useRef<OrderStatus | undefined>(undefined)
       <div className="grid gap-5 lg:grid-cols-3">
         <Panel className="lg:col-span-2">
           <PanelHeader
-            title={isPayable ? 'Pay with ABA PayWay' : 'Payment'}
+            title={
+              isPayable
+                ? 'Pay with ABA PayWay'
+                : isCod
+                  ? 'Cash on Delivery'
+                  : isUnsupportedMethod
+                    ? 'Payment method unavailable'
+                    : 'Payment'
+            }
             hint={
               isPayable
                 ? 'Scan the code with a Cambodian banking app. Nothing is charged until you confirm in the app.'
@@ -150,7 +169,11 @@ const previousStatus = useRef<OrderStatus | undefined>(undefined)
           />
 
           <div className="p-6">
-            {!isPayable ? (
+            {isCod ? (
+              <CodPanel order={data} />
+            ) : isUnsupportedMethod ? (
+              <UnsupportedPaymentPanel order={data} />
+            ) : !isPayable ? (
               <SettledPanel order={data} isCancelled={isCancelled} />
             ) : (
               <PaywayPanel
@@ -186,10 +209,36 @@ const previousStatus = useRef<OrderStatus | undefined>(undefined)
   )
 }
 
+const CodPanel = ({ order }: { order: Order }) => (
+  <div>
+    <p className="eyebrow text-ink">Order created</p>
+    <p className="mt-4 text-sm leading-relaxed text-graphite">
+      Order {order.orderNumber} was created with Cash on Delivery. Payment has not yet been
+      collected. No online payment was started.
+    </p>
+    <Action to={`/dashboard/orders/${order.id}`} className="mt-6" withArrow>
+      View order {order.orderNumber}
+    </Action>
+  </div>
+)
+
+const UnsupportedPaymentPanel = ({ order }: { order: Order }) => (
+  <div>
+    <p className="eyebrow text-ink">Payment unavailable</p>
+    <p className="mt-4 text-sm leading-relaxed text-graphite">
+      Order {order.orderNumber} uses a payment method this page cannot process. No PayWay payment
+      was started. Please contact the studio for help.
+    </p>
+    <Action to={`/dashboard/orders/${order.id}`} className="mt-6" withArrow>
+      View order {order.orderNumber}
+    </Action>
+  </div>
+)
+
 /** The order is out of `PENDING`, so the API is no longer willing to take a payment. */
 const SettledPanel = ({ order, isCancelled }: { order: Order; isCancelled: boolean }) => (
   <div>
-    <p className="label-micro text-ink">{isCancelled ? 'Order closed' : 'Payment received'}</p>
+    <p className="eyebrow text-ink">{isCancelled ? 'Order closed' : 'Payment received'}</p>
     <p className="mt-4 text-sm leading-relaxed text-graphite">
       {isCancelled
         ? `Order ${order.orderNumber} was cancelled, so it is no longer waiting for a payment.`
@@ -319,22 +368,22 @@ const PaywayPanel = ({ order, flow, isRefreshingOrder, onRefreshOrder }: PaywayP
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-3">
           <PaymentBadge status={payment.status} />
-          <span className="label-micro text-graphite" role="status">
+          <span className="text-[13px] text-graphite" role="status">
             Waiting for payment
           </span>
         </div>
 
         <dl className="mt-6 space-y-3 text-sm">
           <div className="flex items-baseline justify-between gap-4">
-            <dt className="label-micro text-ash">Amount</dt>
+            <dt className="text-[12px] font-medium text-graphite">Amount</dt>
             <dd className="font-mono text-ink">{formatMoney(payment.amount, order.currency)}</dd>
           </div>
           <div className="flex items-baseline justify-between gap-4">
-            <dt className="label-micro text-ash">Reference</dt>
+            <dt className="text-[12px] font-medium text-graphite">Reference</dt>
             <dd className="font-mono text-xs text-ink">{payment.transactionId}</dd>
           </div>
           <div className="flex items-baseline justify-between gap-4">
-            <dt className="label-micro text-ash">Expires in</dt>
+            <dt className="text-[12px] font-medium text-graphite">Expires in</dt>
             <dd className="font-mono tabular-nums text-ink">
               {formatCountdown(flow.secondsRemaining)}
             </dd>
@@ -351,7 +400,7 @@ const PaywayPanel = ({ order, flow, isRefreshingOrder, onRefreshOrder }: PaywayP
           {payment.abapayDeeplink && (
             <a
               href={payment.abapayDeeplink}
-              className="label-micro inline-flex items-center gap-2 border border-line px-4 py-3 text-ink transition-colors duration-200 hover:border-ink"
+              className="inline-flex min-h-11 items-center gap-2 border border-line px-4 text-[13px] font-medium text-ink transition-colors duration-200 hover:border-ink"
             >
               <ExternalLink size={12} strokeWidth={1.5} aria-hidden />
               Open ABA Mobile
@@ -455,9 +504,9 @@ const PAYMENT_STATUS_LABEL: Record<string, string> = {
 
 const PaymentBadge = ({ status }: { status: Payment['status'] }) => (
   <span
-    className={`label-micro inline-flex h-7 items-center border px-3 ${
+    className={`inline-flex h-7 items-center border px-3 text-[12px] font-semibold ${
       status === PAYMENT_STATUS.PAID
-        ? 'border-ink/20 bg-ink text-paper'
+        ? 'border-success/25 bg-success-soft text-success'
         : 'border-ink/20 bg-bone text-ink'
     }`}
   >
