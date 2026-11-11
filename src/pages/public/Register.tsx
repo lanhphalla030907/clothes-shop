@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import { Action } from '@/components/ui/Action'
 import { AuthLink, AuthShell } from '@/components/auth/AuthShell'
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton'
 import { FormError, TextField } from '@/components/account/Field'
 import { registerUser, registerErrorMessage } from '@/features/auth/api'
+import { useAuth } from '@/features/auth/useAuth'
 import { useFeedback } from '@/context/feedbackContext'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -46,6 +48,7 @@ const validate = ({ firstName, lastName, email, password, confirmPassword }: Val
 export default function Register() {
   const navigate = useNavigate()
   const { showFeedback } = useFeedback()
+  const { isAuthenticated } = useAuth()
 
   const [values, setValues] = useState<Values>({
     firstName: '',
@@ -103,6 +106,8 @@ export default function Register() {
     }
   }
 
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />
+
   return (
     <AuthShell
       eyebrow="Create account"
@@ -114,70 +119,82 @@ export default function Register() {
         </>
       }
     >
-      <form onSubmit={onSubmit} noValidate className="space-y-5">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <div className="space-y-5">
+        {/* 3. FORM GOES LAST (BOTTOM) */}
+        <form onSubmit={onSubmit} noValidate className="space-y-5">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <TextField
+              label="First name"
+              name="firstName"
+              autoComplete="given-name"
+              required
+              value={values.firstName}
+              error={errors.firstName}
+              onChange={(event) => update('firstName')(event.target.value)}
+            />
+            <TextField
+              label="Last name"
+              name="lastName"
+              autoComplete="family-name"
+              required
+              value={values.lastName}
+              error={errors.lastName}
+              onChange={(event) => update('lastName')(event.target.value)}
+            />
+          </div>
+
           <TextField
-            label="First name"
-            name="firstName"
-            autoComplete="given-name"
+            label="Email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            autoCapitalize="none"
+            spellCheck={false}
             required
-            value={values.firstName}
-            error={errors.firstName}
-            onChange={(event) => update('firstName')(event.target.value)}
+            value={values.email}
+            error={errors.email}
+            onChange={(event) => update('email')(event.target.value)}
           />
+
           <TextField
-            label="Last name"
-            name="lastName"
-            autoComplete="family-name"
+            label="Password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
             required
-            value={values.lastName}
-            error={errors.lastName}
-            onChange={(event) => update('lastName')(event.target.value)}
+            hint="At least 8 characters."
+            value={values.password}
+            error={errors.password}
+            onChange={(event) => update('password')(event.target.value)}
           />
+
+          <TextField
+            label="Confirm password"
+            name="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            required
+            value={values.confirmPassword}
+            error={errors.confirmPassword}
+            onChange={(event) => update('confirmPassword')(event.target.value)}
+          />
+
+          {serverError !== null && <FormError message={serverError} />}
+          
+          <Action type="submit" size="lg" className="w-full" disabled={isPending}>
+            {isPending ? 'Creating account…' : 'Create account'}
+          </Action>
+        </form>
+        <div className="relative my-4 flex items-center justify-center">
+          <div className="flex-1 border-t border-line" />
+          <span className="shrink-0 whitespace-nowrap bg-canvas px-3 text-[10px] font-mono tracking-widest uppercase text-graphite/70">
+            Or register with email
+          </span>
+          <div className="flex-1 border-t border-line" />
         </div>
-
-        <TextField
-          label="Email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          inputMode="email"
-          autoCapitalize="none"
-          spellCheck={false}
-          required
-          value={values.email}
-          error={errors.email}
-          onChange={(event) => update('email')(event.target.value)}
-        />
-
-        <TextField
-          label="Password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          hint="At least 8 characters."
-          value={values.password}
-          error={errors.password}
-          onChange={(event) => update('password')(event.target.value)}
-        />
-
-        <TextField
-          label="Confirm password"
-          name="confirmPassword"
-          type="password"
-          autoComplete="new-password"
-          required
-          value={values.confirmPassword}
-          error={errors.confirmPassword}
-          onChange={(event) => update('confirmPassword')(event.target.value)}
-        />
-
-        {serverError !== null && <FormError message={serverError} />}
-        <Action type="submit" size="lg" className="w-full" disabled={isPending}>
-          {isPending ? 'Creating account…' : 'Create account'}
-        </Action>
-      </form>
+        <GoogleAuthButton mode="signup" />
+      </div>
     </AuthShell>
   )
 }

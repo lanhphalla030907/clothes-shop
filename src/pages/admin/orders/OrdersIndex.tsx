@@ -112,12 +112,12 @@ export default function OrdersIndex() {
       />
 
       <div className="space-y-4">
-        <form onSubmit={submitSearch} className="flex flex-wrap items-end gap-x-4 gap-y-5">
+        <form onSubmit={submitSearch} className="flex flex-wrap items-end gap-x-4 gap-y-4 rounded-xl border border-line bg-paper-pure p-5 shadow-xs">
           <div className="w-full sm:min-w-64 sm:flex-1">
             <TextField
               name="order-search"
               label="Search orders"
-              placeholder="Order number, customer name, or email"
+              placeholder="Order number, customer name, or email…"
               value={searchDraft}
               onChange={(event) => setSearchDraft(event.target.value)}
               autoComplete="off"
@@ -220,11 +220,11 @@ export default function OrdersIndex() {
               )}
             </div>
 
-            <div className="border border-line bg-paper">
+            <div className="overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs">
               <div className="hidden overflow-x-auto lg:block">
-                <table className="w-full text-left">
+                <table className="w-full text-left text-[13px] border-collapse">
                   <thead>
-                    <tr className="border-b border-line">
+                    <tr className="border-b border-line bg-canvas/40">
                       <Column>Order</Column>
                       <Column>Customer</Column>
                       <Column>Placed</Column>
@@ -434,7 +434,7 @@ function Pagination({
   return (
     <nav
       aria-label="Order pagination"
-      className="flex flex-col gap-4 border border-line bg-paper px-5 py-4 sm:flex-row sm:items-end sm:justify-between"
+      className="flex flex-col gap-4 rounded-xl border border-line bg-paper-pure px-5 py-4 shadow-xs sm:flex-row sm:items-end sm:justify-between"
     >
       <div className="w-full sm:w-36">
         <SelectField

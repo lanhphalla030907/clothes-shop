@@ -101,7 +101,7 @@ export default function CodEligibilityIndex() {
       )}
 
       {path.length > 0 && (
-        <nav aria-label="Administrative location path" className="flex flex-wrap items-center gap-2 text-sm">
+        <nav aria-label="Administrative location path" className="flex flex-wrap items-center gap-1.5 rounded-lg border border-line bg-paper-pure px-3.5 py-2 text-sm shadow-xs">
           <Action variant="ghost" size="sm" onClick={() => setPath([])}>
             Provinces
           </Action>
@@ -175,7 +175,7 @@ export default function CodEligibilityIndex() {
               return (
                 <article
                   key={location.pcode}
-                  className="flex flex-col gap-4 border border-line bg-paper-pure p-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-4 rounded-xl border border-line bg-paper-pure p-5 shadow-xs transition-all hover:border-graphite/30 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
                     <h2 className="font-medium text-ink">{locationLabel(location)}</h2>

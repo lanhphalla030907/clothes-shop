@@ -1,4 +1,4 @@
-import { Heart, LayoutDashboard, MapPin, Receipt, ShoppingBag, UserRound } from 'lucide-react'
+import { Heart, LayoutDashboard, MapPin, Receipt, ShoppingBag, UserRound, MessageSquare } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 export type AccountNavItem = {
@@ -42,6 +42,10 @@ export const accountNavigation: readonly AccountNavGroup[] = [
   {
     title: 'Delivery',
     items: [{ label: 'Addresses', to: '/dashboard/addresses', icon: MapPin }],
+  },
+  {
+    title: 'Voice',
+    items: [{ label: 'Feedback', to: '/dashboard/feedback', icon: MessageSquare }],
   },
 ] as const
 

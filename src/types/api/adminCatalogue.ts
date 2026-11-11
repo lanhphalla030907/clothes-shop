@@ -108,6 +108,8 @@ export interface ProductVariantMatrixRecord {
   id: UUID;
   sku: string;
   price: MoneyString;
+  costPrice?: MoneyString | null;
+  costCurrency?: string | null;
   isActive: boolean;
   optionValueIds: UUID[];
   options: Array<{ optionName: string; optionValue: string }>;
@@ -138,6 +140,8 @@ export interface ProductOptionsPreview {
     label: string;
     sku: string;
     price: MoneyString;
+    costPrice?: MoneyString | null;
+    costCurrency?: string | null;
     isActive: boolean;
     available: number | null;
   }>;
@@ -177,6 +181,16 @@ export interface BulkInventoryRequest {
     quantity: number;
     reservedQuantity: number;
   }>;
+}
+
+export interface BulkVariantCostItem {
+  variantId: UUID;
+  costPrice: string;
+  costCurrency: string;
+}
+
+export interface BulkVariantCostRequest {
+  variants: BulkVariantCostItem[];
 }
 
 export interface CreateProductImageRequest {

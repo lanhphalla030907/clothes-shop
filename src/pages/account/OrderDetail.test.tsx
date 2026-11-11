@@ -497,3 +497,77 @@ describe('OrderDetail receipt download', () => {
     createElementSpy.mockRestore()
   })
 })
+
+describe('OrderDetail progress timeline and layout', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('renders progress timeline for a SHIPPED order without marking Out for Delivery as active', async () => {
+    const shippedOrder: Order = {
+      ...mockOrder('SHIPPED', 'ABA_PAYWAY'),
+      shippingProviderName: 'Phnom Penh Express',
+      shippingProviderCode: 'PP_EXP',
+    }
+    fetchOrderMock.mockResolvedValue(shippedOrder)
+
+    renderDetail()
+
+    expect(await screen.findByText('Order Progress')).toBeTruthy()
+    expect(screen.getAllByText('Order Placed').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Order Confirmed').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Processing').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Shipped / In Transit').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Out for Delivery').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Order Delivered').length).toBeGreaterThan(0)
+
+    // Carrier name from real backend API is displayed
+    expect(screen.getAllByText(/Carrier: Phnom Penh Express/).length).toBeGreaterThan(0)
+
+    // Out for delivery is NOT claimed to be active
+    expect(screen.getAllByText('Local courier dispatch').length).toBeGreaterThan(0)
+  })
+
+  it('renders delivered state when order status is DELIVERED', async () => {
+    fetchOrderMock.mockResolvedValue(mockOrder('DELIVERED'))
+
+    renderDetail()
+
+    expect(await screen.findByText('Order Progress')).toBeTruthy()
+    expect(screen.getAllByText('Package received').length).toBeGreaterThan(0)
+  })
+
+  it('renders dedicated cancelled banner and not the active delivery pipeline when order is CANCELLED', async () => {
+    fetchOrderMock.mockResolvedValue(mockOrder('CANCELLED'))
+
+    renderDetail()
+
+    expect(await screen.findByText('Order Cancelled')).toBeTruthy()
+    expect(
+      screen.getByText(
+        /This order was cancelled and its fulfillment was stopped. Any reserved stock has been released./,
+      ),
+    ).toBeTruthy()
+    // Standard progress timeline heading is absent
+    expect(screen.queryByText('Order Progress')).toBeNull()
+  })
+
+  it('displays carrier and delivery area when available on order snapshot', async () => {
+    const orderWithCarrier: Order = {
+      ...mockOrder('CONFIRMED'),
+      shippingProviderName: 'Cambodia Post',
+      codAreaName: 'Central Phnom Penh Zone 1',
+    }
+    fetchOrderMock.mockResolvedValue(orderWithCarrier)
+
+    renderDetail()
+
+    expect(await screen.findByText('Delivery Details')).toBeTruthy()
+    expect(screen.getByText('Cambodia Post')).toBeTruthy()
+    expect(screen.getByText('Central Phnom Penh Zone 1')).toBeTruthy()
+  })
+})

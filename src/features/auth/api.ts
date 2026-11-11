@@ -2,6 +2,7 @@ import { apiGetOne, apiPost } from '@/lib/api/client'
 import { API } from '@/lib/api/config'
 import { ApiError, isApiError, toUserMessage } from '@/lib/api/errors'
 import type { AuthSession, AuthUser, Credentials, RegisterInput } from './authTypes'
+export type { AuthSession, AuthUser, Credentials, RegisterInput }
 
 /**
  * The two calls sign-in is made of.
@@ -22,6 +23,38 @@ export const loginUser = async (credentials: Credentials): Promise<AuthSession> 
   }
 
   return session
+}
+
+export const loginWithGoogle = async (idToken: string, nonce?: string): Promise<AuthSession> => {
+  const session = await apiPost<AuthSession>(API.googleLogin, { idToken, nonce })
+
+  if (!isAuthSession(session)) {
+    throw new ApiError('The studio could not start a session.', { kind: 'unknown' })
+  }
+
+  return session
+}
+
+export interface UserIdentity {
+  id: string
+  provider: string
+  createdAt: string
+}
+
+export const linkGoogleIdentity = async (
+  idToken: string,
+  nonce?: string,
+): Promise<{ success: boolean; provider: string }> => {
+  const result = await apiPost<{ success: boolean; provider: string }>(API.linkGoogle, { idToken, nonce })
+  if (result === undefined) {
+    throw new ApiError('Google account linking could not be completed.', { kind: 'unknown' })
+  }
+  return result
+}
+
+export const fetchLinkedIdentities = async (): Promise<UserIdentity[]> => {
+  const identities = await apiGetOne<UserIdentity[]>(API.identities)
+  return Array.isArray(identities) ? identities : []
 }
 
 export const registerUser = async (input: RegisterInput): Promise<AuthUser> => {
@@ -59,7 +92,9 @@ export const fetchCurrentUser = async (signal?: AbortSignal): Promise<AuthUser> 
  */
 export const loginErrorMessage = (error: unknown): string => {
   if (isApiError(error)) {
-    if (error.kind === 'unauthorized') return 'Email or password is incorrect.'
+    if (error.kind === 'unauthorized') return error.details[0] ?? 'Email or password is incorrect.'
+    if (error.kind === 'conflict')
+      return error.details[0] ?? 'Sign-in failed due to an account conflict.'
     if (error.kind === 'rateLimited')
       return 'Too many attempts just now. Give it a moment, then try again.'
     if (error.kind === 'validation')

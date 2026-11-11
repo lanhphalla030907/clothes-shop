@@ -6,13 +6,14 @@ import { StorefrontLayout } from '@/layouts/StorefrontLayout'
 import { adminRoutes } from '@/app/adminRoutes'
 
 const Home = lazy(() => import('@/pages/public/Home'))
-const Shop = lazy(() => import('@/pages/public/Shop'))
+const ProductsPage = lazy(() => import('@/pages/public/ProductsPage'))
 const ProductDetails = lazy(() => import('@/pages/public/ProductDetails'))
 const CollectionDetails = lazy(() => import('@/pages/public/CollectionDetails'))
 const Cart = lazy(() => import('@/pages/public/Cart'))
 const Checkout = lazy(() => import('@/pages/public/Checkout'))
 const Success = lazy(() => import('@/pages/public/Success'))
 const About = lazy(() => import('@/pages/public/About'))
+const PublicFeedback = lazy(() => import('@/pages/public/Feedback'))
 const Login = lazy(() => import('@/pages/public/Login'))
 const Register = lazy(() => import('@/pages/public/Register'))
 const NotFound = lazy(() => import('@/pages/public/NotFound'))
@@ -25,6 +26,7 @@ const Bag = lazy(() => import('@/pages/account/Bag'))
 const Addresses = lazy(() => import('@/pages/account/Addresses'))
 const AccountCheckout = lazy(() => import('@/pages/account/Checkout'))
 const Profile = lazy(() => import('@/pages/account/Profile'))
+const AccountFeedback = lazy(() => import('@/pages/account/Feedback'))
 const DeliveryDashboard = lazy(() => import('@/pages/delivery/DeliveryDashboard'))
 
 export const routes: RouteObject[] = [
@@ -32,13 +34,15 @@ export const routes: RouteObject[] = [
     Component: StorefrontLayout,
     children: [
       { path: '/', Component: Home },
-      { path: '/shop', Component: Shop },
+      { path: '/shop', Component: ProductsPage },
+      { path: '/products', Component: ProductsPage },
       { path: '/product/:id', Component: ProductDetails },
       { path: '/collections/:slug', Component: CollectionDetails },
       { path: '/cart', Component: Cart },
       { path: '/checkout', Component: Checkout },
       { path: '/success', Component: Success },
       { path: '/about', Component: About },
+      { path: '/feedback', Component: PublicFeedback },
       { path: '/login', Component: Login },
       { path: '/register', Component: Register },
       { path: '*', Component: NotFound },
@@ -66,6 +70,7 @@ export const routes: RouteObject[] = [
           { path: 'checkout', Component: AccountCheckout },
           { path: 'checkout/:orderId', Component: AccountCheckout },
           { path: 'profile', Component: Profile },
+          { path: 'feedback', Component: AccountFeedback },
         ],
       },
     ],

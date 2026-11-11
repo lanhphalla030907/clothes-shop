@@ -1,5 +1,15 @@
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, MapPin, ShoppingBag } from 'lucide-react'
+import {
+  ArrowUpRight,
+  MapPin,
+  ShoppingBag,
+  Package,
+  Clock,
+  CheckCircle2,
+  User,
+  Heart,
+  ChevronRight,
+} from 'lucide-react'
 import { Action } from '@/components/ui/Action'
 import { Panel, PanelHeader } from '@/components/account/PageHeader'
 import { StatusBadge, Money } from '@/components/account/Bits'
@@ -11,23 +21,10 @@ import { useAddressActions } from '@/features/addresses/useAddressActions'
 import { useOrders } from '@/features/orders/useOrders'
 import { useWishlistActions } from '@/features/wishlist/useWishlistActions'
 import type { WishlistActions } from '@/features/wishlist/wishlistActions'
-import { displayName, useAuth } from '@/features/auth/useAuth'
+import { useAuth } from '@/features/auth/useAuth'
 import { STORE_CURRENCY } from '@/lib/api/config'
 import { toUserMessage } from '@/lib/api/errors'
-import { formatAddressLines } from '@/types/api'
-
-/**
- * The account landing screen.
- *
- * Four panels, each backed by its own endpoint, each with its own loading, empty
- * and error state. The temptation with a dashboard is to fire one "summary"
- * request and render a card of counts — but the API has no such endpoint, and
- * inventing one client-side means a page that reports "0 orders" because one of
- * four requests failed. Four honest panels beat one confident wrong number.
- *
- * Every figure here is a count or a server-sent amount. Nothing is derived from a
- * local estimate.
- */
+import { formatAddressLines, ORDER_STATUS } from '@/types/api'
 
 const WIDE = 'lg:col-span-2'
 
@@ -40,37 +37,170 @@ export default function Overview() {
 
   const firstName = user?.firstName?.trim()
 
+  // Real statistics computed across all customer orders (unpaginated server endpoint)
+  const totalOrders = orders.data?.length ?? 0
+  const pendingOrders =
+    orders.data?.filter((order) => order.status === ORDER_STATUS.PENDING).length ?? 0
+  const deliveredOrders =
+    orders.data?.filter((order) => order.status === ORDER_STATUS.DELIVERED).length ?? 0
+
   return (
     <div className="space-y-8">
+      {/* Customer Welcome Header */}
       <header className="border-b border-line pb-7">
-        <p className="eyebrow text-graphite">Account overview</p>
-        <h1 className="mt-2.5 text-[1.75rem] leading-tight font-semibold tracking-[-0.025em] text-ink sm:text-[2.1rem]">
-          {firstName ? `Welcome back, ${firstName}` : 'Welcome back'}
-        </h1>
-        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-graphite">
-          {displayName(user)
-            ? 'Your orders, bag, saved pieces and delivery addresses are stored against your account.'
-            : 'Your orders, bag, saved pieces and delivery addresses live here.'}
-        </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="eyebrow text-graphite">Customer Account</p>
+            <h1 className="mt-2 text-[1.75rem] leading-tight font-semibold tracking-[-0.025em] text-ink sm:text-[2.1rem]">
+              {firstName ? `Welcome back, ${firstName}` : 'Welcome back'}
+            </h1>
+            <p className="mt-2 max-w-2xl text-[14.5px] leading-relaxed text-graphite">
+              {user?.email
+                ? `Signed in as ${user.email}. Manage your orders, delivery addresses, and personal profile.`
+                : 'Your orders, bag, saved pieces and delivery addresses live here.'}
+            </p>
+          </div>
 
-        <div className="mt-6 flex flex-wrap gap-2.5">
-          <Action to="/shop" size="sm" withArrow>
-            Continue shopping
-          </Action>
-          <Action to="/dashboard/orders" variant="outline" size="sm">
-            View orders
-          </Action>
-          <Action to="/dashboard/addresses" variant="ghost" size="sm">
-            Manage addresses
-          </Action>
+          <div className="flex flex-wrap gap-2.5">
+            <Action to="/shop" size="sm" withArrow>
+              Continue shopping
+            </Action>
+            <Action to="/dashboard/orders" variant="outline" size="sm">
+              My orders
+            </Action>
+          </div>
         </div>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      {/* Real Statistics Cards */}
+      <section aria-label="Order summary statistics" className="grid gap-4 sm:grid-cols-3">
+        {/* Total Orders Card */}
+        <div className="flex flex-col justify-between rounded-xl border border-line bg-paper-pure p-5 shadow-xs transition-shadow hover:shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[12.5px] font-medium text-graphite">Total Orders</span>
+            <div className="grid size-8 place-items-center rounded-lg bg-bone text-graphite">
+              <Package size={16} strokeWidth={1.8} aria-hidden />
+            </div>
+          </div>
+          <div className="mt-3">
+            {orders.isLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="font-mono text-3xl font-bold tracking-tight text-ink tabular-nums">
+                {String(totalOrders).padStart(2, '0')}
+              </span>
+            )}
+            <p className="mt-1 text-[11.5px] text-graphite">All orders placed with this account</p>
+          </div>
+        </div>
+
+        {/* Pending Orders Card */}
+        <div className="flex flex-col justify-between rounded-xl border border-line bg-paper-pure p-5 shadow-xs transition-shadow hover:shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[12.5px] font-medium text-graphite">Pending Orders</span>
+            <div className="grid size-8 place-items-center rounded-lg bg-amber-50 text-amber-700">
+              <Clock size={16} strokeWidth={1.8} aria-hidden />
+            </div>
+          </div>
+          <div className="mt-3">
+            {orders.isLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="font-mono text-3xl font-bold tracking-tight text-ink tabular-nums">
+                {String(pendingOrders).padStart(2, '0')}
+              </span>
+            )}
+            <p className="mt-1 text-[11.5px] text-graphite">Awaiting confirmation or payment</p>
+          </div>
+        </div>
+
+        {/* Delivered Orders Card */}
+        <div className="flex flex-col justify-between rounded-xl border border-line bg-paper-pure p-5 shadow-xs transition-shadow hover:shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[12.5px] font-medium text-graphite">Delivered Orders</span>
+            <div className="grid size-8 place-items-center rounded-lg bg-emerald-50 text-emerald-700">
+              <CheckCircle2 size={16} strokeWidth={1.8} aria-hidden />
+            </div>
+          </div>
+          <div className="mt-3">
+            {orders.isLoading ? (
+              <Skeleton className="h-8 w-14" />
+            ) : (
+              <span className="font-mono text-3xl font-bold tracking-tight text-ink tabular-nums">
+                {String(deliveredOrders).padStart(2, '0')}
+              </span>
+            )}
+            <p className="mt-1 text-[11.5px] text-graphite">Successfully fulfilled orders</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Navigation Cards */}
+      <section aria-label="Account quick navigation" className="grid gap-3 sm:grid-cols-3">
+        <Link
+          to="/dashboard/orders"
+          className="group flex items-center justify-between rounded-lg border border-line bg-paper p-4 transition-all hover:border-ink hover:bg-bone/40"
+        >
+          <div className="flex items-center gap-3">
+            <div className="grid size-8 place-items-center rounded-md bg-canvas text-ink">
+              <Package size={16} strokeWidth={1.8} />
+            </div>
+            <div>
+              <p className="text-[13.5px] font-semibold text-ink">My Orders</p>
+              <p className="text-[11.5px] text-graphite">View order history & tracking</p>
+            </div>
+          </div>
+          <ChevronRight
+            size={16}
+            className="text-ash transition-transform group-hover:translate-x-0.5 group-hover:text-ink"
+          />
+        </Link>
+
+        <Link
+          to="/dashboard/addresses"
+          className="group flex items-center justify-between rounded-lg border border-line bg-paper p-4 transition-all hover:border-ink hover:bg-bone/40"
+        >
+          <div className="flex items-center gap-3">
+            <div className="grid size-8 place-items-center rounded-md bg-canvas text-ink">
+              <MapPin size={16} strokeWidth={1.8} />
+            </div>
+            <div>
+              <p className="text-[13.5px] font-semibold text-ink">Delivery Addresses</p>
+              <p className="text-[11.5px] text-graphite">Manage shipping locations</p>
+            </div>
+          </div>
+          <ChevronRight
+            size={16}
+            className="text-ash transition-transform group-hover:translate-x-0.5 group-hover:text-ink"
+          />
+        </Link>
+
+        <Link
+          to="/dashboard/profile"
+          className="group flex items-center justify-between rounded-lg border border-line bg-paper p-4 transition-all hover:border-ink hover:bg-bone/40"
+        >
+          <div className="flex items-center gap-3">
+            <div className="grid size-8 place-items-center rounded-md bg-canvas text-ink">
+              <User size={16} strokeWidth={1.8} />
+            </div>
+            <div>
+              <p className="text-[13.5px] font-semibold text-ink">Account Profile</p>
+              <p className="text-[11.5px] text-graphite">Personal details & security</p>
+            </div>
+          </div>
+          <ChevronRight
+            size={16}
+            className="text-ash transition-transform group-hover:translate-x-0.5 group-hover:text-ink"
+          />
+        </Link>
+      </section>
+
+      {/* Main Grid: Left = Recent Orders, Right = Bag & Saved Pieces */}
+      <div className="grid gap-6 lg:grid-cols-3">
         <Panel className={`${WIDE} flex flex-col`}>
           <PanelHeader
             title="Recent orders"
-            hint="The last five, newest first."
+            hint="The last five orders, newest first."
             action={
               <Link
                 to="/dashboard/orders"
@@ -142,6 +272,7 @@ export default function Overview() {
           )}
         </Panel>
 
+        {/* Right Side: Bag and Wishlist summaries */}
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
           <Panel>
             <PanelHeader
@@ -163,6 +294,7 @@ export default function Overview() {
                   to="/dashboard/wishlist"
                   className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-ink"
                 >
+                  <Heart size={14} className="text-ash" />
                   View all
                   <ArrowUpRight size={13} strokeWidth={1.6} aria-hidden />
                 </Link>
@@ -174,6 +306,7 @@ export default function Overview() {
           </Panel>
         </div>
 
+        {/* Full-width bottom row: Addresses and Assistance */}
         <Panel className={WIDE}>
           <PanelHeader
             title="Delivery addresses"
@@ -239,18 +372,18 @@ export default function Overview() {
         </Panel>
 
         <Panel className="flex flex-col justify-between">
-          <PanelHeader title="Need a hand?" />
+          <PanelHeader title="Need assistance?" />
           <div className="flex flex-1 flex-col justify-between p-5 sm:p-6">
             <p className="text-[13.5px] leading-relaxed text-graphite">
-              Check your delivery details before checkout, or review a past order for its current
-              status.
+              Review your saved delivery locations before checkout, or check an existing order for
+              live status and digital receipts.
             </p>
             <div className="mt-5 flex flex-col gap-2">
-              <Action to="/dashboard/addresses" variant="outline" size="sm">
-                Delivery details
+              <Action to="/dashboard/orders" variant="outline" size="sm">
+                Track orders
               </Action>
-              <Action to="/about" variant="ghost" size="sm">
-                About the studio
+              <Action to="/dashboard/addresses" variant="ghost" size="sm">
+                Delivery details
               </Action>
             </div>
           </div>

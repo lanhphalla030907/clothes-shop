@@ -41,7 +41,7 @@ export default function ProductNew() {
         }
       />
 
-      <div className="border border-line bg-paper p-6 sm:p-8">
+      <div className="rounded-xl border border-line bg-paper-pure p-6 sm:p-8 shadow-xs">
         {categories.isLoading ? (
           <SkeletonText lines={6} />
         ) : categories.error !== undefined ? (

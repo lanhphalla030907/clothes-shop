@@ -30,12 +30,6 @@ export function Navbar() {
   const menuTrigger = useRef<HTMLButtonElement>(null)
 
   useLockBodyScroll(isMenuOpen)
-
-  /**
-   * Signing out from a protected screen has to leave it, or the guard would
-   * bounce the shopper to the sign-in form they have just walked away from.
-   * From a public page there is nothing to leave, so the page stays put.
-   */
   const signOut = () => {
     logout()
     if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {

@@ -148,9 +148,9 @@ export default function CodDashboard() {
           Amounts are grouped by currency and never combined. Figures come from the reconciliation summary.
         </p>
         {summary.isLoading ? (
-          <div className="grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 4 }, (_, index) => (
-              <div key={index} className="bg-paper p-5 sm:p-6">
+              <div key={index} className="rounded-xl border border-line bg-paper-pure p-5 shadow-xs sm:p-6">
                 <Skeleton className="h-3 w-32" />
                 <Skeleton className="mt-2 h-8 w-24" />
               </div>
@@ -170,7 +170,7 @@ export default function CodDashboard() {
             {totalsByCurrency.map((total) => (
               <CurrencyCard key={total.currency} total={total} />
             ))}
-            <div className="bg-paper p-5 sm:p-6 border border-line">
+            <div className="rounded-xl border border-line bg-paper-pure p-5 shadow-xs transition-all hover:border-graphite/30 sm:p-6">
               <dt className="text-[12px] font-medium text-graphite">Discrepancies (all currencies)</dt>
               <dd className="mt-2 font-mono text-3xl font-semibold tabular-nums text-ink">
                 {discrepancyCount}
@@ -181,8 +181,8 @@ export default function CodDashboard() {
         )}
       </section>
 
-      <section className="border border-line bg-paper">
-        <div className="border-b border-line px-5 py-4 sm:px-6">
+      <section className="overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs">
+        <div className="border-b border-line bg-canvas/30 px-5 py-4 sm:px-6">
           <p className="eyebrow text-graphite">Filters</p>
           <h2 className="mt-1 text-[16px] font-semibold text-ink">COD orders</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-graphite">
@@ -304,11 +304,11 @@ export default function CodDashboard() {
             </p>
             {records.isRefreshing && <span role="status">Refreshing…</span>}
           </div>
-          <div className="border border-line bg-paper">
+          <div className="overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs">
             <div className="hidden overflow-x-auto lg:block">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-line">
+                  <tr className="border-b border-line bg-canvas/40">
                     <Column>Order</Column>
                     <Column>Status</Column>
                     <Column>Collected at</Column>
@@ -387,7 +387,7 @@ function CurrencyCard({
   total: AdminCodReconciliationCurrencyTotal
 }) {
   return (
-    <div className="bg-paper p-5 sm:p-6 border border-line">
+    <div className="rounded-xl border border-line bg-paper-pure p-5 shadow-xs transition-all hover:border-graphite/30 sm:p-6">
       <dt className="text-[12px] font-medium text-graphite">{total.currency}</dt>
       <dl className="mt-2 space-y-1">
         <DefinitionRow label="Expected COD"><Money amount={total.expectedAmount} currency={total.currency} emphasis="total" /></DefinitionRow>
@@ -447,7 +447,7 @@ function Column({ children, className = '' }: { children: string; className?: st
 
 function OrderRow({ item }: { item: AdminCodReconciliationListRow }) {
   return (
-    <tr>
+    <tr className="transition-colors hover:bg-canvas/30">
       <td className="px-5 py-4">
         <Link
           to={`/admin/orders/${item.orderId}`}

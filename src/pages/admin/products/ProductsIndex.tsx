@@ -136,13 +136,13 @@ export default function ProductsIndex() {
       <div className="space-y-4">
         <form
           onSubmit={submitSearch}
-          className="flex flex-wrap items-end gap-x-4 gap-y-5"
+          className="flex flex-wrap items-end gap-x-4 gap-y-4 rounded-xl border border-line bg-paper-pure p-5 shadow-xs"
         >
           <div className="w-full sm:min-w-56 sm:flex-1">
             <TextField
               name="search"
-              label="Search"
-              placeholder="Name or slug"
+              label="Search products"
+              placeholder="Filter by name or slug…"
               value={searchDraft}
               onChange={(event) => setSearchDraft(event.target.value)}
               autoComplete="off"
@@ -251,76 +251,76 @@ export default function ProductsIndex() {
               {list.length} {list.length === 1 ? 'product' : 'products'}
             </p>
 
-            <div className="border border-line bg-paper">
+            <div className="overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs">
               {/* Desktop: a real table with real column headers. */}
               <div className="hidden overflow-x-auto md:block">
-                <table className="w-full text-left">
+                <table className="w-full text-left text-[13px] border-collapse">
                   <thead>
-                    <tr className="border-b border-line">
-                      <th scope="col" className="px-5 py-3 text-[12px] font-medium text-graphite">
+                    <tr className="border-b border-line bg-canvas/40">
+                      <th scope="col" className="px-5 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite">
                         Product
                       </th>
-                      <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
+                      <th scope="col" className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite">
                         Category
                       </th>
-                      <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
+                      <th scope="col" className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite">
                         Base price
                       </th>
-                      <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
+                      <th scope="col" className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite">
                         Status
                       </th>
-                      <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
+                      <th scope="col" className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite">
                         Enabled
                       </th>
-                      <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
+                      <th scope="col" className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite">
                         Updated
                       </th>
-                      <th scope="col" className="px-5 py-3 text-[12px] font-medium text-graphite">
-                        <span className="sr-only">Actions</span>
+                      <th scope="col" className="px-5 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite text-right">
+                        <span>Actions</span>
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line-soft">
                     {list.map((product) => (
-                      <tr key={product.id} className={rowDimmed(product, pendingDelete, deleteMutation.isPending)}>
-                        <td className="px-5 py-4">
+                      <tr key={product.id} className={`transition-colors hover:bg-bone/40 ${rowDimmed(product, pendingDelete, deleteMutation.isPending)}`}>
+                        <td className="px-5 py-3.5">
                           <Link
                             to={`/admin/products/${product.id}`}
-                            className="text-[13.5px] font-medium text-ink underline-offset-4 hover:underline"
+                            className="font-semibold text-ink underline-offset-4 hover:underline"
                           >
                             {product.name}
                           </Link>
                           <span className="mt-0.5 block font-mono text-[11px] text-graphite">/{product.slug}</span>
                         </td>
-                        <td className="px-4 py-4 text-[13.5px] text-graphite">
+                        <td className="px-4 py-3.5 text-graphite">
                           {categoryName.get(product.categoryId) ?? '—'}
                         </td>
-                        <td className="px-4 py-4 text-[13.5px] tabular-nums text-ink">
+                        <td className="px-4 py-3.5 tabular-nums text-ink font-medium">
                           <Money amount={product.basePrice} />
                         </td>
-                        <td className="px-4 py-4">
+                        <td className="px-4 py-3.5">
                           <ProductStatusBadge status={product.status} />
                         </td>
-                        <td className="px-4 py-4">
+                        <td className="px-4 py-3.5">
                           <ProductActiveBadge isActive={product.isActive} />
                         </td>
-                        <td className="px-4 py-4 text-[13px] text-graphite">{formatUpdated(product.updatedAt)}</td>
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-4">
+                        <td className="px-4 py-3.5 text-[12.5px] text-graphite">{formatUpdated(product.updatedAt)}</td>
+                        <td className="px-5 py-3.5 text-right">
+                          <div className="inline-flex items-center gap-1">
                             <Link
                               to={`/admin/products/${product.id}`}
-                              className="inline-flex min-h-9 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-ink"
+                              className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium text-graphite transition-colors hover:bg-bone hover:text-ink"
                             >
-                              <Pencil size={13} strokeWidth={1.6} aria-hidden />
+                              <Pencil size={13} strokeWidth={1.8} aria-hidden />
                               Edit
                             </Link>
                             <button
                               type="button"
                               onClick={() => requestDelete(product)}
                               aria-label={`Delete ${product.name}`}
-                              className="inline-flex min-h-9 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-signal"
+                              className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium text-graphite transition-colors hover:bg-rose-50 hover:text-signal"
                             >
-                              <Trash2 size={13} strokeWidth={1.6} aria-hidden />
+                              <Trash2 size={13} strokeWidth={1.8} aria-hidden />
                               Delete
                             </button>
                           </div>
@@ -331,44 +331,44 @@ export default function ProductsIndex() {
                 </table>
               </div>
 
-              {/* Mobile: flat cards — no horizontal scroll. */}
+              {/* Mobile: flat cards */}
               <ul className="divide-y divide-line-soft md:hidden">
                 {list.map((product) => (
-                  <li key={product.id} className={rowDimmed(product, pendingDelete, deleteMutation.isPending)}>
-                    <div className="p-5">
+                  <li key={product.id} className={`p-4 sm:p-5 ${rowDimmed(product, pendingDelete, deleteMutation.isPending)}`}>
+                    <div>
                       <div className="flex items-start justify-between gap-4">
                         <Link
                           to={`/admin/products/${product.id}`}
-                          className="inline-flex min-h-11 items-center text-sm font-medium text-ink underline-offset-4 hover:underline"
+                          className="font-semibold text-ink underline-offset-4 hover:underline"
                         >
                           {product.name}
                         </Link>
-                        <Money amount={product.basePrice} />
+                        <Money amount={product.basePrice} className="font-semibold" />
                       </div>
                       <span className="mt-0.5 block font-mono text-[11px] text-graphite">/{product.slug}</span>
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <div className="mt-2.5 flex flex-wrap items-center gap-2">
                         <ProductStatusBadge status={product.status} />
                         <ProductActiveBadge isActive={product.isActive} />
                       </div>
-                      <p className="mt-3 text-sm text-graphite">
+                      <p className="mt-2.5 text-[12.5px] text-graphite">
                         {categoryName.get(product.categoryId) ?? 'Unknown category'}
-                        <span className="text-graphite"> · updated {formatUpdated(product.updatedAt)}</span>
+                        <span className="text-graphite/70"> · updated {formatUpdated(product.updatedAt)}</span>
                       </p>
-                      <div className="mt-4 flex items-center gap-4 border-t border-line-soft pt-4">
+                      <div className="mt-3.5 flex items-center gap-2 border-t border-line-soft pt-3">
                         <Link
                           to={`/admin/products/${product.id}`}
-                          className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-ink"
+                          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line bg-paper px-3 text-[12px] font-medium text-graphite transition-colors hover:border-ink hover:text-ink"
                         >
-                          <Pencil size={13} strokeWidth={1.6} aria-hidden />
+                          <Pencil size={13} strokeWidth={1.8} aria-hidden />
                           Edit
                         </Link>
                         <button
                           type="button"
                           onClick={() => requestDelete(product)}
                           aria-label={`Delete ${product.name}`}
-                          className="ml-auto inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-signal"
+                          className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-md border border-line px-3 text-[12px] font-medium text-graphite transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-signal"
                         >
-                          <Trash2 size={13} strokeWidth={1.6} aria-hidden />
+                          <Trash2 size={13} strokeWidth={1.8} aria-hidden />
                           Delete
                         </button>
                       </div>

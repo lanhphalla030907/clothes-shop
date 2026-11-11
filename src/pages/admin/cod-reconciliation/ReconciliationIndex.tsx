@@ -199,9 +199,9 @@ export default function ReconciliationIndex() {
 
       <section aria-label="Reconciliation run statistics">
         {history.isLoading ? (
-          <div className="grid gap-px border border-line bg-line sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-3">
             {Array.from({ length: 3 }, (_, index) => (
-              <div key={index} className="space-y-3 bg-paper p-5 sm:p-6">
+              <div key={index} className="space-y-3 rounded-xl border border-line bg-paper-pure p-5 shadow-xs sm:p-6">
                 <Skeleton className="h-3 w-28" />
                 <Skeleton className="h-8 w-16" />
                 <Skeleton className="h-3 w-36" />
@@ -209,7 +209,7 @@ export default function ReconciliationIndex() {
             ))}
           </div>
         ) : history.data ? (
-          <dl className="grid gap-px border border-line bg-line sm:grid-cols-3">
+          <dl className="grid gap-4 sm:grid-cols-3">
             <Stat label="Runs matching filters" value={total} hint="Server-reported total" />
             <Stat label="Completed on this page" value={completedOnPage} hint="Current page only" />
             <Stat label="Failed on this page" value={failedOnPage} hint="Current page only" />
@@ -217,8 +217,8 @@ export default function ReconciliationIndex() {
         ) : null}
       </section>
 
-      <section className="border border-line bg-paper">
-        <div className="border-b border-line px-5 py-4 sm:px-6">
+      <section className="overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs">
+        <div className="border-b border-line bg-canvas/30 px-5 py-4 sm:px-6">
           <p className="eyebrow text-graphite">Manual run</p>
           <h2 className="mt-1 text-[16px] font-semibold text-ink">Trigger reconciliation</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-graphite">
@@ -408,11 +408,11 @@ export default function ReconciliationIndex() {
               </p>
               {history.isRefreshing && <span role="status">Refreshing…</span>}
             </div>
-            <div className="border border-line bg-paper">
+            <div className="overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs">
               <div className="hidden overflow-x-auto lg:block">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-line">
+                    <tr className="border-b border-line bg-canvas/40">
                       <Column>Run</Column>
                       <Column>Status</Column>
                       <Column>Trigger</Column>
@@ -464,7 +464,7 @@ export default function ReconciliationIndex() {
 
 function Stat({ label, value, hint }: { label: string; value: number; hint: string }) {
   return (
-    <div className="bg-paper p-5 sm:p-6">
+    <div className="rounded-xl border border-line bg-paper-pure p-5 shadow-xs transition-all hover:border-graphite/30 sm:p-6">
       <dt className="text-[12px] font-medium text-graphite">{label}</dt>
       <dd className="mt-2 font-mono text-3xl font-semibold tabular-nums text-ink">{value}</dd>
       <p className="mt-1 text-[11px] text-ash">{hint}</p>
@@ -482,7 +482,7 @@ function Column({ children, className = '' }: { children: string; className?: st
 
 function RunRow({ run }: { run: AdminCodReconciliationRun }) {
   return (
-    <tr>
+    <tr className="transition-colors hover:bg-canvas/30">
       <td className="px-5 py-4">
         <span className="block max-w-36 truncate font-mono text-[11px] text-graphite" title={run.id}>
           {run.id}

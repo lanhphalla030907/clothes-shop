@@ -45,6 +45,9 @@ export const STORE_CURRENCY = 'USD'
 /** Paths, named once so a route change is a single-file edit. */
 export const API = {
   login: '/auth/login',
+  googleLogin: '/auth/google',
+  linkGoogle: '/auth/google/link',
+  identities: '/auth/identities',
   me: '/auth/me',
   register: '/users',
   products: '/products',
@@ -66,9 +69,12 @@ export const API = {
   cambodiaLocations: '/locations/cambodia',
   adminUsers: '/admin/users',
   adminOrders: '/admin/orders',
+  adminPromotions: '/admin/promotions',
   deliveryManager: '/delivery/manager',
   deliveryStaff: '/delivery/staff',
   adminCodReconciliation: '/admin/cod-reconciliation',
+  adminCustomers: '/admin/customers',
+  adminFinance: '/admin/finance',
   cart: '/cart',
   cartItems: '/cart/items',
   wishlist: '/wishlist',
@@ -77,4 +83,7 @@ export const API = {
   orders: '/orders',
   checkout: '/checkout',
   users: '/users',
+  feedback: '/feedback',
+  adminFeedback: '/admin/feedback',
+  publicFeedback: '/feedback/public',
 } as const

@@ -49,9 +49,9 @@ type PanelProps = {
   className?: string
 }
 
-/** The bordered surface every account screen is built from. */
+/** The bordered surface every screen panel is built from. */
 export const Panel = ({ children, className = '' }: PanelProps) => (
-  <section className={`border border-line bg-paper ${className}`}>{children}</section>
+  <section className={`overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs ${className}`}>{children}</section>
 )
 
 type PanelHeaderProps = {

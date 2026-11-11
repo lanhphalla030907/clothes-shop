@@ -1,42 +1,72 @@
-import { useRef } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { FloatingProduct } from './FloatingProduct'
 import type { CataloguePiece } from '@/types'
 
 interface ProductRailProps {
   pieces: CataloguePiece[]
-  /** Shown as the section heading. */
   label?: string
-  /** Holds the strip's shape open while the catalogue is being read. */
   isLoading?: boolean
-  /** Optional action rendered on the right of the header (e.g. "View All"). */
   action?: ReactNode
   className?: string
 }
 
-const RailSkeleton = () => (
-  <div
-    role="status"
-    aria-busy="true"
-    className="flex w-[62vw] max-w-[300px] shrink-0 gap-4 sm:w-[38vw] sm:max-w-[330px] lg:w-[290px]"
+const RailArrow = ({
+  direction,
+  onClick,
+  disabled,
+}: {
+  direction: 1 | -1
+  onClick: () => void
+  disabled: boolean
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    aria-label={direction === 1 ? 'Next products' : 'Previous products'}
+    className="grid size-9 place-items-center border border-line text-ink transition-colors duration-400 ease-editorial hover:bg-ink hover:text-paper disabled:pointer-events-none disabled:opacity-25 sm:size-10"
   >
-    <span className="sr-only">Loading the collection…</span>
-    <div className="aspect-[3/4] w-full animate-pulse bg-bone" />
-  </div>
+    {direction === 1 ? <ArrowRight size={15} strokeWidth={1.5} /> : <ArrowLeft size={15} strokeWidth={1.5} />}
+  </button>
 )
 
 export function ProductRail({
   pieces,
   label,
-  isLoading = false,
+  isLoading: _isLoading = false,
   action = null,
   className = '',
 }: ProductRailProps) {
-  const ref = useRef<HTMLDivElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [page, setPage] = useState(0)
+
+  const getPerPage = useCallback(() => {
+    if (typeof window === 'undefined') return 4
+    if (window.innerWidth >= 1024) return 4   // desktop → 4
+    return 2                                   // mobile + tablet → 2
+  }, [])
+
+  const totalPages = Math.max(1, Math.ceil(pieces.length / getPerPage()))
+
+  const goToPage = useCallback((nextPage: number) => {
+    const el = trackRef.current
+    if (!el) return
+    const perPage = getPerPage()
+    const firstCard = el.querySelector<HTMLElement>('[data-card]')
+    if (!firstCard) return
+    const cardWidth = firstCard.offsetWidth
+    const gap = 24
+    el.scrollTo({ left: nextPage * perPage * (cardWidth + gap), behavior: 'smooth' })
+    setPage(nextPage)
+  }, [getPerPage])
+
+  const next = () => { if (page < totalPages - 1) goToPage(page + 1) }
+  const prev = () => { if (page > 0) goToPage(page - 1) }
 
   return (
     <section className={className} aria-label={label ?? 'Product showcase'}>
-      {/* Header with optional action on the right */}
       <div className="container-editorial">
         <div className="flex items-end justify-between gap-6 border-b border-line pb-5">
           <div>
@@ -48,31 +78,28 @@ export function ProductRail({
               {label ?? 'The Rail'}
             </h2>
           </div>
-          {action}
+          <div className="flex items-center gap-4">
+            {action}
+            {pieces.length > 0 && (
+              <div className="flex items-center gap-2">
+                <RailArrow direction={-1} onClick={prev} disabled={page === 0} />
+                <RailArrow direction={1} onClick={next} disabled={page >= totalPages - 1} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="container-editorial mt-6 sm:mt-8">
         <div
-          ref={ref}
-          className="no-scrollbar flex gap-4 overflow-x-auto overscroll-x-contain pb-2 sm:gap-6"
+          ref={trackRef}
+          className="grid grid-flow-col grid-rows-1 auto-cols-[calc((100%-1rem)/2)] gap-4 overflow-x-auto scroll-smooth pb-2 sm:gap-6 lg:auto-cols-[calc((100%-3*1.5rem)/4)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
         >
           {pieces.map((piece, index) => (
-            <div key={piece.id} className="snap-start">
+            <div key={piece.id} data-card className="snap-start min-w-0">
               <FloatingProduct piece={piece} index={index} />
             </div>
           ))}
-
-          {isLoading && pieces.length === 0 && (
-            <>
-              <RailSkeleton />
-              <RailSkeleton />
-              <RailSkeleton />
-              <RailSkeleton />
-            </>
-          )}
-
-          <div className="w-1 shrink-0 sm:w-6" aria-hidden />
         </div>
       </div>
     </section>

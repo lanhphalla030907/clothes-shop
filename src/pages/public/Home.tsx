@@ -6,6 +6,7 @@ import { CollectionsSection } from '@/components/home/CollectionsSection'
 import { Manifesto } from '@/components/home/Manifesto'
 import { EditorialGrid } from '@/components/home/EditorialGrid'
 import { Statement } from '@/components/home/Statement'
+import { FeedbackSection } from '@/components/home/FeedbackSection'
 import { ProductRail } from '@/components/product/ProductRail'
 import { Reveal } from '@/components/ui/Reveal'
 import { Action } from '@/components/ui/Action'
@@ -57,10 +58,7 @@ export default function Home() {
       </div>
 
       <CollectionsSection />
-
-      <Manifesto />
-      <Statement />
-      <EditorialGrid />
+      <FeedbackSection />
 
       {/* Closing call to action */}
       <section className="container-editorial py-20 sm:py-28">

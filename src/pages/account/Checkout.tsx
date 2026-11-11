@@ -97,6 +97,7 @@ const isCheckoutQuote = (value: unknown): value is CheckoutQuote => {
     typeof value.shippingFee === 'string' &&
     typeof value.discountAmount === 'string' &&
     typeof value.totalAmount === 'string' &&
+    (typeof value.couponCode === 'string' || value.couponCode === null || !Object.prototype.hasOwnProperty.call(value, 'couponCode')) &&
     typeof value.currency === 'string' &&
     typeof value.expiresAt === 'string'
   )
@@ -174,6 +175,9 @@ const ReviewAndPlace = () => {
     restoredAttempt.attempt,
   )
   const [quoteNotice, setQuoteNotice] = useState<string | undefined>()
+  const [couponDraft, setCouponDraft] = useState(restoredAttempt.attempt?.quote.couponCode ?? '')
+  const [appliedCouponCode, setAppliedCouponCode] = useState(restoredAttempt.attempt?.quote.couponCode ?? '')
+  const [couponPending, setCouponPending] = useState(false)
   const [clientError, setClientError] = useState<unknown>(restoredAttempt.error)
   const [now, setNow] = useState(() => Date.now())
   const previousQuote = useRef<CheckoutQuote | undefined>(undefined)
@@ -217,8 +221,9 @@ const ReviewAndPlace = () => {
       addressId,
       shippingProviderId: selectedProvider.id,
       paymentMethod,
+      couponCode: appliedCouponCode.trim() || undefined,
     }
-  }, [addressId, canRequestQuote, paymentMethod, selectedProvider])
+  }, [addressId, appliedCouponCode, canRequestQuote, paymentMethod, selectedProvider])
   const quoteKey = `${cartFingerprint}:${JSON.stringify(quoteRequest ?? null)}`
   const quoteResource = useCheckoutQuote(quoteRequest, quoteKey)
   const refetchQuote = quoteResource.refetch
@@ -402,6 +407,22 @@ const ReviewAndPlace = () => {
     }
   }
 
+  const applyCoupon = () => {
+    if (couponPending || selectionDisabled) return
+    setCouponPending(true)
+    setClientError(undefined)
+    setAppliedCouponCode(couponDraft.trim())
+    window.setTimeout(() => setCouponPending(false), 0)
+  }
+
+  const removeCoupon = () => {
+    if (couponPending || selectionDisabled) return
+    setCouponPending(true)
+    setCouponDraft('')
+    setAppliedCouponCode('')
+    window.setTimeout(() => setCouponPending(false), 0)
+  }
+
   const selectionDisabled = checkout.isPlacing || hasAmbiguousAttempt
   const quoteIsCurrent = displayedQuote !== undefined &&
     (activeAttempt !== undefined || (quoteResource.requestKey === quoteKey && !quoteLoading))
@@ -513,6 +534,29 @@ const ReviewAndPlace = () => {
               )}
             </section>
 
+            <section aria-labelledby="checkout-coupon-heading" className="border-t border-line pt-6">
+              <h2 id="checkout-coupon-heading" className="eyebrow text-ink">Coupon code</h2>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <input
+                  aria-label="Coupon code"
+                  value={couponDraft}
+                  disabled={selectionDisabled || couponPending}
+                  onChange={(event) => setCouponDraft(event.target.value)}
+                  placeholder="Enter coupon code"
+                  className="h-11 flex-1 border border-line bg-paper px-3.5 text-[15px] text-ink placeholder:text-ash focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/15"
+                />
+                <Action type="button" size="sm" disabled={selectionDisabled || couponPending || couponDraft.trim() === ''} onClick={applyCoupon}>
+                  {couponPending ? 'Applying…' : 'Apply coupon'}
+                </Action>
+                {appliedCouponCode && (
+                  <Action type="button" variant="outline" size="sm" disabled={selectionDisabled || couponPending} onClick={removeCoupon}>
+                    Remove
+                  </Action>
+                )}
+              </div>
+              {quoteError !== undefined && appliedCouponCode && <p className="mt-2 text-sm text-signal" role="alert">{toUserMessage(quoteError)}</p>}
+            </section>
+
             <section aria-labelledby="checkout-payment-heading" className="border-t border-line pt-6">
               <h2 id="checkout-payment-heading" className="eyebrow text-ink">Payment method</h2>
               <fieldset className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -620,6 +664,12 @@ const ReviewAndPlace = () => {
                   <DefinitionRow label="Discount"><Money amount={displayedQuote.discountAmount} currency={displayedQuote.currency} /></DefinitionRow>
                   <DefinitionRow label="Total"><Money amount={displayedQuote.totalAmount} currency={displayedQuote.currency} emphasis="total" /></DefinitionRow>
                 </dl>
+                {(displayedQuote.appliedCoupon || displayedQuote.appliedAutomaticPromotion) && (
+                  <div className="mt-4 border-t border-line pt-3 text-[13px] text-graphite">
+                    {displayedQuote.appliedCoupon && <p>Coupon applied: <span className="font-medium text-ink">{displayedQuote.appliedCoupon.name}</span></p>}
+                    {displayedQuote.appliedAutomaticPromotion && <p className="mt-1">Automatic promotion: <span className="font-medium text-ink">{displayedQuote.appliedAutomaticPromotion.name}</span></p>}
+                  </div>
+                )}
                 <p className="mt-4 text-xs text-graphite">
                   Quote expires {new Date(displayedQuote.expiresAt).toLocaleTimeString()}.
                 </p>

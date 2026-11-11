@@ -9,7 +9,7 @@ import {
   writeAccessToken,
 } from '@/lib/api/session'
 import { AuthContext, type AuthContextValue } from './authContext'
-import { fetchCurrentUser, loginErrorMessage, loginUser } from './api'
+import { fetchCurrentUser, loginErrorMessage, loginUser, loginWithGoogle as loginWithGoogleApi } from './api'
 import type { AuthUser } from './authTypes'
 
 /**
@@ -150,6 +150,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [showFeedback])
 
+  const loginWithGoogle = useCallback(
+    async (idToken: string, nonce?: string): Promise<boolean> => {
+      if (loginInFlight.current) return false
+      loginInFlight.current = true
+      setIsLoginPending(true)
+      setLoginError(null)
+
+      try {
+        const session = await loginWithGoogleApi(idToken, nonce)
+        writeAccessToken(session.accessToken, session.expiresIn)
+
+        try {
+          setUser(await fetchCurrentUser())
+          showFeedback({
+            type: 'success',
+            title: 'Signed in with Google',
+            message: 'You are signed in and your account is ready.',
+          })
+          return true
+        } catch (identityError: unknown) {
+          if (isApiError(identityError) && identityError.status === 401) {
+            clearAccessToken()
+            setUser(null)
+          }
+          setLoginError(loginErrorMessage(identityError))
+          return false
+        }
+      } catch (error: unknown) {
+        clearAccessToken()
+        setUser(null)
+        setLoginError(loginErrorMessage(error))
+        return false
+      } finally {
+        loginInFlight.current = false
+        setIsLoginPending(false)
+      }
+    },
+    [showFeedback],
+  )
+
   const logout = useCallback(() => {
     clearAccessToken()
     setUser(null)
@@ -164,9 +204,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoginPending,
       loginError,
       login,
+      loginWithGoogle,
       logout,
     }),
-    [user, isInitializing, isLoginPending, loginError, login, logout],
+    [user, isInitializing, isLoginPending, loginError, login, loginWithGoogle, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

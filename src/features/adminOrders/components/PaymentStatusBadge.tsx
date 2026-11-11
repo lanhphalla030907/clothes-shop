@@ -10,17 +10,17 @@ import { paymentStatusLabel } from '@/features/adminOrders/rules'
  */
 const tone: Record<PaymentStatus, string> = {
   [PAYMENT_STATUS.UNPAID]: 'border-line bg-bone text-ink',
-  [PAYMENT_STATUS.PENDING]: 'border-line bg-bone text-ink',
-  [PAYMENT_STATUS.PAID]: 'border-success/25 bg-success-soft text-success',
-  [PAYMENT_STATUS.FAILED]: 'border-signal/25 bg-signal-soft text-signal',
+  [PAYMENT_STATUS.PENDING]: 'border-amber-200/80 bg-amber-50 text-amber-700',
+  [PAYMENT_STATUS.PAID]: 'border-emerald-200/80 bg-emerald-50 text-emerald-700',
+  [PAYMENT_STATUS.FAILED]: 'border-rose-200/80 bg-rose-50 text-rose-700',
   [PAYMENT_STATUS.EXPIRED]: 'border-line bg-bone text-graphite',
 }
 
 const dot: Record<PaymentStatus, string> = {
   [PAYMENT_STATUS.UNPAID]: 'bg-ash',
-  [PAYMENT_STATUS.PENDING]: 'bg-graphite',
-  [PAYMENT_STATUS.PAID]: 'bg-success',
-  [PAYMENT_STATUS.FAILED]: 'bg-signal',
+  [PAYMENT_STATUS.PENDING]: 'bg-amber-500',
+  [PAYMENT_STATUS.PAID]: 'bg-emerald-500',
+  [PAYMENT_STATUS.FAILED]: 'bg-rose-500',
   [PAYMENT_STATUS.EXPIRED]: 'bg-ash',
 }
 
@@ -34,7 +34,7 @@ export function PaymentStatusBadge({
   if (status === null) {
     return (
       <span
-        className={`inline-flex w-fit items-center gap-1.5 border border-line bg-bone px-2.5 py-1 text-[11px] font-medium whitespace-nowrap text-graphite ${className}`}
+        className={`inline-flex w-fit items-center gap-1.5 rounded-full border border-line bg-bone px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap text-graphite shadow-2xs ${className}`}
       >
         <span className="size-1.5 rounded-full bg-ash" aria-hidden />
         No payment
@@ -44,7 +44,7 @@ export function PaymentStatusBadge({
 
   return (
     <span
-      className={`inline-flex w-fit items-center gap-1.5 border px-2.5 py-1 text-[11px] font-medium whitespace-nowrap ${tone[status]} ${className}`}
+      className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap shadow-2xs ${tone[status]} ${className}`}
     >
       <span className={`size-1.5 rounded-full ${dot[status]}`} aria-hidden />
       {paymentStatusLabel(status)}

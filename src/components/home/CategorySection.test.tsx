@@ -6,7 +6,7 @@ import { useCategories } from '@/features/catalogue/useCatalogue'
 import { FeedbackProvider } from '@/context/FeedbackProvider'
 
 // jsdom does not provide IntersectionObserver, which framer-motion's Reveal needs.
-function MockIntersectionObserver() {
+function MockIntersectionObserver(this: Record<string, unknown>) {
   this.observe = vi.fn()
   this.unobserve = vi.fn()
   this.disconnect = vi.fn()
@@ -43,7 +43,7 @@ afterEach(cleanup)
 
 describe('CategorySection', () => {
   it('renders nothing when there are no active categories', () => {
-    useCategoriesMock.mockReturnValue({ data: [], isLoading: false, error: undefined, refetch: vi.fn() })
+    useCategoriesMock.mockReturnValue({ data: [], isLoading: false, isRefreshing: false, error: undefined, refetch: vi.fn() })
 
     const { container } = render(
       <MemoryRouter>
@@ -60,6 +60,7 @@ describe('CategorySection', () => {
     useCategoriesMock.mockReturnValue({
       data: undefined,
       isLoading: true,
+      isRefreshing: false,
       error: undefined,
       refetch: vi.fn(),
     })
@@ -95,6 +96,7 @@ describe('CategorySection', () => {
     useCategoriesMock.mockReturnValue({
       data: categories,
       isLoading: false,
+      isRefreshing: false,
       error: undefined,
       refetch: vi.fn(),
     })
@@ -135,6 +137,7 @@ describe('CategorySection', () => {
     useCategoriesMock.mockReturnValue({
       data: categories,
       isLoading: false,
+      isRefreshing: false,
       error: undefined,
       refetch: vi.fn(),
     })
@@ -164,6 +167,7 @@ describe('CategorySection', () => {
     useCategoriesMock.mockReturnValue({
       data: categories,
       isLoading: false,
+      isRefreshing: false,
       error: undefined,
       refetch: vi.fn(),
     })

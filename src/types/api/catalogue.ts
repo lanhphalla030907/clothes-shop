@@ -70,6 +70,9 @@ export interface ProductVariant {
   productId: UUID
   sku: string
   price: MoneyString
+  /** Admin-only fields; public catalogue responses deliberately omit them. */
+  costPrice?: MoneyString | null
+  costCurrency?: string | null
   isActive: boolean
   createdAt: ISODateTime
   updatedAt: ISODateTime

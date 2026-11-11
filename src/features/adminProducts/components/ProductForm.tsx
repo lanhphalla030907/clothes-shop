@@ -38,6 +38,8 @@ type ProductFormProps = {
   /** Returns the saved product, or `undefined` when the write was refused. */
   onSubmit: (values: ProductFormValues) => Promise<Product | undefined>
   onSaved: (saved: Product) => void
+  /** Discard unsaved changes and reset to the current record (edit mode only). */
+  onCancel?: () => void
 }
 
 export function ProductForm({
@@ -48,6 +50,7 @@ export function ProductForm({
   submitLabel,
   onSubmit,
   onSaved,
+  onCancel,
 }: ProductFormProps) {
   const [values, setValues] = useState<ProductFormValues>(() =>
     product === undefined ? EMPTY_PRODUCT_FORM : productToFormValues(product),
@@ -190,6 +193,16 @@ export function ProductForm({
       </div>
 
       <div className="flex items-center gap-3 pt-2">
+        {onCancel !== undefined && product !== undefined && (
+          <Action
+            variant="outline"
+            size="sm"
+            onClick={onCancel}
+            disabled={isSaving}
+          >
+            Cancel
+          </Action>
+        )}
         <Action type="submit" size="sm" disabled={isSaving || !dirty}>
           {isSaving ? 'Saving' : submitLabel}
         </Action>

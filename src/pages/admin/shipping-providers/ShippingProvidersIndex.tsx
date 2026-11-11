@@ -198,11 +198,11 @@ export default function ShippingProvidersIndex() {
               )}
             </div>
 
-            <div className="border border-line bg-paper">
+            <div className="overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs">
               <div className="hidden overflow-x-auto md:block">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-line">
+                    <tr className="border-b border-line bg-canvas/40">
                       <Column>Name</Column>
                       <Column>Code</Column>
                       <Column>Base fee</Column>
@@ -332,7 +332,7 @@ function Column({
 function ProviderStatus({ isActive }: { isActive: boolean }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 border px-2 py-1 text-[11px] font-medium ${
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${
         isActive
           ? 'border-success/25 bg-success-soft text-success'
           : 'border-line bg-bone text-graphite'

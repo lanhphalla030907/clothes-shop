@@ -327,7 +327,7 @@ function CurrencyCard({
   summary: AdminCodReconciliationCurrencySummary
 }) {
   return (
-    <div className="border border-line bg-paper p-5 sm:p-6">
+    <div className="rounded-xl border border-line bg-paper-pure p-5 shadow-xs transition-all hover:border-graphite/30 sm:p-6">
       <div className="flex items-center justify-between gap-2 mb-3">
         <h3 className="text-[13px] font-semibold text-ink uppercase tracking-wider">
           {summary.currency}
@@ -437,10 +437,10 @@ function RunAuditTable({
             </div>
 
             {/* Desktop table */}
-            <div className="hidden overflow-x-auto lg:block border border-line bg-paper">
+            <div className="hidden overflow-x-auto lg:block overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs">
               <table className="w-full text-left text-[12px]">
                 <thead>
-                  <tr className="border-b border-line">
+                  <tr className="border-b border-line bg-canvas/40">
                     <Column>Order</Column>
                     <Column>Status</Column>
                     <Column>Payment</Column>
@@ -496,7 +496,7 @@ function Column({ children, className = '' }: { children: string; className?: st
 function AuditRow({ item }: { item: AdminCodReconciliationRunSnapshotItem }) {
   const collectionCurrency = item.collectionCurrency ?? item.currency
   return (
-    <tr className="hover:bg-bone/30 transition-colors">
+    <tr className="transition-colors hover:bg-canvas/30">
       <td className="px-5 py-4">
         <span className="block font-mono text-[11px] text-graphite" title={item.orderId}>
           {item.orderNumber ?? item.orderId}

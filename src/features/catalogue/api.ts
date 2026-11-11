@@ -28,11 +28,44 @@ import type {
  * read from the response, so the figure on screen is the figure the server holds.
  */
 
+import type {
+  ProductFilterOptions,
+  PublicProductFilterParams,
+  PublicProductListResponse,
+} from '@/types/productsFilter'
+
 export const fetchCategories = (signal?: AbortSignal): Promise<Category[]> =>
   apiGetList<Category>(API.categories, { signal })
 
-export const fetchProducts = (signal?: AbortSignal): Promise<Product[]> =>
-  apiGetList<Product>(API.products, { signal })
+export const fetchProducts = async (signal?: AbortSignal): Promise<Product[]> => {
+  const body = await apiGetOne<PublicProductListResponse | Product[]>(API.products, { signal })
+  return Array.isArray(body) ? body : (body.data ?? [])
+}
+
+export const fetchPublicProducts = (
+  params: PublicProductFilterParams = {},
+  signal?: AbortSignal,
+): Promise<PublicProductListResponse> => {
+  const query: Record<string, string> = {}
+  if (params.search) query.search = params.search
+  if (params.category) query.category = params.category
+  if (params.minPrice !== undefined) query.minPrice = String(params.minPrice)
+  if (params.maxPrice !== undefined) query.maxPrice = String(params.maxPrice)
+  if (params.size) query.size = params.size
+  if (params.color) query.color = params.color
+  if (params.inStock !== undefined) query.inStock = String(params.inStock)
+  if (params.sortBy) query.sortBy = params.sortBy
+  if (params.page !== undefined) query.page = String(params.page)
+  if (params.limit !== undefined) query.limit = String(params.limit)
+
+  return apiGetOne<PublicProductListResponse>(API.products, {
+    signal,
+    query: Object.keys(query).length > 0 ? query : undefined,
+  })
+}
+
+export const fetchFilterOptions = (signal?: AbortSignal): Promise<ProductFilterOptions> =>
+  apiGetOne<ProductFilterOptions>(`${API.products}/filters`, { signal })
 
 export const fetchNewArrivals = (signal?: AbortSignal, limit = 8): Promise<Product[]> =>
   apiGetList<Product>(API.newArrivals, { signal, query: limit !== 8 ? { limit: String(limit) } : undefined })

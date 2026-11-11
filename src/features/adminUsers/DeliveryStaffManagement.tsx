@@ -72,10 +72,10 @@ export default function DeliveryStaffManagement() {
 
   return (
     <section
-      className="border border-line bg-paper"
+      className="overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs"
       aria-labelledby="delivery-staff-heading"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-canvas/30 px-5 py-4 sm:px-6">
         <div>
           <p className="eyebrow text-graphite">Delivery operations</p>
           <h2
@@ -142,7 +142,7 @@ export default function DeliveryStaffManagement() {
                   key={member.id}
                   className="flex min-w-0 items-center gap-3 py-3"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center bg-bone text-graphite">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-canvas text-graphite">
                     <Truck size={16} strokeWidth={1.6} aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -153,7 +153,7 @@ export default function DeliveryStaffManagement() {
                       {member.email}
                     </span>
                   </span>
-                  <span className="shrink-0 border border-line px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-graphite">
+                  <span className="shrink-0 rounded-full border border-success/25 bg-success-soft px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-success">
                     Active
                   </span>
                 </li>

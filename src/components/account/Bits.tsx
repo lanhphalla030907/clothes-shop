@@ -44,26 +44,28 @@ const statusLabel: Record<OrderStatus, string> = {
 /** Tone per status: only the ones that need attention are given a colour. */
 const statusTone: Record<OrderStatus, string> = {
   [ORDER_STATUS.PENDING]: 'border-line bg-bone text-ink',
-  [ORDER_STATUS.CONFIRMED]: 'border-line bg-bone text-ink',
-  [ORDER_STATUS.PROCESSING]: 'border-line bg-bone text-ink',
-  [ORDER_STATUS.SHIPPED]: 'border-info/25 bg-info-soft text-info',
-  [ORDER_STATUS.DELIVERED]: 'border-success/25 bg-success-soft text-success',
-  [ORDER_STATUS.CANCELLED]: 'border-signal/25 bg-signal-soft text-signal',
+  [ORDER_STATUS.CONFIRMED]: 'border-amber-200/80 bg-amber-50 text-amber-700',
+  [ORDER_STATUS.PROCESSING]: 'border-amber-200/80 bg-amber-50 text-amber-700',
+  [ORDER_STATUS.SHIPPED]: 'border-blue-200/80 bg-blue-50 text-blue-700',
+  [ORDER_STATUS.DELIVERED]: 'border-emerald-200/80 bg-emerald-50 text-emerald-700',
+  [ORDER_STATUS.CANCELLED]: 'border-rose-200/80 bg-rose-50 text-rose-700',
 }
 
 export const StatusBadge = ({ status }: { status: OrderStatus }) => (
   <span
-    className={`inline-flex w-fit items-center gap-1.5 border px-2.5 py-1 text-xs font-medium whitespace-nowrap ${statusTone[status]}`}
+    className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap shadow-2xs ${statusTone[status]}`}
   >
     <span
       aria-hidden
       className={`size-1.5 rounded-full ${
         status === ORDER_STATUS.CANCELLED
-          ? 'bg-signal'
+          ? 'bg-rose-500'
           : status === ORDER_STATUS.SHIPPED
-            ? 'bg-info'
+            ? 'bg-blue-500'
             : status === ORDER_STATUS.DELIVERED
-              ? 'bg-success'
+              ? 'bg-emerald-500'
+            : status === ORDER_STATUS.CONFIRMED || status === ORDER_STATUS.PROCESSING
+              ? 'bg-amber-500'
             : 'bg-graphite'
       }`}
     />

@@ -13,6 +13,16 @@ export interface CreateCheckoutQuoteRequest {
   addressId: UUID
   shippingProviderId: UUID
   paymentMethod: CheckoutPaymentMethod
+  couponCode?: string
+}
+
+export interface AppliedPromotion {
+  id: UUID
+  code: string | null
+  name: string
+  kind: 'COUPON' | 'AUTOMATIC'
+  discountType: 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING'
+  discountAmount: MoneyString
 }
 
 export interface CheckoutQuoteItem {
@@ -41,6 +51,10 @@ export interface CheckoutQuote {
   shippingFee: MoneyString
   discountAmount: MoneyString
   totalAmount: MoneyString
+  couponCode: string | null
+  appliedCoupon: AppliedPromotion | null
+  appliedAutomaticPromotion: AppliedPromotion | null
+  appliedPromotions: AppliedPromotion[]
   currency: string
   expiresAt: ISODateTime
 }

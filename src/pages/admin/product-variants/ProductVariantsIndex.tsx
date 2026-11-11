@@ -7,17 +7,6 @@ import { ProductSelector } from '@/features/adminProducts/components/ProductSele
 import { ProductVariantsSection } from '@/features/adminProducts/components/ProductVariantsSection'
 import { useAdminProducts } from '@/features/adminProducts/useAdminProducts'
 import { toUserMessage } from '@/lib/api/errors'
-
-/**
- * Standalone product-variant management.
- *
- * The administrator picks a product, then works with that product's variants,
- * each variant's options and stock. Every variant route is nested under the
- * chosen product, so no create, edit, delete or inventory write is ever sent
- * without a valid product association. The variant logic itself is the same
- * `ProductVariantsSection` used on Edit Product — nothing is duplicated here.
- */
-
 export default function ProductVariantsIndex() {
   const products = useAdminProducts({})
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -55,7 +44,7 @@ export default function ProductVariantsIndex() {
         }
       />
 
-      <div className="border border-line bg-paper p-6 sm:p-8">
+      <div className="rounded-xl border border-line bg-paper-pure p-6 sm:p-8 shadow-xs">
         <ProductSelector
           placeholder="Search products by name or slug"
           onSelect={(product) => setSelectedId(product.id)}

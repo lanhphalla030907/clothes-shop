@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowUpRight, Pencil, Trash2 } from 'lucide-react'
 import { Action } from '@/components/ui/Action'
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader'
+import { AdminStatCard } from '@/components/admin/AdminStatCard'
 import { EmptyState, ErrorState } from '@/components/account/States'
 import { Skeleton } from '@/components/account/Skeleton'
 import { CategoryFormModal } from '@/features/adminProducts/components/CategoryFormModal'
@@ -158,21 +159,26 @@ export default function CategoriesIndex() {
         {categories.error !== undefined ? (
           <ErrorState message={toUserMessage(categories.error)} onRetry={categories.refetch} />
         ) : (
-          <dl className="grid grid-cols-2 gap-px border border-line bg-line lg:grid-cols-3">
-            <Stat label="Categories" value={list.length} loading={categories.isLoading} hint="All groups" />
-            <Stat
-              label="Active"
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <AdminStatCard
+              label="Total Categories"
+              value={list.length}
+              loading={categories.isLoading}
+              hint="All hierarchy groups"
+            />
+            <AdminStatCard
+              label="Active Categories"
               value={activeCount}
               loading={categories.isLoading}
-              hint="Shown on the storefront"
+              hint="Visible on storefront"
             />
-            <Stat
+            <AdminStatCard
               label="Sub-categories"
               value={childCount}
               loading={categories.isLoading}
-              hint="Filed under a parent"
+              hint="Nested under parent categories"
             />
-          </dl>
+          </div>
         )}
       </section>
 
@@ -199,31 +205,31 @@ export default function CategoriesIndex() {
             {products.error !== undefined && ' · product counts unavailable'}
           </p>
 
-          <div className="border border-line bg-paper">
+          <div className="overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs">
             {/* Desktop: a real table with real column headers. */}
             <div className="hidden overflow-x-auto md:block">
-              <table className="w-full text-left">
+              <table className="w-full text-left text-[13px] border-collapse">
                 <thead>
-                  <tr className="border-b border-line">
-                    <th scope="col" className="px-5 py-3 text-[12px] font-medium text-graphite">
+                  <tr className="border-b border-line bg-canvas/40">
+                    <th scope="col" className="px-5 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite">
                       Category
                     </th>
-                    <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
+                    <th scope="col" className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite">
                       Image
                     </th>
-                    <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
+                    <th scope="col" className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite">
                       Parent
                     </th>
-                    <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
+                    <th scope="col" className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite">
                       Products
                     </th>
-                    <th scope="col" className="px-4 py-3 text-[12px] font-medium text-graphite">
+                    <th scope="col" className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite">
                       Visibility
                     </th>
-                    <th scope="col" className="px-5 py-3 text-[12px] font-medium text-graphite">
+                    <th scope="col" className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite">
                       Updated
                     </th>
-                    <th scope="col" className="px-5 py-3 text-right text-[12px] font-medium text-graphite">
+                    <th scope="col" className="px-5 py-3 text-right text-[11.5px] font-semibold uppercase tracking-wider text-graphite">
                       Actions
                     </th>
                   </tr>
@@ -438,32 +444,6 @@ const VisibilityBadge = ({ isActive }: { isActive: boolean }) => (
     <span aria-hidden className={`size-1.5 rounded-full ${isActive ? 'bg-ink' : 'bg-ash'}`} />
     {isActive ? 'Active' : 'Inactive'}
   </span>
-)
-
-const Stat = ({
-  label,
-  value,
-  loading,
-  hint,
-}: {
-  label: string
-  value: number | undefined
-  loading: boolean
-  hint: string
-}) => (
-  <div className="bg-paper px-5 py-5 sm:px-6">
-    <dt className="text-[12px] font-medium text-graphite">{label}</dt>
-    <dd className="mt-2">
-      {loading ? (
-        <Skeleton className="h-8 w-12" />
-      ) : (
-        <span className="font-mono text-[1.75rem] leading-none tabular-nums text-ink">
-          {String(value ?? 0).padStart(2, '0')}
-        </span>
-      )}
-      <span className="mt-2 block text-[12px] leading-relaxed text-graphite">{hint}</span>
-    </dd>
-  </div>
 )
 
 const CategoryListSkeleton = () => (

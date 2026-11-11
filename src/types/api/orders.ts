@@ -123,6 +123,13 @@ export interface Order {
   currency: string
   /** Units across every line — a bag count, not a line count. */
   itemCount: number
+  shippingProviderId?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaId?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
+  couponCode?: string | null
   shippingRecipientName: string
   shippingPhone: string
   shippingAddressLine1: string

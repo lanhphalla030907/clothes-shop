@@ -1,3 +1,4 @@
+import { ApiError } from "@/lib/api/errors";
 import {
   cleanup,
   fireEvent,
@@ -18,6 +19,7 @@ const api = vi.hoisted(() => ({
   fetchAdminProductOptions: vi.fn(),
   previewAdminProductOptions: vi.fn(),
   saveAdminProductOptions: vi.fn(),
+  updateAdminVariantCost: vi.fn(),
 }));
 const feedback = vi.hoisted(() => ({ showFeedback: vi.fn() }));
 
@@ -116,6 +118,7 @@ describe("ProductVariantsSection", () => {
     api.fetchAdminProductOptions.mockResolvedValue(configuration);
     api.previewAdminProductOptions.mockResolvedValue(preview);
     api.saveAdminProductOptions.mockResolvedValue(configuration);
+    api.updateAdminVariantCost.mockResolvedValue({});
   });
 
   it("collects product options, previews combinations and saves editable variant rows", async () => {
@@ -409,5 +412,172 @@ describe("ProductVariantsSection", () => {
         }),
       ),
     );
+  });
+
+  it("shows known and unknown purchase cost states for saved variants", async () => {
+    const matrixPreview: ProductOptionsPreview = {
+      ...preview,
+      variants: preview.variants.slice(0, 2).map((variant, index) => ({
+        ...variant,
+        id: `variant-${index + 1}`,
+      })),
+    };
+    api.fetchAdminProductOptions.mockResolvedValue({
+      productId: product.id,
+      revision: 1,
+      options: [],
+      variants: [
+        {
+          id: "variant-1",
+          sku: "SKU-1",
+          price: "49.90",
+          isActive: true,
+          optionValueIds: matrixPreview.variants[0].optionValueIds,
+          options: [],
+          inventory: null,
+          costPrice: "12.50",
+          costCurrency: "USD",
+        },
+        {
+          id: "variant-2",
+          sku: "SKU-2",
+          price: "49.90",
+          isActive: true,
+          optionValueIds: matrixPreview.variants[1].optionValueIds,
+          options: [],
+          inventory: null,
+          costPrice: null,
+          costCurrency: null,
+        },
+      ],
+    } as unknown as ProductOptionsConfiguration);
+    api.previewAdminProductOptions.mockResolvedValue(matrixPreview);
+
+    render(<ProductVariantsSection product={product} />);
+    await screen.findByRole("heading", { name: "Product options" });
+    fireEvent.click(screen.getByRole("button", { name: "Generate combinations" }));
+    await screen.findByRole("heading", { name: "Review variants" });
+
+    expect(screen.getByText("Purchase cost: 12.50 USD")).toBeTruthy();
+    expect(screen.getByText("Purchase cost: Unknown")).toBeTruthy();
+  });
+
+  it("updates purchase cost with currency, shows loading, and refreshes after success", async () => {
+    const matrixPreview: ProductOptionsPreview = {
+      ...preview,
+      variants: [{
+        ...preview.variants[0],
+        id: "variant-1",
+      }],
+    };
+    api.fetchAdminProductOptions
+      .mockResolvedValueOnce({
+        productId: product.id,
+        revision: 1,
+        options: [],
+        variants: [{
+          id: "variant-1", sku: "SKU-1", price: "49.90", isActive: true,
+          optionValueIds: matrixPreview.variants[0].optionValueIds, options: [], inventory: null,
+          costPrice: null, costCurrency: null,
+        }],
+      } as unknown as ProductOptionsConfiguration)
+      .mockResolvedValueOnce({
+        productId: product.id,
+        revision: 1,
+        options: [],
+        variants: [{
+          id: "variant-1", sku: "SKU-1", price: "49.90", isActive: true,
+          optionValueIds: matrixPreview.variants[0].optionValueIds, options: [], inventory: null,
+          costPrice: "15.00", costCurrency: "KHR",
+        }],
+      } as unknown as ProductOptionsConfiguration);
+    api.previewAdminProductOptions.mockResolvedValue(matrixPreview);
+    let resolveUpdate!: (value: unknown) => void;
+    api.updateAdminVariantCost.mockImplementation(
+      () => new Promise((resolve) => { resolveUpdate = resolve; }),
+    );
+
+    render(<ProductVariantsSection product={product} />);
+    await screen.findByRole("heading", { name: "Product options" });
+    fireEvent.click(screen.getByRole("button", { name: "Generate combinations" }));
+    await screen.findByRole("heading", { name: "Review variants" });
+
+    fireEvent.click(screen.getByText("Purchase cost: Unknown"));
+    const costInput = screen.getByLabelText("Purchase cost") as HTMLInputElement;
+    const currency = screen.getByLabelText("Purchase cost currency") as HTMLSelectElement;
+    fireEvent.change(costInput, { target: { value: "15" } });
+    fireEvent.change(currency, { target: { value: "KHR" } });
+    const save = screen.getByRole("button", { name: "Save purchase cost" });
+    fireEvent.click(save);
+
+    expect(await screen.findByRole("button", { name: "Saving purchase cost" })).toBeTruthy();
+    expect(api.updateAdminVariantCost).toHaveBeenCalledTimes(1);
+    expect(api.updateAdminVariantCost).toHaveBeenCalledWith(product.id, "variant-1", {
+      costPrice: "15.00",
+      costCurrency: "KHR",
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Saving purchase cost" }));
+    expect(api.updateAdminVariantCost).toHaveBeenCalledTimes(1);
+
+    resolveUpdate({ id: "variant-1", costPrice: "15.00", costCurrency: "KHR" });
+    await waitFor(() => expect(api.fetchAdminProductOptions.mock.calls.length).toBeGreaterThanOrEqual(2));
+  });
+
+  it("shows validation error and prevents invalid purchase cost submit", async () => {
+    const matrixPreview: ProductOptionsPreview = {
+      ...preview,
+      variants: [{ ...preview.variants[0], id: "variant-1" }],
+    };
+    api.fetchAdminProductOptions.mockResolvedValue({
+      productId: product.id, revision: 1, options: [],
+      variants: [{
+        id: "variant-1", sku: "SKU-1", price: "49.90", isActive: true,
+        optionValueIds: matrixPreview.variants[0].optionValueIds, options: [], inventory: null,
+        costPrice: null, costCurrency: null,
+      }],
+    } as unknown as ProductOptionsConfiguration);
+    api.previewAdminProductOptions.mockResolvedValue(matrixPreview);
+
+    render(<ProductVariantsSection product={product} />);
+    await screen.findByRole("heading", { name: "Product options" });
+    fireEvent.click(screen.getByRole("button", { name: "Generate combinations" }));
+    await screen.findByRole("heading", { name: "Review variants" });
+    fireEvent.click(screen.getByText("Purchase cost: Unknown"));
+
+    fireEvent.change(screen.getByLabelText("Purchase cost"), { target: { value: "0" } });
+    expect(screen.getByText("Enter a positive amount with up to 2 decimals and select a currency.")).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Save purchase cost" }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Save purchase cost" }));
+    expect(api.updateAdminVariantCost).not.toHaveBeenCalled();
+  });
+
+  it("shows API failure when purchase cost update fails", async () => {
+    const matrixPreview: ProductOptionsPreview = {
+      ...preview,
+      variants: [{ ...preview.variants[0], id: "variant-1" }],
+    };
+    api.fetchAdminProductOptions.mockResolvedValue({
+      productId: product.id, revision: 1, options: [],
+      variants: [{
+        id: "variant-1", sku: "SKU-1", price: "49.90", isActive: true,
+        optionValueIds: matrixPreview.variants[0].optionValueIds, options: [], inventory: null,
+        costPrice: null, costCurrency: null,
+      }],
+    } as unknown as ProductOptionsConfiguration);
+    api.previewAdminProductOptions.mockResolvedValue(matrixPreview);
+    api.updateAdminVariantCost.mockRejectedValue(
+      new ApiError("Purchase cost update failed", { kind: "conflict" }),
+    );
+
+    render(<ProductVariantsSection product={product} />);
+    await screen.findByRole("heading", { name: "Product options" });
+    fireEvent.click(screen.getByRole("button", { name: "Generate combinations" }));
+    await screen.findByRole("heading", { name: "Review variants" });
+    fireEvent.click(screen.getByText("Purchase cost: Unknown"));
+    fireEvent.change(screen.getByLabelText("Purchase cost"), { target: { value: "10.00" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save purchase cost" }));
+
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect(screen.getByText("Purchase cost update failed")).toBeTruthy();
   });
 });

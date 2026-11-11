@@ -9,12 +9,12 @@ import { codCollectionStatusLabel } from '@/features/adminOrders/rules'
  * order that has no `cod_collections` row.
  */
 const tone: Record<CodCollectionStatus, string> = {
-  COLLECTED: 'border-success/25 bg-success-soft text-success',
-  NOT_COLLECTED: 'border-line bg-bone text-ink',
+  COLLECTED: 'border-emerald-200/80 bg-emerald-50 text-emerald-700',
+  NOT_COLLECTED: 'border-line bg-bone text-graphite',
 }
 
 const dot: Record<CodCollectionStatus, string> = {
-  COLLECTED: 'bg-success',
+  COLLECTED: 'bg-emerald-500',
   NOT_COLLECTED: 'bg-ash',
 }
 
@@ -29,7 +29,7 @@ export function CodCollectionStatusBadge({
 
   return (
     <span
-      className={`inline-flex w-fit items-center gap-1.5 border px-2.5 py-1 text-[11px] font-medium whitespace-nowrap ${tone[status]} ${className}`}
+      className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap shadow-2xs ${tone[status]} ${className}`}
     >
       <span className={`size-1.5 rounded-full ${dot[status]}`} aria-hidden />
       {codCollectionStatusLabel(status)}

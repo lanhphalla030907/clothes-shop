@@ -14,6 +14,7 @@ import type {
   CreateVariantOptionRequest,
   CreateVariantRequest,
   BulkInventoryRequest,
+  BulkVariantCostRequest,
   Inventory,
   ProductImage,
   ProductOptionDraft,
@@ -44,6 +45,12 @@ const productPath = (productId: UUID): string =>
 
 const variantsPath = (productId: UUID): string =>
   `${productPath(productId)}/variants`;
+
+const variantCostPath = (productId: UUID, variantId: UUID): string =>
+  `${variantsPath(productId)}/${variantId}/cost`;
+
+const bulkVariantCostPath = (productId: UUID): string =>
+  `${variantsPath(productId)}/cost/bulk`;
 
 const optionsPath = (productId: UUID, variantId: UUID): string =>
   `${variantsPath(productId)}/${variantId}/options`;
@@ -93,6 +100,25 @@ export const updateAdminProductVariant = async (
       body,
     ),
     "The catalogue did not return the saved variant.",
+  );
+
+export const updateAdminVariantCost = async (
+  productId: UUID,
+  variantId: UUID,
+  body: { costPrice: string; costCurrency: string },
+): Promise<ProductVariant> =>
+  requireEntity(
+    await apiPatch<ProductVariant>(variantCostPath(productId, variantId), body),
+    "The catalogue did not return the saved purchase cost.",
+  );
+
+export const bulkUpdateAdminVariantCost = async (
+  productId: UUID,
+  body: BulkVariantCostRequest,
+): Promise<ProductVariant[]> =>
+  requireEntity(
+    await apiPatch<ProductVariant[]>(bulkVariantCostPath(productId), body),
+    "The catalogue did not return the updated purchase costs.",
   );
 
 export const deleteAdminProductVariant = async (

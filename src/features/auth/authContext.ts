@@ -13,6 +13,8 @@ export interface AuthContextValue {
   loginError: string | null
   /** Resolves `true` only once the user is established, not merely accepted. */
   login: (email: string, password: string) => Promise<boolean>
+  /** Authenticates via a Google Identity Services ID token. */
+  loginWithGoogle: (idToken: string, nonce?: string) => Promise<boolean>
   /** Forgets the token and the user. The API has no logout endpoint to call. */
   logout: () => void
 }

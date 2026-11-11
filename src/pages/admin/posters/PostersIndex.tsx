@@ -221,11 +221,11 @@ export default function PostersIndex() {
               {list.filter((poster) => poster.isActive).length} active
             </p>
 
-            <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {list.map((poster) => (
                 <li
                   key={poster.id}
-                  className={`border border-line bg-paper transition-opacity ${
+                  className={`overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs transition-shadow hover:shadow-sm ${
                     toggleMutation.isPending ? 'opacity-80' : ''
                   }`}
                 >
@@ -368,29 +368,33 @@ const posterLabel = (poster: Poster): string => {
 
 const PosterStatusBadge = ({ isActive }: { isActive: boolean }) => (
   <span
-    className={`absolute top-3 left-3 inline-flex h-7 items-center border px-2.5 text-[11px] font-semibold tracking-[0.06em] uppercase ${
+    className={`absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider shadow-xs backdrop-blur-xs ${
       isActive
-        ? 'border-line bg-paper text-ink'
-        : 'border-line bg-bone/90 text-ash'
+        ? 'border-emerald-200/80 bg-white/95 text-emerald-700'
+        : 'border-line bg-white/95 text-graphite'
     }`}
   >
+    <span
+      aria-hidden
+      className={`size-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-ash'}`}
+    />
     {isActive ? 'Active' : 'Inactive'}
   </span>
 )
 
 const PosterListSkeleton = () => (
   <div
-    className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+    className="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
     role="status"
     aria-busy="true"
   >
     <span className="sr-only">Loading posters</span>
     {Array.from({ length: 3 }, (_, index) => (
-      <div key={index} className="border border-line bg-paper">
+      <div key={index} className="overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs">
         <Skeleton className="aspect-[16/9] w-full" />
         <div className="space-y-3 p-5">
-          <Skeleton className="h-3 w-2/3" />
-          <Skeleton className="h-3 w-1/3" />
+          <Skeleton className="h-3.5 w-2/3 rounded-md" />
+          <Skeleton className="h-3 w-1/3 rounded-md" />
         </div>
       </div>
     ))}

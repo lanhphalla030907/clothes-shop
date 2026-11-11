@@ -7,37 +7,20 @@ import type { CataloguePiece } from '@/types'
 
 interface FloatingProductProps {
   piece: CataloguePiece
-  /** Position in the rail — kept for API compatibility. */
   index: number
-  /** `hero` overlaps the display type; `rail` sits in the showcase strip. */
   variant?: 'hero' | 'rail'
 }
 
-/**
- * A garment suspended on an invisible rail. Static — no float, no hover lift.
- * Every card is the same size so tops and bottoms line up in the rail.
- */
-export function FloatingProduct({ piece, index, variant = 'rail' }: FloatingProductProps) {
+export function FloatingProduct({ piece, index: _index, variant = 'rail' }: FloatingProductProps) {
   const isHero = variant === 'hero'
 
   return (
-    <div
-      className={
-        isHero
-          ? 'w-full'
-          : 'w-[62vw] max-w-[300px] shrink-0 sm:w-[38vw] sm:max-w-[330px] lg:w-[290px]'
-      }
-    >
+    <div className={isHero ? 'w-full' : 'w-full'}>
       <div className="group/piece relative">
-        {/* Hanger hook — the visual cue that these pieces are suspended */}
+        {/* Hanger */}
         <div className="pointer-events-none absolute top-0 left-1/2 z-20 -translate-x-1/2 -translate-y-full">
           <svg width="14" height="30" viewBox="0 0 14 30" fill="none" aria-hidden>
-            <path
-              d="M7 6.5a3.2 3.2 0 1 1 2.4-5.36"
-              stroke="currentColor"
-              strokeWidth="1"
-              className="text-graphite"
-            />
+            <path d="M7 6.5a3.2 3.2 0 1 1 2.4-5.36" stroke="currentColor" strokeWidth="1" className="text-graphite" />
             <path d="M7 6.5V30" stroke="currentColor" strokeWidth="1" className="text-graphite" />
           </svg>
         </div>
@@ -54,22 +37,24 @@ export function FloatingProduct({ piece, index, variant = 'rail' }: FloatingProd
               className="h-full w-full object-cover transition-transform duration-[1.4s] ease-editorial group-hover/piece:scale-[1.07]"
             />
 
-            {/* Scrim keeps the caption legible over any photo */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-ink/45 via-ink/10 to-transparent opacity-0 transition-opacity duration-700 ease-editorial group-hover/piece:opacity-100" />
+            {/* Scrim — always visible on mobile */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-ink/60 via-ink/15 to-transparent opacity-100 transition-opacity duration-700 ease-editorial lg:opacity-0 lg:group-hover/piece:opacity-100" />
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-3 p-3.5 opacity-0 transition-all duration-500 ease-editorial group-hover/piece:translate-y-0 group-hover/piece:opacity-100 sm:p-4">
+            {/* Info — always visible on mobile, hover on desktop */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 p-2.5 opacity-100 transition-all duration-500 ease-editorial sm:p-3 lg:translate-y-3 lg:p-4 lg:opacity-0 lg:group-hover/piece:translate-y-0 lg:group-hover/piece:opacity-100">
               <div className="flex items-end justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-[11px] font-semibold tracking-[0.02em] text-paper uppercase sm:text-xs">
+                  <p className="truncate text-[10px] font-semibold tracking-[0.02em] text-paper uppercase sm:text-[11px] lg:text-xs">
                     {piece.name}
                   </p>
-                  <p className="mt-0.5 font-mono text-[9px] tracking-[0.16em] text-paper/70 uppercase">
+                  <p className="mt-0.5 font-mono text-[8px] tracking-[0.16em] text-paper/70 uppercase lg:text-[9px]">
                     {piece.category}
                   </p>
                 </div>
-                <span className="flex shrink-0 items-center gap-1 font-mono text-[11px] text-paper tabular-nums">
+                <span className="flex shrink-0 items-center gap-0.5 font-mono text-[10px] text-paper tabular-nums lg:gap-1 lg:text-[11px]">
                   {formatMoney(piece.price, STORE_CURRENCY)}
-                  <ArrowUpRight size={12} strokeWidth={1.5} />
+                  <ArrowUpRight size={10} strokeWidth={1.5} className="lg:hidden" />
+                  <ArrowUpRight size={12} strokeWidth={1.5} className="hidden lg:block" />
                 </span>
               </div>
             </div>
