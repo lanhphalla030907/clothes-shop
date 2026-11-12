@@ -11,13 +11,8 @@ import { useWishlistActions } from '@/features/wishlist/useWishlistActions'
 import { useUI } from '@/hooks/useUI'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 
-/** The CTRL mark — a struck-through square, echoing the brand's restraint. */
-const Mark = ({ className = '' }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" aria-hidden className={className}>
-    <rect x="1.6" y="1.6" width="20.8" height="20.8" stroke="currentColor" strokeWidth="1.4" />
-    <path d="M6 12h12" stroke="currentColor" strokeWidth="1.4" />
-  </svg>
-)
+// Official shop logo from public directory
+const LOGO_SRC = '/logo.png'
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -37,8 +32,6 @@ export function Navbar() {
     }
   }
 
-  // The home hero carries its own chrome, so the bar stays out of the way
-  // until the page is scrolled — but it still surfaces for keyboard users.
   const isHome = pathname === '/'
   const docked = scrolled || !isHome
 
@@ -58,45 +51,64 @@ export function Navbar() {
             : 'pointer-events-none border-b border-transparent opacity-0'
         }`}
       >
-        <div className="container-editorial flex h-16 items-center justify-between gap-4 sm:h-[4.5rem]">
-          {/* Wordmark */}
-          <Link to="/" className="group flex min-h-11 shrink-0 items-center gap-2.5" aria-label="CTRL — home">
-            <Mark className="size-4 text-ink transition-transform duration-700 ease-editorial group-hover:rotate-90 sm:size-[18px]" />
-            <span className="text-[15px] font-extrabold tracking-[-0.03em] uppercase sm:text-base">
-              CTRL
-            </span>
-          </Link>
+        <div className="container-editorial flex h-16 items-center justify-between gap-4 sm:h-[4.5rem] lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-0">
+          
+          {/* LEFT CLUSTER: Navigation Links (Desktop) / Menu Toggle (Mobile) */}
+          <div className="flex items-center justify-start">
+            
+            {/* Mobile Menu Button */}
+            <button
+              ref={menuTrigger}
+              type="button"
+              onClick={openMenu}
+              aria-label="Open menu"
+              className="grid size-11 place-items-center text-ink transition-colors hover:bg-bone lg:hidden -ml-2"
+            >
+              <Menu size={20} strokeWidth={1.6} />
+            </button>
 
-          {/* Desktop nav — centred, plain labels, a rule under the active route */}
-          <nav aria-label="Primary" className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 lg:flex">
-            {navLinks.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.to === '/'}
-                className={({ isActive }) =>
-                  `relative flex min-h-11 items-center px-3.5 text-[12px] font-semibold tracking-[0.12em] uppercase transition-colors ${
-                    isActive ? 'text-ink' : 'text-graphite hover:text-ink'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    {link.label}
-                    <span
-                      aria-hidden
-                      className={`absolute inset-x-3.5 bottom-1.5 h-px origin-left bg-ink transition-transform duration-300 ${
-                        isActive ? 'scale-x-100' : 'scale-x-0'
-                      }`}
-                    />
-                  </>
-                )}
-              </NavLink>
-            ))}
-          </nav>
+            {/* Desktop Nav */}
+            <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.to === '/'}
+                  className={({ isActive }) =>
+                    `relative flex min-h-11 items-center px-3.5 text-[12px] font-semibold tracking-[0.12em] uppercase transition-colors ${
+                      isActive ? 'text-ink' : 'text-graphite hover:text-ink'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {link.label}
+                      <span
+                        aria-hidden
+                        className={`absolute inset-x-3.5 bottom-1.5 h-px origin-left bg-ink transition-transform duration-300 ${
+                          isActive ? 'scale-x-100' : 'scale-x-0'
+                        }`}
+                      />
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
 
-          {/* Right cluster: session, bag, menu */}
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          {/* CENTER: The Logo */}
+          <div className="flex justify-center">
+            <Link to="/" className="group flex min-h-11 shrink-0 items-center gap-2.5" aria-label="LOMOR — home">
+              <img
+                src={LOGO_SRC}
+                alt="LOMOR Logo"
+                className="h-15 w-auto object-contain transition-opacity duration-300 group-hover:opacity-70"
+              />
+            </Link>
+          </div>
+
+          {/* RIGHT CLUSTER: Account, Bag, & Auth */}
+          <div className="flex shrink-0 items-center justify-end gap-1 sm:gap-2">
             {!isInitializing &&
               (isAuthenticated ? (
                 <AccountMenu
@@ -141,16 +153,6 @@ export function Navbar() {
                 Bag
               </span>
             </Link>
-
-            <button
-              ref={menuTrigger}
-              type="button"
-              onClick={openMenu}
-              aria-label="Open menu"
-              className="grid size-11 place-items-center text-ink transition-colors hover:bg-bone lg:hidden"
-            >
-              <Menu size={20} strokeWidth={1.6} />
-            </button>
           </div>
         </div>
       </header>
@@ -184,11 +186,6 @@ function MobileMenu({
   const { user, isInitializing } = useAuth()
   const { pathname } = useLocation()
 
-  /**
-   * Dismissing the menu (Escape or the close button) should put the keyboard
-   * back on the control that opened it. Following a link is different: the
-   * route change owns the next focus position.
-   */
   const dismiss = () => {
     closeMenu()
     triggerRef.current?.focus()
@@ -223,9 +220,12 @@ function MobileMenu({
           className="fixed inset-0 z-[85] flex flex-col overflow-hidden bg-paper lg:hidden"
         >
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-line px-5 sm:h-[4.5rem]">
-            <Link to="/" onClick={closeMenu} className="flex items-center gap-2.5" aria-label="CTRL — home">
-              <Mark className="size-4" />
-              <span className="text-[15px] font-extrabold tracking-[-0.03em] uppercase">CTRL</span>
+            <Link to="/" onClick={closeMenu} className="flex items-center gap-2.5" aria-label="LOMOR — home">
+              <img
+                src={LOGO_SRC}
+                alt="LOMOR Logo"
+                className="h-9 w-auto object-contain"
+              />
             </Link>
             <button
               type="button"

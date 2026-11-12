@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Check, RotateCcw } from 'lucide-react'
 import type { ProductFilterOptions } from '@/types/productsFilter'
 
@@ -67,11 +67,15 @@ export function ProductFiltersSidebar({
     filters.maxPrice !== undefined ? String(filters.maxPrice) : '',
   )
   const [priceError, setPriceError] = useState<string | null>(null)
+  const [lastMinPrice, setLastMinPrice] = useState(filters.minPrice)
+  const [lastMaxPrice, setLastMaxPrice] = useState(filters.maxPrice)
 
-  useEffect(() => {
+  if (filters.minPrice !== lastMinPrice || filters.maxPrice !== lastMaxPrice) {
+    setLastMinPrice(filters.minPrice)
+    setLastMaxPrice(filters.maxPrice)
     setMinPriceInput(filters.minPrice !== undefined ? String(filters.minPrice) : '')
     setMaxPriceInput(filters.maxPrice !== undefined ? String(filters.maxPrice) : '')
-  }, [filters.minPrice, filters.maxPrice])
+  }
 
   const handlePriceApply = () => {
     const min = minPriceInput.trim() !== '' ? Number(minPriceInput) : undefined

@@ -14,15 +14,6 @@ export type AccountNavGroup = {
   items: readonly AccountNavItem[]
 }
 
-/**
- * The account's navigation. Every entry is a screen that exists and reads real
- * data — there is no placeholder entry, because a disabled link is a promise the
- * phase does not keep.
- *
- * Checkout is deliberately absent. It is a flow, not a destination: it starts
- * from the bag and ends at payment, and a permanent sidebar link to it invites
- * people to abandon an order midway.
- */
 export const accountNavigation: readonly AccountNavGroup[] = [
   {
     title: 'Account',

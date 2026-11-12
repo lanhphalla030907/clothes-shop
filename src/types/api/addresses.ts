@@ -71,7 +71,9 @@ export interface AddressFormValues {
   city: string
   stateProvince: string
   provincePcode: string
+  districtPcode: string
   district: string
+  communePcode: string
   commune: string
   postalCode: string
   countryCode: string
@@ -86,7 +88,9 @@ export const EMPTY_ADDRESS_FORM: AddressFormValues = {
   city: '',
   stateProvince: '',
   provincePcode: '',
+  districtPcode: '',
   district: '',
+  communePcode: '',
   commune: '',
   postalCode: '',
   countryCode: 'KH',
@@ -103,10 +107,14 @@ export const addressToFormValues = (address: Address): AddressFormValues => ({
   stateProvince: address.countryCode === 'KH' ? '' : address.stateProvince ?? '',
   provincePcode:
     address.administrativeLocationPath?.find((location) => location.adminLevel === 1)?.pcode ?? '',
+  districtPcode:
+    address.administrativeLocationPath?.find((location) => location.adminLevel === 2)?.pcode ?? '',
   // Legacy Cambodia rows may not have a canonical province P-code. Keep their
   // free-text columns editable, but never infer a P-code from either value.
   district:
     address.district ?? (address.countryCode === 'KH' ? address.stateProvince ?? '' : ''),
+  communePcode:
+    address.administrativeLocationPath?.find((location) => location.adminLevel === 3)?.pcode ?? '',
   commune: address.commune ?? (address.countryCode === 'KH' ? address.city ?? '' : ''),
   postalCode: address.postalCode ?? '',
   countryCode: address.countryCode,
@@ -132,6 +140,8 @@ export const addressFormValuesToRequest = (
     ...(countryCode === 'KH'
       ? {
           administrativeLocationPcode: values.provincePcode,
+          districtPcode: values.districtPcode || undefined,
+          communePcode: values.communePcode || undefined,
           district: values.district,
           commune: values.commune,
         }

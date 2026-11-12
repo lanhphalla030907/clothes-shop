@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Navbar } from '@/components/layout/Navbar'
+import { BottomNavigation } from '@/components/layout/BottomNavigation'
 import { Footer } from '@/components/layout/Footer'
 
 /** Restores scroll to the top on navigation (but honours hash links). */
@@ -23,7 +24,7 @@ const ScrollToTop = () => {
 
 export function StorefrontLayout() {
   return (
-    <div className="flex min-h-svh flex-col bg-paper">
+    <div className="flex min-h-svh flex-col bg-paper pb-safe-bottom lg:pb-0">
       <ScrollToTop />
       <a
         href="#main"
@@ -36,6 +37,7 @@ export function StorefrontLayout() {
         <Outlet />
       </main>
       <Footer />
+      <BottomNavigation />
     </div>
   )
 }

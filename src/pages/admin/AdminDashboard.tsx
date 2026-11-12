@@ -102,7 +102,6 @@ export default function AdminDashboard() {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Recently updated products */}
         <AdminCard className="lg:col-span-2">
           <AdminCardHeader
             title="Recently updated"
@@ -148,9 +147,10 @@ export default function AdminDashboard() {
                 <li key={product.id}>
                   <Link
                     to={`/admin/products/${product.id}`}
-                    className="group flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-bone/50 sm:px-6"
+                    className="group flex flex-col justify-between gap-2 px-4 py-3.5 transition-colors hover:bg-bone/50 sm:flex-row sm:items-center sm:gap-3 sm:px-6"
                   >
-                    <div className="min-w-0">
+                    {/* Left: Name & Slug */}
+                    <div className="min-w-0 flex-1">
                       <p className="truncate text-[13.5px] font-semibold text-ink group-hover:text-ink">
                         {product.name}
                       </p>
@@ -158,9 +158,11 @@ export default function AdminDashboard() {
                         /{product.slug}
                       </p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-3">
+                    
+                    {/* Right: Status & Price */}
+                    <div className="flex shrink-0 items-center justify-between gap-3 sm:w-auto sm:justify-end mt-1 sm:mt-0">
                       <ProductStatusBadge status={product.status} />
-                      <Money amount={product.basePrice} className="font-semibold" />
+                      <Money amount={product.basePrice} className="text-[13px] font-semibold" />
                     </div>
                   </Link>
                 </li>
@@ -196,7 +198,7 @@ export default function AdminDashboard() {
             ) : (
               <ul className="divide-y divide-line-soft">
                 {bestSellers.data!.slice(0, 6).map((item) => (
-                  <li key={item.productId} className="flex items-center gap-3 px-5 py-3">
+                  <li key={item.productId} className="flex items-center gap-3 px-4 py-3 sm:px-5">
                     <span className="grid size-6 shrink-0 place-items-center rounded-md bg-bone font-mono text-[11px] font-semibold text-graphite">
                       {item.rank}
                     </span>
@@ -205,11 +207,14 @@ export default function AdminDashboard() {
                     ) : (
                       <div className="size-9 shrink-0 rounded-md bg-bone" />
                     )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-medium text-ink">{item.name}</p>
-                      <p className="text-[11px] text-graphite">{item.unitsSold} sold</p>
+                    {/* Wrapped name/sold and price in a flex container that behaves well on mobile */}
+                    <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-medium text-ink">{item.name}</p>
+                        <p className="text-[11px] text-graphite">{item.unitsSold} sold</p>
+                      </div>
+                      <Money amount={String(item.revenue ?? '0')} className="shrink-0 text-[11px] font-semibold sm:text-xs" />
                     </div>
-                    <Money amount={String(item.revenue ?? '0')} className="text-xs font-semibold" />
                   </li>
                 ))}
               </ul>

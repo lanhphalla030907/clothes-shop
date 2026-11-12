@@ -31,20 +31,13 @@ export const REQUEST_TIMEOUT_MS = 20_000
  * as an error instead of a spinner that never resolves.
  */
 export const UPLOAD_TIMEOUT_MS = 60_000
-
-/**
- * The currency to label cart figures with.
- *
- * `GET /cart` returns bare two-decimal strings with **no** currency of its own,
- * unlike an order, which carries one. So a cart subtotal has to be rendered in the
- * store's currency until an order exists to tell us otherwise — the amount is
- * still the server's, only its unit is the catalogue's default.
- */
 export const STORE_CURRENCY = 'USD'
 
 /** Paths, named once so a route change is a single-file edit. */
 export const API = {
   login: '/auth/login',
+  forgotPassword: '/auth/forgot-password',
+  resetPassword: '/auth/reset-password',
   googleLogin: '/auth/google',
   linkGoogle: '/auth/google/link',
   identities: '/auth/identities',

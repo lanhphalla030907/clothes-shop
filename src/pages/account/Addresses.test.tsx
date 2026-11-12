@@ -50,15 +50,45 @@ describe('Cambodia address form', () => {
       isCreating: false,
     })
     createMock.mockResolvedValue(undefined)
-    fetchLocationsMock.mockResolvedValue([
-      {
-        pcode: 'KH12',
-        parentPcode: null,
-        adminLevel: 1,
-        nameEn: 'Phnom Penh',
-        nameKm: null,
-      },
-    ])
+    fetchLocationsMock.mockImplementation((parentPcode?: string) => {
+      if (!parentPcode) {
+        // Provinces
+        return Promise.resolve([
+          {
+            pcode: 'KH12',
+            parentPcode: null,
+            adminLevel: 1,
+            nameEn: 'Phnom Penh',
+            nameKm: null,
+          },
+        ])
+      }
+      if (parentPcode === 'KH12') {
+        // Districts
+        return Promise.resolve([
+          {
+            pcode: 'KH1201',
+            parentPcode: 'KH12',
+            adminLevel: 2,
+            nameEn: 'Chamkar Mon',
+            nameKm: null,
+          },
+        ])
+      }
+      if (parentPcode === 'KH1201') {
+        // Communes
+        return Promise.resolve([
+          {
+            pcode: 'KH120101',
+            parentPcode: 'KH1201',
+            adminLevel: 3,
+            nameEn: 'Tonle Bassac',
+            nameKm: null,
+          },
+        ])
+      }
+      return Promise.resolve([])
+    })
   })
 
   afterEach(cleanup)
@@ -77,18 +107,23 @@ describe('Cambodia address form', () => {
     await screen.findByRole('option', { name: 'Phnom Penh' })
     fireEvent.change(province, { target: { value: 'KH12' } })
 
-    fireEvent.change(form.getByLabelText('District / Khan', { exact: false }), {
-      target: { value: 'Khan Chamkar Mon' },
-    })
-    fireEvent.change(form.getByLabelText('Commune / Sangkat', { exact: false }), {
-      target: { value: 'ស្រះចក' },
-    })
+    // Wait for districts to load and select one
+    await screen.findByRole('option', { name: 'Chamkar Mon' })
+    const district = form.getByLabelText('District / Khan', { exact: false })
+    fireEvent.change(district, { target: { value: 'KH1201' } })
+
+    // Wait for communes to load and select one
+    await screen.findByRole('option', { name: 'Tonle Bassac' })
+    const commune = form.getByLabelText('Commune / Sangkat', { exact: false })
+    fireEvent.change(commune, { target: { value: 'KH120101' } })
 
     fireEvent.click(form.getByRole('button', { name: 'Add address' }))
 
     await waitFor(() => expect(createMock).toHaveBeenCalledOnce())
-    expect(fetchLocationsMock).toHaveBeenCalledOnce()
+    expect(fetchLocationsMock).toHaveBeenCalledTimes(3)
     expect(fetchLocationsMock).toHaveBeenCalledWith(undefined, expect.any(AbortSignal))
+    expect(fetchLocationsMock).toHaveBeenCalledWith('KH12', expect.any(AbortSignal))
+    expect(fetchLocationsMock).toHaveBeenCalledWith('KH1201', expect.any(AbortSignal))
     expect(createMock).toHaveBeenCalledWith(
       expect.objectContaining({
         label: 'Home',
@@ -97,8 +132,10 @@ describe('Cambodia address form', () => {
         addressLine1: 'Street 1',
         countryCode: 'KH',
         administrativeLocationPcode: 'KH12',
-        district: 'Khan Chamkar Mon',
-        commune: 'ស្រះចក',
+        districtPcode: 'KH1201',
+        communePcode: 'KH120101',
+        district: 'Chamkar Mon',
+        commune: 'Tonle Bassac',
       }),
     )
     expect(createMock.mock.calls[0][0]).not.toHaveProperty('city')

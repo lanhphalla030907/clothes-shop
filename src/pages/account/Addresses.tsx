@@ -261,13 +261,37 @@ const AddressFormModal = ({
   )
   const [errors, setErrors] = useState<AddressErrors>({})
   const isCambodia = values.countryCode.trim().toUpperCase() === 'KH'
+
+  // Provinces (level 1) - always loaded when Cambodia is selected
   const provinces = useAsyncResource(
     (signal) => isCambodia ? fetchCambodiaLocations(undefined, signal) : Promise.resolve([]),
     [isCambodia],
   )
+
+  // Districts (level 2) - loaded when provincePcode changes
+  const districts = useAsyncResource(
+    (signal) =>
+      isCambodia && values.provincePcode
+        ? fetchCambodiaLocations(values.provincePcode, signal)
+        : Promise.resolve([]),
+    [isCambodia, values.provincePcode],
+  )
+
+  // Communes (level 3) - loaded when districtPcode changes
+  const communes = useAsyncResource(
+    (signal) =>
+      isCambodia && values.districtPcode
+        ? fetchCambodiaLocations(values.districtPcode, signal)
+        : Promise.resolve([]),
+    [isCambodia, values.districtPcode],
+  )
+
   const locationsBusy =
-    isCambodia && (provinces.isLoading || provinces.isRefreshing)
-  const locationsFailed = isCambodia && provinces.error !== undefined
+    isCambodia &&
+    (provinces.isLoading || districts.isLoading || communes.isLoading ||
+     provinces.isRefreshing || districts.isRefreshing || communes.isRefreshing)
+  const locationsFailed =
+    isCambodia && (provinces.error !== undefined || districts.error !== undefined || communes.error !== undefined)
 
   const set = (field: keyof AddressFormValues) => (value: string) => {
     setValues((current) => ({ ...current, [field]: value }))
@@ -275,11 +299,73 @@ const AddressFormModal = ({
     setErrors((current) => (current[field] ? { ...current, [field]: undefined } : current))
   }
 
+  // Handle province change - reset district and commune
+  const handleProvinceChange = (provincePcode: string) => {
+    setValues((current) => ({
+      ...current,
+      provincePcode,
+      districtPcode: '',
+      district: '',
+      communePcode: '',
+      commune: '',
+    }))
+    setErrors((current) => {
+      const next = { ...current }
+      delete next.district
+      delete next.commune
+      delete next.districtPcode
+      delete next.communePcode
+      return next
+    })
+  }
+
+  // Handle district change - reset commune
+  const handleDistrictChange = (districtPcode: string) => {
+    setValues((current) => ({
+      ...current,
+      districtPcode,
+      district: '',
+      communePcode: '',
+      commune: '',
+    }))
+    setErrors((current) => {
+      const next = { ...current }
+      delete next.commune
+      delete next.communePcode
+      return next
+    })
+  }
+
+  // Handle commune change
+  const handleCommuneChange = (communePcode: string) => {
+    setValues((current) => ({
+      ...current,
+      communePcode,
+      commune: '',
+    }))
+    setErrors((current) => {
+      const next = { ...current }
+      delete next.commune
+      return next
+    })
+  }
+
+  // Sync district name from selected district pcode
+  const selectedDistrict = districts.data?.find((d) => d.pcode === values.districtPcode)
+  const selectedCommune = communes.data?.find((c) => c.pcode === values.communePcode)
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (locationsBusy || locationsFailed) return
 
-    const found = validateAddress(values)
+    // Sync display names from selected pcodes before validation
+    const valuesToValidate = {
+      ...values,
+      district: selectedDistrict?.nameEn ?? values.district,
+      commune: selectedCommune?.nameEn ?? values.commune,
+    }
+
+    const found = validateAddress(valuesToValidate)
     setErrors(found)
 
     if (Object.keys(found).length > 0) {
@@ -289,7 +375,8 @@ const AddressFormModal = ({
       return
     }
 
-    await onSubmit(values)
+    // Submit with synced display names
+    await onSubmit(valuesToValidate)
   }
 
   return (
@@ -379,7 +466,9 @@ const AddressFormModal = ({
               ...current,
               countryCode,
               provincePcode: '',
+              districtPcode: '',
               district: '',
+              communePcode: '',
               commune: '',
               ...(countryCode.toUpperCase() === 'KH'
                 ? { city: '', stateProvince: '' }
@@ -406,7 +495,7 @@ const AddressFormModal = ({
         {isCambodia ? (
           <div className="space-y-4">
             <p className="text-sm leading-relaxed text-graphite">
-              Select a province or municipality. Enter the district and commune as written locally; existing free-text addresses are not assigned a province automatically.
+              Select a province or municipality, then a district/khan, then a commune/sangkat.
             </p>
             {address?.countryCode === 'KH' &&
               address.administrativeLocationPcode === null && (
@@ -414,6 +503,8 @@ const AddressFormModal = ({
                   Previously saved location: {[address.stateProvince, address.city].filter(Boolean).join(', ') || 'not provided'}. Re-enter the district and commune below after choosing the correct province.
                 </p>
               )}
+
+            {/* Province Selection */}
             {provinces.error !== undefined ? (
               <div className="space-y-2">
                 <FormError message={toUserMessage(provinces.error)} />
@@ -424,7 +515,7 @@ const AddressFormModal = ({
               name="provincePcode"
               label="Province / municipality"
               value={values.provincePcode}
-              onChange={(event) => set('provincePcode')(event.target.value)}
+              onChange={(event) => handleProvinceChange(event.target.value)}
               error={errors.provincePcode}
               required
               disabled={isSaving || provinces.isLoading || provinces.isRefreshing || provinces.error !== undefined}
@@ -436,26 +527,60 @@ const AddressFormModal = ({
                 </option>
               ))}
             </SelectField>
-            <TextField
-              name="district"
+
+            {/* District Selection */}
+            {districts.error !== undefined ? (
+              <div className="space-y-2">
+                <FormError message={toUserMessage(districts.error)} />
+                <button type="button" className="text-sm underline" onClick={districts.refetch}>Retry districts</button>
+              </div>
+            ) : null}
+            <SelectField
+              name="districtPcode"
               label="District / Khan"
-              value={values.district}
-              onChange={(event) => set('district')(event.target.value)}
+              value={values.districtPcode}
+              onChange={(event) => handleDistrictChange(event.target.value)}
               error={errors.district}
-              maxLength={ADDRESS_LIMITS.district}
-              required
-              autoComplete="address-level2"
-            />
-            <TextField
-              name="commune"
+              required={!!values.provincePcode}
+              disabled={isSaving || !values.provincePcode || districts.isLoading || districts.isRefreshing || districts.error !== undefined}
+            >
+              <option value="">Select a district or khan</option>
+              {values.provincePcode && (districts.data ?? []).length === 0 && !districts.isLoading && !districts.error && (
+                <option disabled>No districts found for this province</option>
+              )}
+              {(districts.data ?? []).map((location) => (
+                <option key={location.pcode} value={location.pcode}>
+                  {location.nameKm ? `${location.nameEn} / ${location.nameKm}` : location.nameEn}
+                </option>
+              ))}
+            </SelectField>
+
+            {/* Commune Selection */}
+            {communes.error !== undefined ? (
+              <div className="space-y-2">
+                <FormError message={toUserMessage(communes.error)} />
+                <button type="button" className="text-sm underline" onClick={communes.refetch}>Retry communes</button>
+              </div>
+            ) : null}
+            <SelectField
+              name="communePcode"
               label="Commune / Sangkat"
-              value={values.commune}
-              onChange={(event) => set('commune')(event.target.value)}
+              value={values.communePcode}
+              onChange={(event) => handleCommuneChange(event.target.value)}
               error={errors.commune}
-              maxLength={ADDRESS_LIMITS.commune}
-              required
-              autoComplete="address-level3"
-            />
+              required={!!values.districtPcode}
+              disabled={isSaving || !values.districtPcode || communes.isLoading || communes.isRefreshing || communes.error !== undefined}
+            >
+              <option value="">Select a commune or sangkat</option>
+              {values.districtPcode && (communes.data ?? []).length === 0 && !communes.isLoading && !communes.error && (
+                <option disabled>No communes found for this district</option>
+              )}
+              {(communes.data ?? []).map((location) => (
+                <option key={location.pcode} value={location.pcode}>
+                  {location.nameKm ? `${location.nameEn} / ${location.nameKm}` : location.nameEn}
+                </option>
+              ))}
+            </SelectField>
           </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2">

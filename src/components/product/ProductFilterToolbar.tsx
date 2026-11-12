@@ -38,11 +38,13 @@ export function ProductFilterToolbar({
   categoryName,
 }: ProductFilterToolbarProps) {
   const [searchInput, setSearchInput] = useState(search)
+  const [lastSearch, setLastSearch] = useState(search)
 
   // Sync internal search input if external search prop changes
-  useEffect(() => {
+  if (search !== lastSearch) {
+    setLastSearch(search)
     setSearchInput(search)
-  }, [search])
+  }
 
   // Debounce search update to parent
   useEffect(() => {

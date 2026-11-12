@@ -13,9 +13,10 @@ const Cart = lazy(() => import('@/pages/public/Cart'))
 const Checkout = lazy(() => import('@/pages/public/Checkout'))
 const Success = lazy(() => import('@/pages/public/Success'))
 const About = lazy(() => import('@/pages/public/About'))
-const PublicFeedback = lazy(() => import('@/pages/public/Feedback'))
 const Login = lazy(() => import('@/pages/public/Login'))
 const Register = lazy(() => import('@/pages/public/Register'))
+const ForgotPassword = lazy(() => import('@/pages/public/ForgotPassword'))
+const ResetPassword = lazy(() => import('@/pages/public/ResetPassword'))
 const NotFound = lazy(() => import('@/pages/public/NotFound'))
 
 const Overview = lazy(() => import('@/pages/account/Overview'))
@@ -42,9 +43,10 @@ export const routes: RouteObject[] = [
       { path: '/checkout', Component: Checkout },
       { path: '/success', Component: Success },
       { path: '/about', Component: About },
-      { path: '/feedback', Component: PublicFeedback },
       { path: '/login', Component: Login },
       { path: '/register', Component: Register },
+      { path: '/forgot-password', Component: ForgotPassword },
+      { path: '/reset-password', Component: ResetPassword },
       { path: '*', Component: NotFound },
     ],
   },

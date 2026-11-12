@@ -5,6 +5,9 @@ import { ArrowRight, Check } from 'lucide-react'
 import { navLinks } from '@/data/navigation'
 import { Reveal } from '@/components/ui/Reveal'
 
+// Official shop logo from public directory
+const LOGO_SRC = '/logo.png'
+
 const COLLECTIONS = ['Knitwear', 'Outerwear', 'Denim', 'Essentials'] as const
 
 export function Footer() {
@@ -20,9 +23,17 @@ export function Footer() {
 
   return (
     <footer className="mt-24 border-t border-line bg-paper sm:mt-32">
-      {/* Oversized wordmark bleeds off the bottom edge */}
       <div className="container-editorial pt-16 sm:pt-24">
         <Reveal>
+          {/* Official Shop Logo */}
+          <div className="mb-8 lg:mb-12">
+            <img
+              src={LOGO_SRC}
+              alt="Shop Logo"
+              className="w-full max-w-[220px] sm:max-w-[260px] h-auto object-contain"
+            />
+          </div>
+
           <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-sm">
               <h2 className="type-display text-[11vw] leading-[0.85] sm:text-[7vw] lg:text-[4.4rem]">

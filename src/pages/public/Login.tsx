@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useSearchParams } from 'react-router-dom'
+import { Navigate, Link, useSearchParams } from 'react-router-dom'
 import { RouteFallback } from '@/app/RouteFallback'
 import { Action } from '@/components/ui/Action'
 import { AuthLink, AuthShell } from '@/components/auth/AuthShell'
@@ -89,6 +89,15 @@ export default function Login() {
             error={errors.password}
             onChange={(event) => update('password')(event.target.value)}
           />
+
+          <div className="-mt-2 flex justify-end">
+            <Link
+              to="/forgot-password"
+              className="text-[13px] font-medium text-graphite underline decoration-line underline-offset-4 transition-colors hover:text-ink hover:decoration-ink"
+            >
+              Forgot password?
+            </Link>
+          </div>
 
           {loginError !== null && <FormError message={loginError} />}
 

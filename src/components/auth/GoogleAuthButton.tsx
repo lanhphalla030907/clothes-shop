@@ -184,6 +184,7 @@ export function GoogleAuthButton({
 
       // Reset previous render
       buttonContainerRef.current.innerHTML = ''
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset render state before reinitializing external GSI button
       setIsGsiRendered(false)
 
       const buttonWidth = clampWidth(containerWidth)

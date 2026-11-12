@@ -33,10 +33,10 @@ describe('CollectionsSection', () => {
     expect(container.querySelector('section')).toBeNull()
   })
 
-  it('uses the public four-collection limit and links to the collection slug', () => {
+  it('uses the public three-collection limit and links to the collection slug', () => {
     useCollectionsMock.mockReturnValue(resource([collection()]))
     render(<MemoryRouter><CollectionsSection /></MemoryRouter>)
-    expect(useCollectionsMock).toHaveBeenCalledWith(4)
+    expect(useCollectionsMock).toHaveBeenCalledWith(3)
     expect(screen.getByRole('link', { name: /explore collection/i }).getAttribute('href')).toBe('/collections/outerwear')
     expect(screen.getByAltText('Outerwear').getAttribute('src')).toBe('https://example.com/outerwear.jpg')
   })

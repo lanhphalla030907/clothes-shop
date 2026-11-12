@@ -34,19 +34,6 @@ const settleOnNearestCard = (el: HTMLDivElement) => {
   if (Math.abs(target.left - el.scrollLeft) < 1) return
   el.scrollTo({ left: target.left, behavior: 'smooth' })
 }
-
-/**
- * Turns a horizontally scrollable element into a drag-to-scroll surface.
- *
- * Touch and pen keep their native momentum scrolling, so only a mouse press
- * becomes a drag and cards stay clickable.
- *
- * Deliberately no CSS `scroll-snap` and no pointer capture. Snapping fights
- * programmatic scrolling — Chrome pins the rail at its snap point and the
- * drag never moves it — and capturing the pointer drops the later moves and
- * the matching `pointerup`. Instead the rail settles onto the nearest card
- * programmatically once the drag ends.
- */
 export const useDragScroll = (): DragScroll => {
   const ref = useRef<HTMLDivElement>(null)
   const state = useRef({ active: false, startX: 0, startScroll: 0, moved: 0 })

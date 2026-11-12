@@ -39,6 +39,7 @@ describe('Google Authentication Frontend Integration', () => {
   })
 
   it('renders GoogleAuthButton in disabled state with clear guidance when VITE_GOOGLE_CLIENT_ID is missing', () => {
+    vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '')
     render(<GoogleAuthButton mode="signin" />)
 
     expect(screen.getByText(/Continue with Google \(Unavailable\)/i)).toBeDefined()

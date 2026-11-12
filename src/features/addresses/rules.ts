@@ -68,8 +68,12 @@ export const validateAddress = (values: AddressFormValues): AddressErrors => {
     if (!/^KH[0-9]{2}$/.test(values.provincePcode)) {
       errors.provincePcode = 'Select a province or municipality'
     }
-    assign('district', required(values.district, 'A district', ADDRESS_LIMITS.district))
-    assign('commune', required(values.commune, 'A commune', ADDRESS_LIMITS.commune))
+    if (!/^KH[0-9]{4}$/.test(values.districtPcode)) {
+      errors.district = 'Select a district or khan'
+    }
+    if (!/^KH[0-9]{6}$/.test(values.communePcode)) {
+      errors.commune = 'Select a commune or sangkat'
+    }
   } else {
     assign('city', required(values.city, 'A city', ADDRESS_LIMITS.city))
     assign('stateProvince', optional(values.stateProvince, 'A state or province', ADDRESS_LIMITS.stateProvince))

@@ -35,10 +35,11 @@ const RailArrow = ({
 export function ProductRail({
   pieces,
   label,
-  isLoading: _isLoading = false,
+  isLoading,
   action = null,
   className = '',
 }: ProductRailProps) {
+  void isLoading
   const trackRef = useRef<HTMLDivElement>(null)
   const [page, setPage] = useState(0)
 

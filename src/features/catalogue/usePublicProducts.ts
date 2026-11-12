@@ -70,9 +70,8 @@ export function usePublicProducts(
     activeAbortRef.current = controller
     const signal = controller.signal
 
-    setIsFetching(true)
-
     async function load() {
+      setIsFetching(true)
       try {
         const [response, categories] = await Promise.all([
           fetchPublicProducts(params, signal),
@@ -111,6 +110,7 @@ export function usePublicProducts(
     return () => {
       controller.abort()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     params.search,
     params.category,

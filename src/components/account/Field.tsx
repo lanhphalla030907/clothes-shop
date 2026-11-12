@@ -62,22 +62,40 @@ type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> & {
   label: string
   error?: string | undefined
   hint?: string
+  /**
+   * A control pinned inside the input's trailing edge — a password visibility
+   * toggle, for instance. The input reserves room so text never runs underneath.
+   */
+  trailing?: ReactNode
 }
 
-export const TextField = ({ label, error, hint, required, className = '', ...rest }: TextFieldProps) => {
+export const TextField = ({
+  label,
+  error,
+  hint,
+  required,
+  className = '',
+  trailing,
+  ...rest
+}: TextFieldProps) => {
   const generated = useId()
   const id = rest.name ? `field-${rest.name}` : generated
 
   return (
     <FieldShell id={id} label={label} error={error} hint={hint} required={required}>
-      <input
-        id={id}
-        required={required}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-        className={`${controlClasses(Boolean(error))} h-11 ${className}`}
-        {...rest}
-      />
+      <div className="relative">
+        <input
+          id={id}
+          required={required}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+          className={`${controlClasses(Boolean(error))} h-11 ${trailing ? 'pr-12' : ''} ${className}`}
+          {...rest}
+        />
+        {trailing && (
+          <div className="absolute inset-y-0 right-0 flex items-center pr-1">{trailing}</div>
+        )}
+      </div>
     </FieldShell>
   )
 }

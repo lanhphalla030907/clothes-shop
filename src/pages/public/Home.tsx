@@ -3,14 +3,12 @@ import { Marquee } from '@/components/home/Marquee'
 import { CategorySection } from '@/components/home/CategorySection'
 import { PosterCarousel } from '@/components/home/PosterCarousel'
 import { CollectionsSection } from '@/components/home/CollectionsSection'
-import { Manifesto } from '@/components/home/Manifesto'
-import { EditorialGrid } from '@/components/home/EditorialGrid'
-import { Statement } from '@/components/home/Statement'
 import { FeedbackSection } from '@/components/home/FeedbackSection'
 import { ProductRail } from '@/components/product/ProductRail'
 import { Reveal } from '@/components/ui/Reveal'
 import { Action } from '@/components/ui/Action'
 import { useNewArrivals, useBestSellers } from '@/features/catalogue/useCatalogue'
+import { ArchiveManifesto } from '@/components/home/ArchiveManifesto'
 
 export default function Home() {
   const newArrivals = useNewArrivals(8)
@@ -56,7 +54,7 @@ export default function Home() {
           className="py-10 sm:py-14"
         />
       </div>
-
+       <ArchiveManifesto/>
       <CollectionsSection />
       <FeedbackSection />
 

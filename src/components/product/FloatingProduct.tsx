@@ -7,11 +7,11 @@ import type { CataloguePiece } from '@/types'
 
 interface FloatingProductProps {
   piece: CataloguePiece
-  index: number
+  index?: number
   variant?: 'hero' | 'rail'
 }
 
-export function FloatingProduct({ piece, index: _index, variant = 'rail' }: FloatingProductProps) {
+export function FloatingProduct({ piece, variant = 'rail' }: FloatingProductProps) {
   const isHero = variant === 'hero'
 
   return (

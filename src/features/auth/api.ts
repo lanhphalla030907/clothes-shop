@@ -65,6 +65,43 @@ export const registerUser = async (input: RegisterInput): Promise<AuthUser> => {
   return user
 }
 
+/** The message the API answers both password-reset calls with. */
+interface PasswordResetMessage {
+  message?: string
+}
+
+/**
+ * Asks for a reset link.
+ *
+ * The server answers identically whether or not the address belongs to an
+ * account, so this function returns nothing about existence. `undefined` means
+ * the server broke its contract, not that the address was unknown.
+ */
+export const requestPasswordReset = async (email: string): Promise<string> => {
+  const result = await apiPost<PasswordResetMessage>(API.forgotPassword, { email })
+
+  if (result === undefined || typeof result.message !== 'string' || result.message.length === 0) {
+    throw new ApiError('The reset request could not be completed.', { kind: 'unknown' })
+  }
+
+  return result.message
+}
+
+/** Completes a reset with the token from the emailed link. */
+export const submitPasswordReset = async (input: {
+  token: string
+  newPassword: string
+  confirmPassword: string
+}): Promise<string> => {
+  const result = await apiPost<PasswordResetMessage>(API.resetPassword, input)
+
+  if (result === undefined || typeof result.message !== 'string' || result.message.length === 0) {
+    throw new ApiError('The password could not be reset.', { kind: 'unknown' })
+  }
+
+  return result.message
+}
+
 /**
  * The caller's own record.
  *
@@ -113,6 +150,42 @@ export const registerErrorMessage = (error: unknown): string => {
       return 'Too many attempts just now. Give it a moment, then try again.'
     if (error.kind === 'validation')
       return error.details[0] ?? 'Check the details you entered and try again.'
+  }
+
+  return toUserMessage(error)
+}
+
+const PASSWORD_RESET_UNAVAILABLE_MESSAGE =
+  'Password reset is temporarily unavailable. Please try again later.'
+
+/** A sentence for a reset request that was refused. */
+export const passwordResetRequestErrorMessage = (error: unknown): string => {
+  if (isApiError(error)) {
+    if (error.kind === 'unavailable')
+      return error.details[0] ?? PASSWORD_RESET_UNAVAILABLE_MESSAGE
+    if (error.kind === 'rateLimited')
+      return 'Too many reset requests just now. Give it a minute, then try again.'
+    if (error.kind === 'validation')
+      return error.details[0] ?? 'Check your email address and try again.'
+  }
+
+  return toUserMessage(error)
+}
+
+/**
+ * A sentence for a reset that was refused.
+ *
+ * The server deliberately uses one message for invalid, expired, already-used
+ * and concurrently-consumed tokens, so every `400` reads the same here too.
+ */
+export const passwordResetErrorMessage = (error: unknown): string => {
+  if (isApiError(error)) {
+    if (error.kind === 'validation' || error.kind === 'unauthorized')
+      return error.details[0] ?? 'This password reset link is invalid or has expired.'
+    if (error.kind === 'unavailable')
+      return error.details[0] ?? PASSWORD_RESET_UNAVAILABLE_MESSAGE
+    if (error.kind === 'rateLimited')
+      return 'Too many attempts just now. Give it a moment, then try again.'
   }
 
   return toUserMessage(error)
