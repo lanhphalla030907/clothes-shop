@@ -243,12 +243,12 @@ const ReviewAndPlace = () => {
 
     refetchCart()
     if (checkout.placedOrder.paymentMethod === CHECKOUT_PAYMENT_METHOD.ABA_PAYWAY) {
-      navigate(`/dashboard/checkout/${checkout.placedOrder.id}`, {
+      navigate(`/account/checkout/${checkout.placedOrder.id}`, {
         replace: true,
         state: { justPlaced: true },
       })
     } else {
-      navigate(`/dashboard/orders/${checkout.placedOrder.id}`, {
+      navigate(`/account/orders/${checkout.placedOrder.id}`, {
         replace: true,
         state: { justPlaced: true },
       })
@@ -312,7 +312,7 @@ const ReviewAndPlace = () => {
           title="Your bag is empty"
           description="There is nothing to check out. Add something from your bag before continuing."
           action={
-            <Action to="/dashboard/bag" withArrow>
+            <Action to="/account/bag" withArrow>
               Go to your bag
             </Action>
           }
@@ -462,7 +462,7 @@ const ReviewAndPlace = () => {
                   <p className="text-sm leading-relaxed text-graphite">
                     Checkout needs a saved address with a verified delivery location.
                   </p>
-                  <Action to="/dashboard/addresses" size="sm" className="mt-5" withArrow>
+                  <Action to="/account/addresses" size="sm" className="mt-5" withArrow>
                     Add an address
                   </Action>
                 </div>
@@ -609,7 +609,7 @@ const ReviewAndPlace = () => {
                       <p className="text-sm text-signal" role="alert">
                         This Cambodia address needs a canonical province or municipality before Cash on Delivery can be checked. District and commune are entered as text in your address.
                       </p>
-                      <Action to="/dashboard/addresses" size="sm" variant="outline">
+                      <Action to="/account/addresses" size="sm" variant="outline">
                         Update delivery address
                       </Action>
                     </div>
@@ -722,7 +722,7 @@ const ReviewAndPlace = () => {
               )}
             </div>
           </Panel>
-          <Action to="/dashboard/bag" variant="outline" className="w-full">
+          <Action to="/account/bag" variant="outline" className="w-full">
             Return to bag
           </Action>
         </div>

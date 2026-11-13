@@ -12,6 +12,8 @@ type AdminStatCardProps = {
     value: string
     positive?: boolean
   }
+  /** Gives a headline metric a little more visual weight than the supporting ones. */
+  emphasis?: boolean
   className?: string
 }
 
@@ -22,11 +24,14 @@ export function AdminStatCard({
   icon: Icon,
   loading = false,
   trend,
+  emphasis = false,
   className = '',
 }: AdminStatCardProps) {
   return (
     <div
-      className={`relative flex flex-col justify-between rounded-xl border border-line bg-paper-pure p-5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-sm ${className}`}
+      className={`relative flex flex-col justify-between rounded-xl border bg-paper-pure p-5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-sm ${
+        emphasis ? 'border-ink/20 shadow-sm' : 'border-line'
+      } ${className}`}
     >
       <div className="flex items-center justify-between gap-3">
         <span className="text-[12.5px] font-medium text-graphite">{label}</span>
@@ -42,7 +47,11 @@ export function AdminStatCard({
           <Skeleton className="h-8 w-20 rounded-md" />
         ) : (
           <div className="flex items-baseline gap-2">
-            <span className="font-sans text-[1.75rem] font-bold tracking-tight text-ink tabular-nums">
+            <span
+              className={`font-sans font-bold tracking-tight text-ink tabular-nums ${
+                emphasis ? 'text-[2rem]' : 'text-[1.75rem]'
+              }`}
+            >
               {value}
             </span>
             {trend && (

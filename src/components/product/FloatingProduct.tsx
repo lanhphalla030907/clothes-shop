@@ -30,11 +30,12 @@ export function FloatingProduct({ piece, variant = 'rail' }: FloatingProductProp
           className="block pt-6"
           aria-label={`${piece.name} — ${formatMoney(piece.price, STORE_CURRENCY)}`}
         >
-          <div className="relative aspect-[3/4] w-full overflow-hidden border border-line bg-paper shadow-[0_1px_2px_rgba(11,11,11,0.04)] transition-shadow duration-700 ease-editorial group-hover/piece:shadow-[0_28px_60px_-24px_rgba(11,11,11,0.35)]">
+          <div className="relative aspect-[4/5] w-full overflow-hidden border border-line bg-[#f4f4f4] shadow-[0_1px_2px_rgba(11,11,11,0.04)] transition-shadow duration-700 ease-editorial group-hover/piece:shadow-[0_28px_60px_-24px_rgba(11,11,11,0.35)]">
             <Plate
               src={piece.images[0]}
               alt={piece.name}
-              className="h-full w-full object-cover transition-transform duration-[1.4s] ease-editorial group-hover/piece:scale-[1.07]"
+              position="object-top"
+              className="h-full w-full transition-transform duration-[1.4s] ease-editorial group-hover/piece:scale-[1.05]"
             />
 
             {/* Scrim — always visible on mobile */}

@@ -209,7 +209,7 @@ export function CategoryFormModal({
                 src={category.imageUrl}
                 alt={category.altText ?? category.name}
                 loading="lazy"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover object-top"
               />
             </div>
           )}

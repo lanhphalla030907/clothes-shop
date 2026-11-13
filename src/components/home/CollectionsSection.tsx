@@ -41,7 +41,7 @@ export function CollectionsSection() {
       <div className="mt-6 grid grid-cols-1 gap-4 sm:mt-8 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
         {resource.isLoading
           ? Array.from({ length: 3 }, (_, i) => (
-              <div key={i} className="aspect-[4/5] animate-pulse bg-bone" />
+              <div key={i} className="aspect-[4/5] animate-pulse bg-[#f4f4f4]" />
             ))
           : collections.map((collection, index) => (
               <Reveal key={collection.id} delay={Math.min(index * 0.06, 0.18)}>
@@ -49,11 +49,12 @@ export function CollectionsSection() {
                   to={`/collections/${collection.slug}`}
                   className="group block focus-visible:outline-offset-4"
                 >
-                  <div className="relative aspect-[4/5] overflow-hidden bg-bone">
+                  <div className="relative aspect-[4/5] overflow-hidden bg-[#f4f4f4]">
                     <SmartImage
                       src={collection.coverImage}
                       alt={collection.title}
                       priority={index === 0}
+                      position="object-top"
                       className="h-full w-full object-cover transition-transform duration-[1.4s] ease-editorial group-hover:scale-[1.05]"
                     />
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/85 via-ink/25 to-transparent p-5 pt-24 text-paper">

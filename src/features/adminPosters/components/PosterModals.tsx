@@ -261,12 +261,12 @@ export function PosterEditModal({
           <FormError message={toUserMessage(serverError)} />
         )}
 
-        <div className="aspect-[16/7] overflow-hidden bg-bone">
+        <div className="aspect-[16/9] overflow-hidden bg-[#f4f4f4]">
           <img
             src={poster.imageUrl}
             alt={poster.title ?? 'Poster image'}
             loading="lazy"
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover object-center"
           />
         </div>
 
@@ -355,12 +355,12 @@ export function PosterReplaceImageModal({
           <FormError message={toUserMessage(serverError)} />
         )}
 
-        <div className="aspect-[16/7] overflow-hidden bg-bone">
+        <div className="aspect-[16/9] overflow-hidden bg-[#f4f4f4]">
           <img
             src={poster.imageUrl}
             alt={poster.title ?? 'Current poster image'}
             loading="lazy"
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover object-center"
           />
         </div>
 

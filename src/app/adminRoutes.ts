@@ -10,6 +10,7 @@ const OrdersIndex = lazy(() => import('@/pages/admin/orders/OrdersIndex'))
 const OrderDetail = lazy(() => import('@/pages/admin/orders/OrderDetail'))
 const ProductsIndex = lazy(() => import('@/pages/admin/products/ProductsIndex'))
 const ProductNew = lazy(() => import('@/pages/admin/products/ProductNew'))
+const ProductOverview = lazy(() => import('@/pages/admin/products/ProductOverview'))
 const ProductEdit = lazy(() => import('@/pages/admin/products/ProductEdit'))
 const ProductImagesIndex = lazy(() => import('@/pages/admin/product-images/ProductImagesIndex'))
 const ProductVariantsIndex = lazy(() => import('@/pages/admin/product-variants/ProductVariantsIndex'))
@@ -41,6 +42,7 @@ export const adminRoutes: RouteObject[] = [
           { path: 'cod-dashboard', Component: CodDashboard },
           { path: 'products', Component: ProductsIndex },
           { path: 'products/new', Component: ProductNew },
+          { path: 'products/overview', Component: ProductOverview },
           { path: 'products/:productId', Component: ProductEdit },
           { path: 'product-images', Component: ProductImagesIndex },
           { path: 'product-variants', Component: ProductVariantsIndex },

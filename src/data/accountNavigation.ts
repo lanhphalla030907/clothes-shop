@@ -18,25 +18,25 @@ export const accountNavigation: readonly AccountNavGroup[] = [
   {
     title: 'Account',
     items: [
-      { label: 'Overview', to: '/dashboard', icon: LayoutDashboard },
-      { label: 'Orders', to: '/dashboard/orders', icon: Receipt },
-      { label: 'Profile', to: '/dashboard/profile', icon: UserRound },
+      { label: 'Overview', to: '/account', icon: LayoutDashboard },
+      { label: 'Orders', to: '/account/orders', icon: Receipt },
+      { label: 'Profile', to: '/account/profile', icon: UserRound },
     ],
   },
   {
     title: 'Shopping',
     items: [
-      { label: 'Bag', to: '/dashboard/bag', icon: ShoppingBag, countKey: 'bag' },
-      { label: 'Wishlist', to: '/dashboard/wishlist', icon: Heart, countKey: 'wishlist' },
+      { label: 'Bag', to: '/account/bag', icon: ShoppingBag, countKey: 'bag' },
+      { label: 'Wishlist', to: '/account/wishlist', icon: Heart, countKey: 'wishlist' },
     ],
   },
   {
     title: 'Delivery',
-    items: [{ label: 'Addresses', to: '/dashboard/addresses', icon: MapPin }],
+    items: [{ label: 'Addresses', to: '/account/addresses', icon: MapPin }],
   },
   {
     title: 'Voice',
-    items: [{ label: 'Feedback', to: '/dashboard/feedback', icon: MessageSquare }],
+    items: [{ label: 'Feedback', to: '/account/feedback', icon: MessageSquare }],
   },
 ] as const
 

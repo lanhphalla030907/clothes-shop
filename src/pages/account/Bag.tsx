@@ -154,7 +154,7 @@ export default function Bag() {
 
             <div className="border-t border-line px-6 py-5">
               <Action
-                to="/dashboard/checkout"
+                to="/account/checkout"
                 className="w-full"
                 disabled={blocking.length > 0}
               >

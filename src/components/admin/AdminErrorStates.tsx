@@ -38,7 +38,7 @@ export function AdminForbidden() {
         <Action to="/" variant="outline" size="sm" withArrow>
           Back to storefront
         </Action>
-        <Action to="/dashboard" variant="ghost" size="sm">
+        <Action to="/account" variant="ghost" size="sm">
           Your account
         </Action>
       </div>

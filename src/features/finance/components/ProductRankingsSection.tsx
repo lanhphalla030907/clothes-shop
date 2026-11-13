@@ -82,7 +82,7 @@ export function ProductRankingsSection({
         }
       />
 
-      <div className="border border-line bg-paper px-5 py-4 sm:px-6">
+      <div className="card-premium px-5 py-4 sm:px-6">
         <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Ranking view">
           {FINANCE_RANKING_VIEWS.map((option) => (
             <button
@@ -215,7 +215,7 @@ function RankingsDataView({
       )}
 
       {groups.map(([currency, currencyItems]) => (
-        <div key={currency} className="border border-line bg-paper">
+        <div key={currency} className="card-premium overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-4 sm:px-6">
             <div className="flex items-center gap-3">
               <span className="font-mono text-[12px] font-semibold tracking-[0.08em] text-ink">
@@ -475,7 +475,7 @@ function groupByCurrency<T extends { currency: string }>(
 
 const RankingsSkeleton = () => (
   <div
-    className="border border-line bg-paper p-5 sm:p-6"
+    className="card-premium p-5 sm:p-6"
     role="status"
     aria-busy="true"
     aria-label="Loading product rankings"

@@ -1,7 +1,7 @@
 import type { Role } from './authTypes'
 
 /** The landing screen for a signed-in customer. */
-const CUSTOMER_HOME = '/dashboard'
+const CUSTOMER_HOME = '/account'
 
 /** The landing screen for a signed-in administrator. */
 const ADMIN_HOME = '/admin'
@@ -46,7 +46,7 @@ const isDeliveryPath = (pathname: string): boolean =>
 
 /** The signed-in customer account area. */
 const isCustomerAccountPath = (pathname: string): boolean =>
-  pathname === '/dashboard' || pathname.startsWith('/dashboard/')
+  pathname === '/account' || pathname.startsWith('/account/')
 
 /**
  * A path this app is willing to send the shopper back to after signing in.
@@ -61,8 +61,8 @@ const isCustomerAccountPath = (pathname: string): boolean =>
  *   the admin guard;
  * - only delivery staff are returned to `/delivery`;
  * - delivery staff are never sent into `/admin`;
- * - an administrator is not returned to `/dashboard` after signing in, because
- *   that is the customer landing screen. This is the common `?from=/dashboard`
+ * - an administrator is not returned to `/account` after signing in, because
+ *   that is the customer landing screen. This is the common `?from=/account`
  *   path created when someone opens the customer account while signed out;
  * - the sign-in pages themselves are refused, because returning to `/login`
  *   after a successful sign-in is a redirect loop;

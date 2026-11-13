@@ -25,7 +25,7 @@ import {
 } from '@/types/api'
 
 /**
- * The ABA PayWay screen for one order, at `/dashboard/checkout/:orderId`.
+ * The ABA PayWay screen for one order, at `/account/checkout/:orderId`.
  *
  * There is no payment-status endpoint, and an order carries no payment list. What
  * PayWay's verified callback moves is `orders.status`, out of `PENDING` into
@@ -73,7 +73,7 @@ export const PaymentForOrder = ({ orderId }: { orderId: UUID }) => {
       message: `Payment for order ${data.orderNumber} has been confirmed.`,
     })
     const timer = window.setTimeout(() => {
-      navigate(`/dashboard/orders/${data.id}`, { replace: true, state: { justPaid: true } })
+      navigate(`/account/orders/${data.id}`, { replace: true, state: { justPaid: true } })
     }, SUCCESS_PAUSE_MS)
     return () => window.clearInterval(timer)
   }, [data, navigate, showFeedback])
@@ -101,7 +101,7 @@ export const PaymentForOrder = ({ orderId }: { orderId: UUID }) => {
   if (order.error) {
     return (
       <div className="space-y-8">
-        <BackLink to="/dashboard/orders">All orders</BackLink>
+        <BackLink to="/account/orders">All orders</BackLink>
         <PageHeader eyebrow="Order" title="Payment" />
         <ErrorState message={toUserMessage(order.error)} onRetry={order.refetch} />
       </div>
@@ -111,14 +111,14 @@ export const PaymentForOrder = ({ orderId }: { orderId: UUID }) => {
   if (!data) {
     return (
       <div className="space-y-8">
-        <BackLink to="/dashboard/orders">All orders</BackLink>
+        <BackLink to="/account/orders">All orders</BackLink>
         <PageHeader eyebrow="Order" title="Payment" />
         <EmptyState
           eyebrow="Not found"
           title="We could not open that order"
           description="It may belong to another account, or the link may be wrong."
           action={
-            <Action to="/dashboard/orders" size="sm">
+            <Action to="/account/orders" size="sm">
               Back to orders
             </Action>
           }
@@ -133,7 +133,7 @@ export const PaymentForOrder = ({ orderId }: { orderId: UUID }) => {
 
   return (
     <div className="space-y-8">
-      <BackLink to="/dashboard/orders">All orders</BackLink>
+      <BackLink to="/account/orders">All orders</BackLink>
 
       <PageHeader
         eyebrow="Order"
@@ -199,7 +199,7 @@ export const PaymentForOrder = ({ orderId }: { orderId: UUID }) => {
             </DefinitionRow>
           </dl>
           <div className="border-t border-line px-6 py-5">
-            <Action to={`/dashboard/orders/${data.id}`} variant="outline" size="sm" className="w-full">
+            <Action to={`/account/orders/${data.id}`} variant="outline" size="sm" className="w-full">
               View order
             </Action>
           </div>
@@ -216,7 +216,7 @@ const CodPanel = ({ order }: { order: Order }) => (
       Order {order.orderNumber} was created with Cash on Delivery. Payment has not yet been
       collected. No online payment was started.
     </p>
-    <Action to={`/dashboard/orders/${order.id}`} className="mt-6" withArrow>
+    <Action to={`/account/orders/${order.id}`} className="mt-6" withArrow>
       View order {order.orderNumber}
     </Action>
   </div>
@@ -229,7 +229,7 @@ const UnsupportedPaymentPanel = ({ order }: { order: Order }) => (
       Order {order.orderNumber} uses a payment method this page cannot process. No PayWay payment
       was started. Please contact the studio for help.
     </p>
-    <Action to={`/dashboard/orders/${order.id}`} className="mt-6" withArrow>
+    <Action to={`/account/orders/${order.id}`} className="mt-6" withArrow>
       View order {order.orderNumber}
     </Action>
   </div>
@@ -244,7 +244,7 @@ const SettledPanel = ({ order, isCancelled }: { order: Order; isCancelled: boole
         ? `Order ${order.orderNumber} was cancelled, so it is no longer waiting for a payment.`
         : `Order ${order.orderNumber} is ${order.status.toLowerCase()} and is no longer waiting for a payment. PayWay confirmed it — the studio now holds the money.`}
     </p>
-    <Action to={`/dashboard/orders/${order.id}`} className="mt-6" withArrow>
+    <Action to={`/account/orders/${order.id}`} className="mt-6" withArrow>
       View order {order.orderNumber}
     </Action>
   </div>
@@ -305,7 +305,7 @@ const PaywayPanel = ({ order, flow, isRefreshingOrder, onRefreshOrder }: PaywayP
           PayWay confirms this payment was collected for order {order.orderNumber}. Nothing further
           is needed here.
         </p>
-        <Action to={`/dashboard/orders/${order.id}`} className="mt-6" withArrow>
+        <Action to={`/account/orders/${order.id}`} className="mt-6" withArrow>
           View order {order.orderNumber}
         </Action>
       </div>
@@ -432,7 +432,7 @@ const QrPending = () => (
   <div className="py-8 text-center">
     <QrCode size={26} strokeWidth={1.2} aria-hidden className="mx-auto text-ash" />
     <p className="mt-5 text-sm leading-relaxed text-graphite">Asking PayWay for a QR code…</p>
-    <Skeleton className="mx-auto mt-6 h-64 w-64" />
+    <Skeleton className="mx-auto mt-6 aspect-square w-full max-w-64" />
   </div>
 )
 

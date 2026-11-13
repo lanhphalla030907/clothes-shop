@@ -246,7 +246,7 @@ export function ProductImagesSection({ product }: { product: Product }) {
                   src={image.imageUrl}
                   alt={image.altText ?? `${product.name} image`}
                   loading="lazy"
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover object-top"
                 />
                 {image.isPrimary && (
                   <span className="absolute top-2 left-2 inline-flex items-center gap-1 border border-ink/15 bg-paper px-2 py-1 text-[10px] font-semibold tracking-[0.06em] uppercase text-ink">

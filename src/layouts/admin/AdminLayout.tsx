@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowUpRight,
   BadgePercent,
+  Boxes,
   ChevronRight,
   ClipboardList,
   CreditCard,
@@ -62,6 +63,7 @@ const NAV_GROUPS: ReadonlyArray<NavGroup> = [
     title: 'Catalogue',
     items: [
       { label: 'Products', to: '/admin/products', icon: Package, exact: false },
+      { label: 'Product overview', to: '/admin/products/overview', icon: Boxes, exact: true },
       { label: 'Product images', to: '/admin/product-images', icon: Image, exact: false },
       { label: 'Product variants', to: '/admin/product-variants', icon: Sliders, exact: false },
       { label: 'Categories', to: '/admin/categories', icon: FolderTree, exact: false },
@@ -175,7 +177,15 @@ export function AdminLayout() {
                   to={to}
                   end={exact}
                   onClick={onNavigate}
-                  className={({ isActive }) => navLinkClasses(isActive)}
+                  className={({ isActive }) =>
+                    navLinkClasses(
+                      isActive &&
+                        !(
+                          to === '/admin/products' &&
+                          pathname.startsWith('/admin/products/overview')
+                        ),
+                    )
+                  }
                 >
                   <Icon size={16} strokeWidth={1.75} aria-hidden className="shrink-0" />
                   <span>{label}</span>

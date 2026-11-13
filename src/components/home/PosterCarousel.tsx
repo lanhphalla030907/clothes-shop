@@ -16,8 +16,6 @@ export function PosterCarousel() {
   const count = list.length
   const prefersReduced = useReducedMotion()
 
-  // Extended-track position: 1 is the first real poster, 0 the trailing clone
-  // of the last poster and count + 1 the leading clone of the first.
   const [position, setPosition] = useState(1)
   const [instant, setInstant] = useState(false)
   const [paused, setPaused] = useState(false)
@@ -100,15 +98,12 @@ export function PosterCarousel() {
         aria-label="Featured promotions"
       >
         <span className="sr-only">Loading featured promotions</span>
-
-        {/* Compact header skeleton */}
         <div className="flex items-end justify-between border-b border-line pb-5">
           <div>
             <Skeleton className="h-2.5 w-24" />
             <Skeleton className="mt-3 h-5 w-40" />
           </div>
         </div>
-
         <Skeleton className="mt-8 aspect-[16/10] w-full bg-bone sm:mt-10 sm:aspect-[16/7] lg:aspect-[16/5]" />
       </section>
     )
@@ -145,7 +140,7 @@ export function PosterCarousel() {
             aria-roledescription="carousel"
             aria-label="Featured promotions"
             data-testid="poster-carousel"
-            className="group relative aspect-[16/10] overflow-hidden bg-bone sm:aspect-[16/7] lg:aspect-[16/5]"
+            className="group relative aspect-[16/10] overflow-hidden bg-[#f4f4f4] sm:aspect-[16/7] lg:aspect-[16/5]"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
             onTouchStart={handleTouchStart}
@@ -179,6 +174,11 @@ export function PosterCarousel() {
                     aria-hidden={isClone ? true : undefined}
                     className="relative h-full w-full shrink-0"
                   >
+                    {/* 
+                      THE FIX: 
+                      Changed back to object-cover to fill the space.
+                      Added object-center to ensure the models are in the middle, not cut off.
+                    */}
                     <SmartImage
                       src={poster.imageUrl}
                       alt={
@@ -187,7 +187,7 @@ export function PosterCarousel() {
                           : (poster.title ?? `Campaign poster ${index + 1}`)
                       }
                       priority={index === 1}
-                      className="h-full w-full"
+                      className="h-full w-full object-cover object-center"
                     />
                   </div>
                 )

@@ -74,9 +74,9 @@ const mockOrderSummary = (
 
 const renderOverview = () =>
   render(
-    <MemoryRouter initialEntries={['/dashboard']}>
+    <MemoryRouter initialEntries={['/account']}>
       <Routes>
-        <Route path="/dashboard" element={<Overview />} />
+        <Route path="/account" element={<Overview />} />
       </Routes>
     </MemoryRouter>,
   )
@@ -173,6 +173,6 @@ describe('Customer Dashboard Overview', () => {
     renderOverview()
 
     const orderLink = await screen.findByRole('link', { name: /ORD-REC-1/i })
-    expect(orderLink.getAttribute('href')).toBe('/dashboard/orders/order-uuid-1')
+    expect(orderLink.getAttribute('href')).toBe('/account/orders/order-uuid-1')
   })
 })

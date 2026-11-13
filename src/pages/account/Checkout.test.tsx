@@ -191,11 +191,11 @@ const LocationProbe = () => {
 }
 
 const checkoutTree = () => (
-  <MemoryRouter initialEntries={['/dashboard/checkout']}>
+  <MemoryRouter initialEntries={['/account/checkout']}>
     <Routes>
-      <Route path="/dashboard/checkout" element={<AccountCheckout />} />
-      <Route path="/dashboard/checkout/:orderId" element={<p>PayWay confirmation route</p>} />
-      <Route path="/dashboard/orders/:id" element={<p>Order detail confirmation route</p>} />
+      <Route path="/account/checkout" element={<AccountCheckout />} />
+      <Route path="/account/checkout/:orderId" element={<p>PayWay confirmation route</p>} />
+      <Route path="/account/orders/:id" element={<p>Order detail confirmation route</p>} />
     </Routes>
     <LocationProbe />
   </MemoryRouter>
@@ -636,7 +636,7 @@ describe('authenticated checkout quote flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Place order' }))
 
     await screen.findByText('Order detail confirmation route')
-    expect(screen.getByTestId('location').textContent).toBe(`/dashboard/orders/${ORDER_ID}`)
+    expect(screen.getByTestId('location').textContent).toBe(`/account/orders/${ORDER_ID}`)
   })
 
   it('refuses duplicate in-flight checkout submissions at the hook boundary', async () => {

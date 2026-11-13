@@ -1,7 +1,7 @@
 import { lazy } from 'react'
 import type { RouteObject } from 'react-router-dom'
 import { RequireAuth, RequireDeliveryStaffRoute } from '@/app/guards'
-import { AccountLayout } from '@/layouts/AccountLayout'
+import { AccountSectionLayout } from '@/layouts/AccountSectionLayout'
 import { StorefrontLayout } from '@/layouts/StorefrontLayout'
 import { adminRoutes } from '@/app/adminRoutes'
 
@@ -47,6 +47,27 @@ export const routes: RouteObject[] = [
       { path: '/register', Component: Register },
       { path: '/forgot-password', Component: ForgotPassword },
       { path: '/reset-password', Component: ResetPassword },
+      {
+        path: '/account',
+        Component: RequireAuth,
+        children: [
+          {
+            Component: AccountSectionLayout,
+            children: [
+              { index: true, Component: Overview },
+              { path: 'orders', Component: Orders },
+              { path: 'orders/:id', Component: OrderDetail },
+              { path: 'wishlist', Component: Wishlist },
+              { path: 'bag', Component: Bag },
+              { path: 'addresses', Component: Addresses },
+              { path: 'checkout', Component: AccountCheckout },
+              { path: 'checkout/:orderId', Component: AccountCheckout },
+              { path: 'profile', Component: Profile },
+              { path: 'feedback', Component: AccountFeedback },
+            ],
+          },
+        ],
+      },
       { path: '*', Component: NotFound },
     ],
   },
@@ -55,26 +76,5 @@ export const routes: RouteObject[] = [
     path: '/delivery',
     Component: RequireDeliveryStaffRoute,
     children: [{ index: true, Component: DeliveryDashboard }],
-  },
-  {
-    path: '/dashboard',
-    Component: RequireAuth,
-    children: [
-      {
-        Component: AccountLayout,
-        children: [
-          { index: true, Component: Overview },
-          { path: 'orders', Component: Orders },
-          { path: 'orders/:id', Component: OrderDetail },
-          { path: 'wishlist', Component: Wishlist },
-          { path: 'bag', Component: Bag },
-          { path: 'addresses', Component: Addresses },
-          { path: 'checkout', Component: AccountCheckout },
-          { path: 'checkout/:orderId', Component: AccountCheckout },
-          { path: 'profile', Component: Profile },
-          { path: 'feedback', Component: AccountFeedback },
-        ],
-      },
-    ],
   },
 ]

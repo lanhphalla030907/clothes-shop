@@ -322,7 +322,7 @@ export default function Checkout() {
                 {items.map((item) => (
                   <li key={item.lineId} className="flex gap-4">
                     <div className="relative w-14 shrink-0 bg-bone">
-                      <SmartImage src={item.image} alt={item.name} className="aspect-3/4 w-full" />
+                      <SmartImage src={item.image} alt={item.name} position="object-top" className="aspect-[4/5] w-full" />
                       <span className="absolute -top-2 -right-2 grid size-5 place-items-center rounded-full bg-ink font-mono text-[9px] text-paper">
                         {item.quantity}
                       </span>

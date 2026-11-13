@@ -90,7 +90,7 @@ export default function Cart() {
                 >
                   <div className="flex gap-4 py-6 sm:gap-6 sm:py-7">
                     <Link to={`/product/${item.productId}`} className="w-24 shrink-0 bg-bone sm:w-32">
-                      <SmartImage src={item.image} alt={item.name} className="aspect-3/4 w-full" />
+                      <SmartImage src={item.image} alt={item.name} position="object-top" className="aspect-[4/5] w-full" />
                     </Link>
 
                     <div className="flex min-w-0 flex-1 flex-col">
@@ -194,7 +194,7 @@ export default function Cart() {
             <p className="mt-6 border border-line px-5 py-4 text-xs leading-relaxed text-graphite">
               This is the storefront's own bag, held in this browser. Pieces bought from the
               collection go to{' '}
-              <Link to="/dashboard/bag" className="text-ink underline underline-offset-4">
+              <Link to="/account/bag" className="text-ink underline underline-offset-4">
                 your account bag
               </Link>
               .

@@ -70,7 +70,7 @@ export function CategorySection() {
         <div className="mt-10 flex gap-4 sm:mt-14 sm:gap-5 md:gap-6 overflow-hidden">
           {[0, 1, 2, 3, 4].map((index) => (
             <div key={index} className={cardWidthClass}>
-              <div className="relative aspect-[4/5] overflow-hidden bg-bone rounded-sm">
+              <div className="relative aspect-[4/5] overflow-hidden bg-[#f4f4f4] rounded-sm">
                 <Skeleton className="h-full w-full aspect-[4/5]" />
                 <SkeletonText lines={2} className="mt-4" />
               </div>
@@ -155,12 +155,13 @@ export function CategorySection() {
                   className="group/category block"
                 >
                   <div
-                    className={`relative aspect-[4/5] overflow-hidden bg-bone rounded-sm group-hover/category:scale-[1.02] transition-transform duration-500 ease-editorial`}
+                    className={`relative aspect-[4/5] overflow-hidden bg-[#f4f4f4] rounded-sm group-hover/category:scale-[1.02] transition-transform duration-500 ease-editorial`}
                   >
                     {category.imageUrl !== null && category.imageUrl !== undefined ? (
                       <SmartImage
                         src={category.imageUrl}
                         alt={category.altText ?? category.name}
+                        position="object-top"
                         className="h-full w-full object-cover group-hover/category:scale-[1.05] transition-transform duration-[1.5s] ease-editorial"
                         priority={index < 3}
                       />

@@ -20,7 +20,9 @@ export default function OrderDetail() {
   const order = useOrder(id)
   const location = useLocation()
   const { showFeedback, confirmFeedback } = useFeedback()
-  const justPlaced = (location.state as { justPlaced?: boolean } | null)?.justPlaced === true
+  const detailState = location.state as { justPlaced?: boolean; justPaid?: boolean } | null
+  const justPlaced = detailState?.justPlaced === true
+  const justPaid = detailState?.justPaid === true
   const { refetch: refetchOrder } = order
 
   const downloadMutation = useMutation((orderId: string) => downloadReceipt(orderId), {
@@ -75,7 +77,7 @@ export default function OrderDetail() {
   if (order.error) {
     return (
       <div className="space-y-6">
-        <BackLink to="/dashboard/orders">All orders</BackLink>
+        <BackLink to="/account/orders">All orders</BackLink>
         <ErrorState message={toUserMessage(order.error)} onRetry={order.refetch} />
       </div>
     )
@@ -84,13 +86,13 @@ export default function OrderDetail() {
   if (!order.data) {
     return (
       <div className="space-y-6">
-        <BackLink to="/dashboard/orders">All orders</BackLink>
+        <BackLink to="/account/orders">All orders</BackLink>
         <EmptyState
           eyebrow="Not found"
           title="We could not open that order"
           description="It may belong to another account, or the link may be wrong."
           action={
-            <Action to="/dashboard/orders" size="sm">
+            <Action to="/account/orders" size="sm">
               Back to orders
             </Action>
           }
@@ -138,10 +140,17 @@ export default function OrderDetail() {
     year: 'numeric',
   })
 
+  // `justPaid` is a one-shot navigation state set by the PayWay screen. Only
+  // honour it while the order is actually in a post-payment state, so a later
+  // cancellation cannot leave a stale "Payment received" banner on the page.
+  const showPaymentReceived =
+    data.status === ORDER_STATUS.CONFIRMED ||
+    (justPaid && data.status !== ORDER_STATUS.PENDING && data.status !== ORDER_STATUS.CANCELLED)
+
   return (
     <div className="space-y-8">
       {/* Top Navigation */}
-      <BackLink to="/dashboard/orders">All orders</BackLink>
+      <BackLink to="/account/orders">All orders</BackLink>
 
       {/* Header section with actions */}
       <PageHeader
@@ -171,7 +180,7 @@ export default function OrderDetail() {
       )}
 
       {/* Status Alert Banner */}
-      {data.status === ORDER_STATUS.CONFIRMED ? (
+      {showPaymentReceived ? (
         <div
           role="status"
           className="rounded-xl border border-emerald-200/80 bg-emerald-50/60 p-5 text-sm leading-relaxed text-ink"
@@ -396,7 +405,7 @@ export default function OrderDetail() {
                       it — the code expires, so a new one is needed after a while.
                     </p>
                     <Action
-                      to={`/dashboard/checkout/${data.id}`}
+                      to={`/account/checkout/${data.id}`}
                       size="sm"
                       className="mt-5 w-full"
                       withArrow
@@ -455,7 +464,7 @@ export default function OrderDetail() {
 
           <div className="pt-2 text-center sm:text-left">
             <Link
-              to="/dashboard/orders"
+              to="/account/orders"
               className="inline-flex items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-ink"
             >
               <ArrowLeft size={13} strokeWidth={1.8} aria-hidden />

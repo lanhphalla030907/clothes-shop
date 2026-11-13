@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
-import { RotateCcw } from 'lucide-react'
+import type { FormEvent, ReactNode } from 'react'
+import {
+  CalendarDays,
+  Coins,
+  RotateCcw,
+  Scale,
+  SlidersHorizontal,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { Action } from '@/components/ui/Action'
 import { FormError, SelectField, TextField } from '@/components/account/Field'
 import type { FinanceRangeResponse } from '@/types/api'
@@ -98,10 +105,13 @@ export function FinanceFilters({
   }
 
   return (
-    <section className="rounded-xl border border-line bg-paper-pure shadow-xs overflow-hidden" aria-label="Reporting filters">
+    <section className="filter-bar overflow-hidden" aria-label="Reporting filters">
       <div className="flex flex-col gap-2 border-b border-line px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">
         <div>
-          <p className="eyebrow text-graphite">Reporting window</p>
+          <p className="eyebrow flex items-center gap-1.5 text-graphite">
+            <SlidersHorizontal size={12} strokeWidth={1.8} aria-hidden />
+            Reporting window
+          </p>
           <h2 className="mt-1 text-[16px] font-semibold text-ink">Filters</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-graphite">
             Dates are calendar labels in {range?.timezone ?? 'Asia/Phnom_Penh'}. The server applies the
@@ -116,6 +126,17 @@ export function FinanceFilters({
             </span>
           </p>
         )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 border-b border-line bg-bone/40 px-5 py-3 sm:px-6">
+        <span className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-graphite">
+          Active
+        </span>
+        <FilterChip icon={CalendarDays}>
+          {range ? formatFinanceRange(range) : 'Server default window'}
+        </FilterChip>
+        <FilterChip icon={Coins}>{filters.currency ?? 'All currencies'}</FilterChip>
+        <FilterChip icon={Scale}>{basisLabel(filters.basis)} basis</FilterChip>
       </div>
 
       <form onSubmit={submit} className="space-y-5 p-5 sm:p-6">
@@ -192,5 +213,14 @@ export function FinanceFilters({
         </div>
       </form>
     </section>
+  )
+}
+
+function FilterChip({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper-pure px-2.5 py-1 text-[11.5px] font-medium text-graphite">
+      <Icon size={12} strokeWidth={1.8} aria-hidden />
+      {children}
+    </span>
   )
 }

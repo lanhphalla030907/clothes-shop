@@ -33,9 +33,9 @@ const mockSummary = (status: OrderSummary['status']): OrderSummary => ({
 
 const renderOrders = () =>
   render(
-    <MemoryRouter initialEntries={['/dashboard/orders']}>
+    <MemoryRouter initialEntries={['/account/orders']}>
       <Routes>
-        <Route path="/dashboard/orders" element={<Orders />} />
+        <Route path="/account/orders" element={<Orders />} />
       </Routes>
     </MemoryRouter>,
   )

@@ -183,7 +183,7 @@ export function ProductProfitSection({
         }
       />
 
-      <div className="border border-line bg-paper p-5 sm:p-6">
+      <div className="card-premium p-5 sm:p-6">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_auto] lg:items-end">
           <form onSubmit={submitSearch} className="flex items-end gap-2">
             <div className="min-w-0 flex-1">
@@ -303,110 +303,112 @@ export function ProductProfitSection({
 
       {visibleItems.length > 0 && (
         <>
-          <div className="hidden overflow-x-auto border border-line bg-paper md:block">
-            <table className="w-full min-w-[1080px] border-collapse text-left">
-              <caption className="sr-only">
-                Product and variant profitability for the selected reporting window
-              </caption>
-              <thead>
-                <tr className="border-b border-line bg-bone">
-                  {tableColumns.map((column) =>
-                    column.sortKey ? (
-                      <SortHeader
-                        key={column.key}
-                        label={column.label}
-                        sortKey={column.sortKey}
-                        currentSortBy={sortBy}
-                        currentSortOrder={sortOrder}
-                        align={column.align}
-                        onSort={changeSort}
-                      />
-                    ) : (
-                      <th
-                        key={column.key}
-                        scope="col"
-                        className={`px-4 py-3 text-[11px] font-semibold tracking-[0.06em] text-graphite uppercase ${
-                          column.align === 'right' ? 'text-right' : 'text-left'
-                        }`}
-                      >
-                        {column.label}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {visibleItems.map((item) => (
-                  <tr
-                    key={`${item.variantId}-${item.currency}`}
-                    className="border-b border-line-soft last:border-b-0 transition-colors hover:bg-bone"
-                  >
-                    <td className="max-w-[220px] px-4 py-3 align-top">
-                      <p className="truncate text-[13px] font-medium text-ink">
-                        {item.productName}
-                      </p>
-                      <p className="mt-0.5 font-mono text-[10.5px] text-graphite">
-                        {item.currency}
-                      </p>
-                    </td>
-                    <td className="max-w-[170px] px-4 py-3 align-top">
-                      <p className="truncate font-mono text-[11.5px] text-ink">
-                        {item.variantSku}
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-graphite">
-                        {formatCount(item.orderCount)} orders
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 text-right align-top font-mono text-[12px] tabular-nums text-ink">
-                      {formatCount(item.unitsSold)}
-                    </td>
-                    <td className="px-4 py-3 text-right align-top font-mono text-[12px] tabular-nums text-ink">
-                      {formatMoney(item.grossRevenue, item.currency)}
-                    </td>
-                    <td className="px-4 py-3 text-right align-top font-mono text-[12px] tabular-nums text-ink">
-                      {formatMoney(item.productDiscounts, item.currency)}
-                    </td>
-                    <td className="px-4 py-3 text-right align-top font-mono text-[12px] tabular-nums text-ink">
-                      {formatMoney(item.netRevenue, item.currency)}
-                    </td>
-                    <td className="px-4 py-3 text-right align-top">
-                      {item.cogs === null ? (
-                        <span className="inline-flex flex-col items-end gap-1">
+          <div className="card-premium hidden overflow-hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1080px] border-collapse text-left">
+                <caption className="sr-only">
+                  Product and variant profitability for the selected reporting window
+                </caption>
+                <thead>
+                  <tr className="border-b border-line bg-bone">
+                    {tableColumns.map((column) =>
+                      column.sortKey ? (
+                        <SortHeader
+                          key={column.key}
+                          label={column.label}
+                          sortKey={column.sortKey}
+                          currentSortBy={sortBy}
+                          currentSortOrder={sortOrder}
+                          align={column.align}
+                          onSort={changeSort}
+                        />
+                      ) : (
+                        <th
+                          key={column.key}
+                          scope="col"
+                          className={`px-4 py-3 text-[11px] font-semibold tracking-[0.06em] text-graphite uppercase ${
+                            column.align === 'right' ? 'text-right' : 'text-left'
+                          }`}
+                        >
+                          {column.label}
+                        </th>
+                      ),
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleItems.map((item) => (
+                    <tr
+                      key={`${item.variantId}-${item.currency}`}
+                      className="border-b border-line-soft last:border-b-0 transition-colors hover:bg-bone"
+                    >
+                      <td className="max-w-[220px] px-4 py-3 align-top">
+                        <p className="truncate text-[13px] font-medium text-ink">
+                          {item.productName}
+                        </p>
+                        <p className="mt-0.5 font-mono text-[10.5px] text-graphite">
+                          {item.currency}
+                        </p>
+                      </td>
+                      <td className="max-w-[170px] px-4 py-3 align-top">
+                        <p className="truncate font-mono text-[11.5px] text-ink">
+                          {item.variantSku}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-graphite">
+                          {formatCount(item.orderCount)} orders
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-right align-top font-mono text-[12px] tabular-nums text-ink">
+                        {formatCount(item.unitsSold)}
+                      </td>
+                      <td className="px-4 py-3 text-right align-top font-mono text-[12px] tabular-nums text-ink">
+                        {formatMoney(item.grossRevenue, item.currency)}
+                      </td>
+                      <td className="px-4 py-3 text-right align-top font-mono text-[12px] tabular-nums text-ink">
+                        {formatMoney(item.productDiscounts, item.currency)}
+                      </td>
+                      <td className="px-4 py-3 text-right align-top font-mono text-[12px] tabular-nums text-ink">
+                        {formatMoney(item.netRevenue, item.currency)}
+                      </td>
+                      <td className="px-4 py-3 text-right align-top">
+                        {item.cogs === null ? (
+                          <span className="inline-flex flex-col items-end gap-1">
+                            <span className="font-mono text-[12px] text-graphite">
+                              Unknown
+                            </span>
+                            <UnknownCostBadge />
+                          </span>
+                        ) : (
+                          <span className="font-mono text-[12px] tabular-nums text-ink">
+                            {formatMoney(item.cogs, item.currency)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right align-top">
+                        {item.grossProfit === null ? (
                           <span className="font-mono text-[12px] text-graphite">
                             Unknown
                           </span>
-                          <UnknownCostBadge />
+                        ) : (
+                          <span className="font-mono text-[12px] tabular-nums text-ink">
+                            {formatMoney(item.grossProfit, item.currency)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right align-top font-mono text-[12px] tabular-nums text-ink">
+                        {formatRatioPercent(item.grossMargin) ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right align-top">
+                        <span className="inline-flex flex-col items-end gap-1">
+                          <CoverageBadge coverage={item.costCoverage} />
+                          {item.isProfitPartial && <PartialProfitBadge />}
                         </span>
-                      ) : (
-                        <span className="font-mono text-[12px] tabular-nums text-ink">
-                          {formatMoney(item.cogs, item.currency)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right align-top">
-                      {item.grossProfit === null ? (
-                        <span className="font-mono text-[12px] text-graphite">
-                          Unknown
-                        </span>
-                      ) : (
-                        <span className="font-mono text-[12px] tabular-nums text-ink">
-                          {formatMoney(item.grossProfit, item.currency)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right align-top font-mono text-[12px] tabular-nums text-ink">
-                      {formatRatioPercent(item.grossMargin) ?? '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right align-top">
-                      <span className="inline-flex flex-col items-end gap-1">
-                        <CoverageBadge coverage={item.costCoverage} />
-                        {item.isProfitPartial && <PartialProfitBadge />}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="space-y-3 md:hidden">
@@ -421,7 +423,7 @@ export function ProductProfitSection({
       )}
 
       {pagination && pagination.total > 0 && (
-        <div className="flex flex-col gap-3 border border-line bg-paper px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="card-premium flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[12px] text-graphite">
             Page {formatCount(pagination.page)} of{' '}
             {formatCount(Math.max(1, pagination.totalPages))}
@@ -500,7 +502,7 @@ function SortHeader({
 
 function ProductCard({ item }: { item: ProductProfitItem }) {
   return (
-    <article className="border border-line bg-paper p-4">
+    <article className="card-premium p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-[13px] font-semibold text-ink">{item.productName}</h3>
@@ -572,7 +574,7 @@ function Stat({ label, value }: { label: string; value: ReactNode }) {
 
 const ProductsSkeleton = () => (
   <div
-    className="border border-line bg-paper p-5 sm:p-6"
+    className="card-premium p-5 sm:p-6"
     role="status"
     aria-busy="true"
     aria-label="Loading product profitability"

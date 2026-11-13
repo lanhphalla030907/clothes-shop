@@ -229,12 +229,12 @@ export default function PostersIndex() {
                     toggleMutation.isPending ? 'opacity-80' : ''
                   }`}
                 >
-                  <div className="relative aspect-[16/9] overflow-hidden bg-bone">
+                  <div className="relative aspect-[16/9] overflow-hidden bg-[#f4f4f4]">
                     <img
                       src={poster.imageUrl}
                       alt={posterLabel(poster)}
                       loading="lazy"
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover object-center"
                     />
                     <PosterStatusBadge isActive={poster.isActive} />
                   </div>

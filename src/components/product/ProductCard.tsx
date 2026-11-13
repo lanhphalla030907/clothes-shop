@@ -14,8 +14,6 @@ import type { CataloguePiece } from '@/types'
 interface ProductCardProps {
   piece: CataloguePiece
   index?: number
-  /** `rail` sizes down for the horizontal showcase. */
-  variant?: 'grid' | 'rail'
   priority?: boolean
 }
 
@@ -23,9 +21,7 @@ interface ProductCardProps {
  * Editorial product plate. Metadata lives under a hairline rule rather than
  * in a card, and the quick-add bar wipes up from the base on hover.
  */
-export function ProductCard({ piece, index = 0, variant = 'grid', priority = false }: ProductCardProps) {
-  const isRail = variant === 'rail'
-
+export function ProductCard({ piece, index = 0, priority = false }: ProductCardProps) {
   return (
     <motion.article
       initial={{ opacity: 0, y: 32 }}
@@ -38,12 +34,13 @@ export function ProductCard({ piece, index = 0, variant = 'grid', priority = fal
         to={`/product/${piece.id}`}
         className="block focus-visible:outline-offset-4"
       >
-        <div className={`relative overflow-hidden bg-bone ${isRail ? 'aspect-[3/4]' : 'aspect-[4/5]'}`}>
+        <div className="relative aspect-[4/5] overflow-hidden bg-[#f4f4f4]">
           <Plate
             src={piece.images[0]}
             alt={piece.name}
             priority={priority}
-            className="transition-transform duration-[1.4s] ease-editorial group-hover/card:scale-[1.06]"
+            position="object-top"
+            className="transition-transform duration-[1.4s] ease-editorial group-hover/card:scale-[1.03]"
           />
 
           {/* The only chrome on the image, and only when there is something to say. */}

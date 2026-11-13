@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+  CalendarDays,
   LayoutDashboard,
   Package,
   Trophy,
@@ -19,6 +20,8 @@ import { RevenueTrendSection } from '@/features/finance/components/RevenueTrendS
 import { useFinanceFilters } from '@/features/finance/hooks/useFinanceFilters'
 import {
   FINANCE_SECTIONS,
+  basisLabel,
+  formatFinanceRange,
   isFinanceSection,
   type FinanceSection,
 } from '@/features/finance/utils'
@@ -99,8 +102,23 @@ export default function FinanceDashboard() {
     <div className="space-y-7">
       <AdminPageHeader
         eyebrow="Finance"
-        title="Finance & profit"
-        description="Revenue, known-cost profit and cash movement in the reporting timezone. Amounts are separated by currency and are never converted or combined."
+        title="Finance Overview"
+        description="Monitor revenue, costs, profitability, and cash collection."
+        action={
+          overview.data ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-line bg-paper px-3 text-[12px] shadow-xs">
+                <CalendarDays size={14} strokeWidth={1.8} aria-hidden className="text-graphite" />
+                <span className="font-medium text-ink">
+                  {formatFinanceRange(overview.data.range)}
+                </span>
+              </span>
+              <span className="inline-flex min-h-10 items-center rounded-lg border border-line bg-bone px-3 text-[12px] font-medium text-graphite">
+                {basisLabel(overview.data.range.basis)} basis · {overview.data.range.timezone}
+              </span>
+            </div>
+          ) : undefined
+        }
       />
 
       <FinanceFilters

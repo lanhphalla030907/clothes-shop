@@ -68,9 +68,9 @@ const mockOrder = (
 
 const renderDetail = (id = '11111111-1111-4111-8111-111111111111', state?: unknown) =>
   render(
-    <MemoryRouter initialEntries={[{ pathname: `/dashboard/orders/${id}`, state }]}>
+    <MemoryRouter initialEntries={[{ pathname: `/account/orders/${id}`, state }]}>
       <Routes>
-        <Route path="/dashboard/orders/:id" element={<OrderDetail />} />
+        <Route path="/account/orders/:id" element={<OrderDetail />} />
       </Routes>
     </MemoryRouter>,
   )
@@ -96,6 +96,43 @@ describe('OrderDetail status update regression test', () => {
     })
 
     expect(screen.getAllByText('Awaiting payment').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Payment received.')).toBeNull()
+  })
+
+  it('shows the placed banner when returning from checkout without a payment confirmation', async () => {
+    fetchOrderMock.mockResolvedValueOnce(mockOrder('PENDING'))
+
+    renderDetail(undefined, { justPlaced: true })
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0)
+    })
+
+    expect(screen.getByText('Your order is placed.')).toBeTruthy()
+  })
+
+  it('shows the payment received banner when PayWay returns the customer after paying', async () => {
+    fetchOrderMock.mockResolvedValueOnce(mockOrder('PROCESSING'))
+
+    renderDetail(undefined, { justPaid: true })
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0)
+    })
+
+    expect(screen.getByText('Payment received.')).toBeTruthy()
+    expect(screen.queryByText('Your order is placed.')).toBeNull()
+  })
+
+  it('does not claim payment received while the order is still pending', async () => {
+    fetchOrderMock.mockResolvedValueOnce(mockOrder('PENDING'))
+
+    renderDetail(undefined, { justPaid: true })
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0)
+    })
+
     expect(screen.queryByText('Payment received.')).toBeNull()
   })
 

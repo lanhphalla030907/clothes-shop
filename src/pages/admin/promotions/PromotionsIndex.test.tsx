@@ -95,6 +95,16 @@ const usagePage = (): PromotionUsagePage => ({
 })
 
 beforeEach(() => {
+  // jsdom does not implement the native <dialog> methods used by Modal.
+  // showModal must also set `open`, otherwise the dialog stays display:none and
+  // role queries cannot see its contents.
+  HTMLDialogElement.prototype.showModal = function showModal(this: HTMLDialogElement) {
+    this.setAttribute('open', '')
+  }
+  HTMLDialogElement.prototype.close = function close(this: HTMLDialogElement) {
+    this.removeAttribute('open')
+  }
+
   fetchMock.mockReset()
   createMock.mockReset()
   updateMock.mockReset()
@@ -106,6 +116,8 @@ beforeEach(() => {
   feedback.confirmFeedback.mockReset()
   feedback.confirmFeedback.mockResolvedValue(true)
 
+  // One implementation serves the list read and the three status-count reads,
+  // which all share this endpoint.
   fetchMock.mockResolvedValue(page([promotion()]))
   createMock.mockResolvedValue(promotion())
   updateMock.mockResolvedValue(promotion())
@@ -137,15 +149,18 @@ describe('PromotionsIndex', () => {
   })
 
   it('shows the loading state until the first response arrives', async () => {
-    let resolveList: ((value: ReturnType<typeof page>) => void) | undefined
+    const resolvers: Array<(value: ReturnType<typeof page>) => void> = []
     fetchMock.mockImplementation(
-      () => new Promise((resolve) => { resolveList = resolve }),
+      () =>
+        new Promise((resolve) => {
+          resolvers.push(resolve)
+        }),
     )
 
     render(<PromotionsIndex />)
 
     expect(screen.getByText('Loading promotions…')).toBeTruthy()
-    resolveList?.(page([promotion()]))
+    resolvers.forEach((resolve) => resolve(page([promotion()])))
     expect(await screen.findByText('Save 10%')).toBeTruthy()
   })
 

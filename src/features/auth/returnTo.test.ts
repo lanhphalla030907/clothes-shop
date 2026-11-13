@@ -7,7 +7,7 @@ describe('landingPathFor', () => {
   })
 
   it('sends a customer to the account dashboard', () => {
-    expect(landingPathFor('CUSTOMER')).toBe('/dashboard')
+    expect(landingPathFor('CUSTOMER')).toBe('/account')
   })
 
   it('sends delivery staff to the delivery workspace', () => {
@@ -15,15 +15,15 @@ describe('landingPathFor', () => {
   })
 
   it('treats an unknown role as a customer', () => {
-    expect(landingPathFor(null)).toBe('/dashboard')
-    expect(landingPathFor(undefined)).toBe('/dashboard')
+    expect(landingPathFor(null)).toBe('/account')
+    expect(landingPathFor(undefined)).toBe('/account')
   })
 })
 
 describe('safeReturnTo', () => {
   it('uses the role-specific landing screen when no destination was requested', () => {
     expect(safeReturnTo(null, 'ADMIN')).toBe('/admin')
-    expect(safeReturnTo(undefined, 'CUSTOMER')).toBe('/dashboard')
+    expect(safeReturnTo(undefined, 'CUSTOMER')).toBe('/account')
     expect(safeReturnTo(undefined, 'DELIVERY_STAFF')).toBe('/delivery')
   })
 
@@ -33,30 +33,30 @@ describe('safeReturnTo', () => {
   })
 
   it('never returns a customer to an admin destination', () => {
-    expect(safeReturnTo('/admin', 'CUSTOMER')).toBe('/dashboard')
-    expect(safeReturnTo('/admin/products', 'CUSTOMER')).toBe('/dashboard')
-    expect(safeReturnTo('/admin?tab=products', 'CUSTOMER')).toBe('/dashboard')
-    expect(safeReturnTo('/ADMIN/products/', 'CUSTOMER')).toBe('/dashboard')
+    expect(safeReturnTo('/admin', 'CUSTOMER')).toBe('/account')
+    expect(safeReturnTo('/admin/products', 'CUSTOMER')).toBe('/account')
+    expect(safeReturnTo('/admin?tab=products', 'CUSTOMER')).toBe('/account')
+    expect(safeReturnTo('/ADMIN/products/', 'CUSTOMER')).toBe('/account')
   })
 
   it('only returns delivery staff to a delivery destination', () => {
     expect(safeReturnTo('/delivery', 'DELIVERY_STAFF')).toBe('/delivery')
     expect(safeReturnTo('/delivery/assignments', 'DELIVERY_STAFF')).toBe('/delivery/assignments')
-    expect(safeReturnTo('/delivery', 'CUSTOMER')).toBe('/dashboard')
+    expect(safeReturnTo('/delivery', 'CUSTOMER')).toBe('/account')
     expect(safeReturnTo('/delivery/assignments', 'ADMIN')).toBe('/admin')
     expect(safeReturnTo('/admin', 'DELIVERY_STAFF')).toBe('/delivery')
   })
 
   it('preserves ordinary account destinations for a customer', () => {
-    expect(safeReturnTo('/dashboard', 'CUSTOMER')).toBe('/dashboard')
-    expect(safeReturnTo('/dashboard/bag', 'CUSTOMER')).toBe('/dashboard/bag')
+    expect(safeReturnTo('/account', 'CUSTOMER')).toBe('/account')
+    expect(safeReturnTo('/account/bag', 'CUSTOMER')).toBe('/account/bag')
   })
 
   it('keeps an administrator out of the customer account area after signing in', () => {
-    expect(safeReturnTo('/dashboard', 'ADMIN')).toBe('/admin')
-    expect(safeReturnTo('/dashboard/', 'ADMIN')).toBe('/admin')
-    expect(safeReturnTo('/dashboard/bag', 'ADMIN')).toBe('/admin')
-    expect(safeReturnTo('/dashboard/orders?status=paid', 'ADMIN')).toBe('/admin')
+    expect(safeReturnTo('/account', 'ADMIN')).toBe('/admin')
+    expect(safeReturnTo('/account/', 'ADMIN')).toBe('/admin')
+    expect(safeReturnTo('/account/bag', 'ADMIN')).toBe('/admin')
+    expect(safeReturnTo('/account/orders?status=paid', 'ADMIN')).toBe('/admin')
   })
 
   it('still preserves non-account storefront destinations for an administrator', () => {
@@ -66,15 +66,15 @@ describe('safeReturnTo', () => {
 
   it('rejects off-site destinations', () => {
     expect(safeReturnTo('https://evil.example', 'ADMIN')).toBe('/admin')
-    expect(safeReturnTo('//evil.example', 'CUSTOMER')).toBe('/dashboard')
-    expect(safeReturnTo('/\\evil.example', 'CUSTOMER')).toBe('/dashboard')
+    expect(safeReturnTo('//evil.example', 'CUSTOMER')).toBe('/account')
+    expect(safeReturnTo('/\\evil.example', 'CUSTOMER')).toBe('/account')
   })
 
   it('refuses the auth pages themselves, so signing in cannot loop', () => {
     expect(safeReturnTo('/login', 'ADMIN')).toBe('/admin')
-    expect(safeReturnTo('/login?from=%2Fdashboard', 'CUSTOMER')).toBe('/dashboard')
-    expect(safeReturnTo('/register', 'CUSTOMER')).toBe('/dashboard')
+    expect(safeReturnTo('/login?from=%2Faccount', 'CUSTOMER')).toBe('/account')
+    expect(safeReturnTo('/register', 'CUSTOMER')).toBe('/account')
     expect(safeReturnTo('/LOGIN/', 'ADMIN')).toBe('/admin')
-    expect(safeReturnTo('/Register', 'CUSTOMER')).toBe('/dashboard')
+    expect(safeReturnTo('/Register', 'CUSTOMER')).toBe('/account')
   })
 })

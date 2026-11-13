@@ -121,7 +121,7 @@ export default function Success() {
               {order.items.map((item) => (
                 <li key={item.lineId} className="flex gap-4">
                   <div className="w-14 shrink-0 bg-bone">
-                    <SmartImage src={item.image} alt={item.name} className="aspect-3/4 w-full" />
+                    <SmartImage src={item.image} alt={item.name} position="object-top" className="aspect-[4/5] w-full" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[12px] font-semibold tracking-[0.01em] uppercase">

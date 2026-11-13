@@ -1,272 +1,381 @@
 import { Link } from 'react-router-dom'
-import {
-  Archive,
-  ArrowUpRight,
-  CheckCircle2,
-  FileEdit,
-  FolderTree,
-  Package,
-  Sparkles,
-  Trophy,
-  Users,
-} from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { Action } from '@/components/ui/Action'
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader'
 import { AdminCard, AdminCardHeader } from '@/components/admin/AdminCard'
-import { AdminStatCard } from '@/components/admin/AdminStatCard'
 import { EmptyState, ErrorState } from '@/components/account/States'
 import { Skeleton } from '@/components/account/Skeleton'
-import { Money } from '@/components/account/Bits'
-import { ProductStatusBadge } from '@/features/adminProducts/components/ProductBadges'
-import { useAdminCategories, useAdminProducts, useAdminBestSellers } from '@/features/adminProducts/useAdminProducts'
-import { displayName, useAuth } from '@/features/auth/useAuth'
+import { useAsyncResource } from '@/hooks/useAsyncResource'
+import {
+  fetchFinanceOverview,
+  fetchFinanceRevenueTrend,
+} from '@/features/finance/api'
+import { fetchAdminCustomerStats } from '@/features/adminCustomers/api'
+import {
+  useAdminBestSellers,
+  useAdminProducts,
+} from '@/features/adminProducts/useAdminProducts'
+import { fetchOrderStatusCounts, fetchRecentOrders } from '@/features/adminDashboard/api'
+import { BestSellersPanel } from '@/features/adminDashboard/components/BestSellersPanel'
+import { InventoryStockAlerts } from '@/features/adminDashboard/components/InventoryStockAlerts'
+import { KpiGrid } from '@/features/adminDashboard/components/KpiGrid'
+import { OrderStatusOverview } from '@/features/adminDashboard/components/OrderStatusOverview'
+import { PaymentBreakdownDonut } from '@/features/adminDashboard/components/PaymentBreakdownDonut'
+import { PeriodSelector } from '@/features/adminDashboard/components/PeriodSelector'
+import { QuickActions } from '@/features/adminDashboard/components/QuickActions'
+import { RecentOrdersPanel } from '@/features/adminDashboard/components/RecentOrdersPanel'
+import { SalesOrdersTrendChart } from '@/features/adminDashboard/components/SalesOrdersTrendChart'
+import { useDashboardFilters } from '@/features/adminDashboard/hooks/useDashboardFilters'
+import {
+  formatReportingRange,
+  granularityForRange,
+  toReportingEndTimestamp,
+  toReportingStartTimestamp,
+} from '@/features/adminDashboard/reporting'
 import { toUserMessage } from '@/lib/api/errors'
 
+/**
+ * The store overview: money, orders and operations for the whole business.
+ *
+ * Every figure comes from an existing admin API. The selected period is shared
+ * by the finance, trend and order panels; recent orders stay "latest overall" and
+ * customers/products are lifetime counters. Amounts are never added across
+ * currencies — the finance API returns them per currency and so does this page.
+ *
+ * Catalogue records keep their own dashboard at `/admin/products/overview`.
+ */
 export default function AdminDashboard() {
-  const { user } = useAuth()
-  const products = useAdminProducts({})
-  const categories = useAdminCategories()
-  const bestSellers = useAdminBestSellers(10)
+  const filters = useDashboardFilters()
+  const granularity = granularityForRange(filters.range)
+  const createdFrom = toReportingStartTimestamp(filters.range.from)
+  const createdTo = toReportingEndTimestamp(filters.range.to)
 
-  const list = products.data ?? []
-  const active = list.filter((product) => product.status === 'ACTIVE' && product.isActive).length
-  const drafts = list.filter((product) => product.status === 'DRAFT').length
-  const archived = list.filter((product) => product.status === 'ARCHIVED').length
-  const activeCategories = (categories.data ?? []).filter((category) => category.isActive).length
-  const recent = [...list]
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 5)
+  const finance = useAsyncResource(
+    (signal) =>
+      fetchFinanceOverview(
+        {
+          from: filters.range.from,
+          to: filters.range.to,
+          basis: 'delivered',
+        },
+        signal,
+      ),
+    [filters.range.from, filters.range.to],
+  )
+
+  const trend = useAsyncResource(
+    (signal) =>
+      fetchFinanceRevenueTrend(
+        {
+          from: filters.range.from,
+          to: filters.range.to,
+          basis: 'delivered',
+          granularity,
+        },
+        signal,
+      ),
+    [filters.range.from, filters.range.to, granularity],
+  )
+
+  const orderCounts = useAsyncResource(
+    (signal) => fetchOrderStatusCounts({ createdFrom, createdTo }, signal),
+    [createdFrom, createdTo],
+  )
+
+  // Recent orders are the latest overall, not the latest inside the period: the
+  // operator wants to see what just happened even when reviewing last month.
+  const recentOrders = useAsyncResource(
+    (signal) => fetchRecentOrders(7, signal),
+    [],
+  )
+
+  const customers = useAsyncResource(
+    (signal) => fetchAdminCustomerStats(signal),
+    [],
+  )
+
+  const products = useAdminProducts({})
+  const bestSellers = useAdminBestSellers(6)
+
+  const cashRows = finance.data?.cashByCurrency ?? []
+  const trendSeries = trend.data?.series ?? []
+  const availableCurrencies = Array.from(
+    new Set([
+      ...cashRows.map((row) => row.currency),
+      ...trendSeries.map((series) => series.currency),
+    ]),
+  ).sort((a, b) => {
+    // Prefer the store's primary currency, then keep the rest deterministic.
+    if (a === 'USD') return -1
+    if (b === 'USD') return 1
+    return a.localeCompare(b)
+  })
+
+  const activeCurrency =
+    filters.currency && availableCurrencies.includes(filters.currency)
+      ? filters.currency
+      : availableCurrencies[0]
+
+  const activeSeries =
+    trendSeries.find((series) => series.currency === activeCurrency) ??
+    trendSeries[0]
+
+  const chartCurrency = activeSeries?.currency ?? activeCurrency
+
+  const kpiError =
+    finance.error ?? orderCounts.error ?? customers.error ?? products.error
+
+  const retryKpis = () => {
+    if (finance.error !== undefined) finance.refetch()
+    if (orderCounts.error !== undefined) orderCounts.refetch()
+    if (customers.error !== undefined) customers.refetch()
+    if (products.error !== undefined) products.refetch()
+  }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
       <AdminPageHeader
-        eyebrow="Studio overview"
-        title="Dashboard"
-        description={`Signed in as ${displayName(user) || 'an administrator'}. Catalogue records, gallery media, variants, options and stock are managed here; customers are managed on the Customers page. Delivery staff accounts are managed on the Delivery staff page.`}
+        eyebrow="Store"
+        title="Store Overview"
+        description="Your store performance at a glance. Monitor sales, orders, payments, customers, and operations."
         action={
-          <Action to="/admin/products/new" size="sm" withArrow>
-            New product
+          <Action to="/admin/products/overview" variant="outline" size="sm">
+            Product dashboard
           </Action>
         }
       />
 
-      {/* Catalogue KPI summary */}
-      <section aria-label="Catalogue summary">
-        {products.error !== undefined || categories.error !== undefined ? (
-          <ErrorState
-            message={toUserMessage(products.error ?? categories.error)}
-            onRetry={() => {
-              if (products.error !== undefined) products.refetch()
-              if (categories.error !== undefined) categories.refetch()
-            }}
-          />
-        ) : (
-          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-5">
-            <AdminStatCard
-              label="Total Products"
-              value={list.length}
-              loading={products.isLoading}
-              hint="All catalogue records"
-              icon={Package}
-            />
-            <AdminStatCard
-              label="Active"
-              value={active}
-              loading={products.isLoading}
-              hint="Live on storefront"
-              icon={CheckCircle2}
-            />
-            <AdminStatCard
-              label="Drafts"
-              value={drafts}
-              loading={products.isLoading}
-              hint="Unpublished drafts"
-              icon={FileEdit}
-            />
-            <AdminStatCard
-              label="Archived"
-              value={archived}
-              loading={products.isLoading}
-              hint="Withdrawn records"
-              icon={Archive}
-            />
-            <AdminStatCard
-              label="Categories"
-              value={categories.data?.length ?? 0}
-              loading={categories.isLoading}
-              hint={`${activeCategories} active`}
-              icon={FolderTree}
-            />
-          </div>
-        )}
-      </section>
+      <PeriodSelector
+        preset={filters.preset}
+        range={filters.range}
+        isRefreshing={
+          finance.isRefreshing ||
+          trend.isRefreshing ||
+          orderCounts.isRefreshing
+        }
+        onPreset={filters.applyPreset}
+        onCustom={filters.applyCustom}
+      />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <AdminCard className="lg:col-span-2">
+      {kpiError !== undefined && (
+        <ErrorState message={toUserMessage(kpiError)} onRetry={retryKpis} />
+      )}
+
+      <KpiGrid
+        overview={finance.data?.byCurrency}
+        cash={finance.data?.cashByCurrency}
+        orderCounts={orderCounts.data}
+        customerStats={customers.data}
+        productCount={products.data?.length}
+        financeLoading={finance.isLoading}
+        ordersLoading={orderCounts.isLoading}
+        customersLoading={customers.isLoading}
+        productsLoading={products.isLoading}
+      />
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        <AdminCard className="xl:col-span-2">
           <AdminCardHeader
-            title="Recently updated"
-            description="The five products edited most recently."
+            title="Sales & orders trend"
+            description={`Net revenue and order count for ${formatReportingRange(filters.range)}.`}
+            action={
+              availableCurrencies.length > 1 ? (
+                <div
+                  className="flex flex-wrap gap-1.5"
+                  role="group"
+                  aria-label="Trend currency"
+                >
+                  {availableCurrencies.map((currency) => (
+                    <button
+                      key={currency}
+                      type="button"
+                      aria-pressed={currency === chartCurrency}
+                      onClick={() => filters.setCurrency(currency)}
+                      className={`min-h-8 rounded-lg border px-2.5 font-mono text-[11.5px] font-semibold transition-colors ${
+                        currency === chartCurrency
+                          ? 'border-ink bg-ink text-paper'
+                          : 'border-line bg-paper-pure text-ink hover:border-ink'
+                      }`}
+                    >
+                      {currency}
+                    </button>
+                  ))}
+                </div>
+              ) : undefined
+            }
+          />
+          <div className="p-5 sm:p-6">
+            {trend.isLoading ? (
+              <div className="space-y-3" role="status" aria-busy="true">
+                <span className="sr-only">Loading sales and orders trend</span>
+                <Skeleton className="h-48 w-full rounded-lg" />
+                <Skeleton className="h-48 w-full rounded-lg" />
+              </div>
+            ) : trend.error !== undefined ? (
+              <ErrorState
+                message={toUserMessage(trend.error)}
+                onRetry={trend.refetch}
+              />
+            ) : activeSeries === undefined ||
+              activeSeries.buckets.length === 0 ? (
+              <EmptyState
+                align="left"
+                eyebrow="No trend"
+                title="No sales in this reporting window"
+                description="Choose a wider period, or wait for the first delivered order in this range."
+              />
+            ) : (
+              <SalesOrdersTrendChart
+                buckets={activeSeries.buckets}
+                currency={activeSeries.currency}
+                granularity={trend.data!.granularity}
+                range={trend.data!.range}
+                timezone={trend.data!.timezone}
+              />
+            )}
+          </div>
+        </AdminCard>
+
+        <AdminCard>
+          <AdminCardHeader
+            title="Payment collection breakdown"
+            description="Collected cash by payment method."
+          />
+          <div className="p-5 sm:p-6">
+            {finance.isLoading ? (
+              <div className="space-y-3" role="status" aria-busy="true">
+                <span className="sr-only">Loading payment collection</span>
+                <Skeleton className="h-36 w-36 self-center rounded-full" />
+                <Skeleton className="h-12 w-full rounded-md" />
+              </div>
+            ) : finance.error !== undefined ? (
+              <ErrorState
+                message={toUserMessage(finance.error)}
+                onRetry={finance.refetch}
+              />
+            ) : (
+              <PaymentBreakdownDonut
+                rows={cashRows}
+                currency={activeCurrency}
+                onCurrencyChange={filters.setCurrency}
+              />
+            )}
+          </div>
+        </AdminCard>
+      </div>
+
+      <AdminCard>
+        <AdminCardHeader
+          title="Order status overview"
+          description="Orders created in the selected period. Click a status to review those orders."
+          action={
+            <Link
+              to="/admin/orders"
+              className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-graphite transition-colors hover:text-ink"
+            >
+              <span>All orders</span>
+              <ArrowUpRight size={13} strokeWidth={1.8} aria-hidden />
+            </Link>
+          }
+        />
+        <div className="p-5 sm:p-6">
+          {orderCounts.error !== undefined ? (
+            <ErrorState
+              message={toUserMessage(orderCounts.error)}
+              onRetry={orderCounts.refetch}
+            />
+          ) : (
+            <OrderStatusOverview
+              counts={orderCounts.data}
+              isLoading={orderCounts.isLoading}
+            />
+          )}
+        </div>
+      </AdminCard>
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        <AdminCard className="xl:col-span-2">
+          <AdminCardHeader
+            title="Recent orders"
+            description="The latest orders across every status."
             action={
               <Link
-                to="/admin/products"
+                to="/admin/orders"
                 className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-graphite transition-colors hover:text-ink"
               >
-                <span>View catalogue</span>
+                <span>View all orders</span>
                 <ArrowUpRight size={13} strokeWidth={1.8} aria-hidden />
               </Link>
             }
           />
-
-          {products.isLoading ? (
-            <div className="space-y-3 p-5 sm:p-6">
-              {Array.from({ length: 4 }, (_, index) => (
-                <Skeleton key={index} className="h-9 w-full rounded-md" />
-              ))}
-            </div>
-          ) : products.error !== undefined ? (
+          {recentOrders.error !== undefined ? (
             <div className="p-5 sm:p-6">
-              <ErrorState message={toUserMessage(products.error)} onRetry={products.refetch} />
-            </div>
-          ) : recent.length === 0 ? (
-            <div className="p-5 sm:p-6">
-              <EmptyState
-                align="left"
-                eyebrow="No products"
-                title="The catalogue is empty"
-                description="Create the first product to start building the release."
-                action={
-                  <Action to="/admin/products/new" size="sm" withArrow>
-                    New product
-                  </Action>
-                }
+              <ErrorState
+                message={toUserMessage(recentOrders.error)}
+                onRetry={recentOrders.refetch}
               />
             </div>
           ) : (
-            <ul className="divide-y divide-line-soft">
-              {recent.map((product) => (
-                <li key={product.id}>
-                  <Link
-                    to={`/admin/products/${product.id}`}
-                    className="group flex flex-col justify-between gap-2 px-4 py-3.5 transition-colors hover:bg-bone/50 sm:flex-row sm:items-center sm:gap-3 sm:px-6"
-                  >
-                    {/* Left: Name & Slug */}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13.5px] font-semibold text-ink group-hover:text-ink">
-                        {product.name}
-                      </p>
-                      <p className="mt-0.5 truncate font-mono text-[11px] text-graphite">
-                        /{product.slug}
-                      </p>
-                    </div>
-                    
-                    {/* Right: Status & Price */}
-                    <div className="flex shrink-0 items-center justify-between gap-3 sm:w-auto sm:justify-end mt-1 sm:mt-0">
-                      <ProductStatusBadge status={product.status} />
-                      <Money amount={product.basePrice} className="text-[13px] font-semibold" />
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <RecentOrdersPanel
+              orders={recentOrders.data?.items}
+              isLoading={recentOrders.isLoading}
+            />
           )}
         </AdminCard>
 
-        {/* Sidebar panels */}
-        <div className="space-y-6">
-          {/* Best Sellers */}
-          <AdminCard>
-            <div className="flex items-center gap-2 border-b border-line px-5 py-4">
-              <div className="grid size-7 place-items-center rounded-md bg-amber-50 text-amber-600">
-                <Trophy size={15} strokeWidth={1.8} aria-hidden />
-              </div>
-              <h2 className="text-[14.5px] font-semibold text-ink">Best Sellers</h2>
-            </div>
-            {bestSellers.isLoading ? (
-              <div className="space-y-2 p-4">
-                {Array.from({ length: 4 }, (_, i) => (
-                  <Skeleton key={i} className="h-10 w-full rounded-md" />
-                ))}
-              </div>
-            ) : bestSellers.error ? (
-              <div className="p-4">
-                <ErrorState message={toUserMessage(bestSellers.error)} onRetry={bestSellers.refetch} />
-              </div>
-            ) : (bestSellers.data?.length ?? 0) === 0 ? (
-              <div className="p-4">
-                <EmptyState align="left" title="No sales yet" description="Best-selling products will appear here." />
-              </div>
-            ) : (
-              <ul className="divide-y divide-line-soft">
-                {bestSellers.data!.slice(0, 6).map((item) => (
-                  <li key={item.productId} className="flex items-center gap-3 px-4 py-3 sm:px-5">
-                    <span className="grid size-6 shrink-0 place-items-center rounded-md bg-bone font-mono text-[11px] font-semibold text-graphite">
-                      {item.rank}
-                    </span>
-                    {item.image ? (
-                      <img src={item.image} alt="" className="size-9 shrink-0 rounded-md object-cover bg-bone" />
-                    ) : (
-                      <div className="size-9 shrink-0 rounded-md bg-bone" />
-                    )}
-                    {/* Wrapped name/sold and price in a flex container that behaves well on mobile */}
-                    <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-[13px] font-medium text-ink">{item.name}</p>
-                        <p className="text-[11px] text-graphite">{item.unitsSold} sold</p>
-                      </div>
-                      <Money amount={String(item.revenue ?? '0')} className="shrink-0 text-[11px] font-semibold sm:text-xs" />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </AdminCard>
-
-          {/* Quick Workspace Shortcuts */}
-          <AdminCard>
-            <div className="border-b border-line px-5 py-3.5">
-              <h2 className="text-[14px] font-semibold text-ink">Quick Shortcuts</h2>
-            </div>
-            <div className="p-2 space-y-0.5">
+        <AdminCard>
+          <AdminCardHeader
+            title="Best-selling products"
+            description="All-time units sold and revenue."
+            action={
               <Link
-                to="/admin/products"
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-ink transition-colors hover:bg-bone"
+                to="/admin/products/overview"
+                className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-graphite transition-colors hover:text-ink"
               >
-                <Package size={15} strokeWidth={1.8} aria-hidden className="text-graphite" />
-                <span className="flex-1">Manage Products</span>
-                <ArrowUpRight size={13} strokeWidth={1.8} aria-hidden className="text-ash" />
+                <span>Products</span>
+                <ArrowUpRight size={13} strokeWidth={1.8} aria-hidden />
               </Link>
-              <Link
-                to="/admin/categories"
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-ink transition-colors hover:bg-bone"
-              >
-                <FolderTree size={15} strokeWidth={1.8} aria-hidden className="text-graphite" />
-                <span className="flex-1">Category Hierarchy</span>
-                <ArrowUpRight size={13} strokeWidth={1.8} aria-hidden className="text-ash" />
-              </Link>
-              <Link
-                to="/admin/customers"
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-ink transition-colors hover:bg-bone"
-              >
-                <Users size={15} strokeWidth={1.8} aria-hidden className="text-graphite" />
-                <span className="flex-1">Customers Directory</span>
-                <ArrowUpRight size={13} strokeWidth={1.8} aria-hidden className="text-ash" />
-              </Link>
+            }
+          />
+          {bestSellers.error !== undefined ? (
+            <div className="p-5">
+              <ErrorState
+                message={toUserMessage(bestSellers.error)}
+                onRetry={bestSellers.refetch}
+              />
             </div>
-          </AdminCard>
-
-          {/* Admin API Coverage Note */}
-          <div className="rounded-xl border border-line-soft bg-paper-pure p-5 shadow-2xs">
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-graphite">
-              <Sparkles size={13} className="text-amber-500" />
-              <span>Studio Architecture</span>
-            </div>
-            <p className="mt-2 text-[12.5px] leading-relaxed text-graphite">
-              Products, categories, images, variants, options and stock are managed here.
-              Customers and delivery staff accounts are accessible via dedicated sections.
-            </p>
-          </div>
-        </div>
+          ) : (
+            <BestSellersPanel
+              items={bestSellers.data}
+              isLoading={bestSellers.isLoading}
+            />
+          )}
+        </AdminCard>
       </div>
+
+      <AdminCard>
+        <AdminCardHeader
+          title="Inventory stock"
+          description="Variants that need attention, based on available stock."
+          action={
+            <Link
+              to="/admin/product-variants"
+              className="inline-flex min-h-9 items-center rounded-lg border border-line bg-paper px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink"
+            >
+              Manage stock
+            </Link>
+          }
+        />
+        <InventoryStockAlerts />
+      </AdminCard>
+
+      <AdminCard>
+        <AdminCardHeader
+          title="Quick actions"
+          description="Jump straight to an existing admin workspace."
+        />
+        <QuickActions />
+      </AdminCard>
     </div>
   )
 }

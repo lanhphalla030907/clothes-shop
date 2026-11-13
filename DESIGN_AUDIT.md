@@ -3,9 +3,9 @@
 ## Routes found
 
 - Storefront: `/`, `/shop`, `/product/:id`, `/cart`, `/checkout`, `/success`, `/about`, `/login`, `/register`, `*`
-- Account (protected): `/dashboard`, `/dashboard/orders`, `/dashboard/orders/:id`, `/dashboard/wishlist`,
-  `/dashboard/bag`, `/dashboard/addresses`, `/dashboard/checkout`, `/dashboard/checkout/:orderId`,
-  `/dashboard/profile`
+- Account (protected, inside the storefront layout): `/account`, `/account/orders`, `/account/orders/:id`,
+  `/account/wishlist`, `/account/bag`, `/account/addresses`, `/account/checkout`,
+  `/account/checkout/:orderId`, `/account/profile`, `/account/feedback`
 - Admin (ADMIN role): `/admin`, `/admin/products`, `/admin/products/new`,
   `/admin/products/:productId`, `/admin/categories`
 

@@ -27,7 +27,7 @@ export function Navbar() {
   useLockBodyScroll(isMenuOpen)
   const signOut = () => {
     logout()
-    if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+    if (pathname.startsWith('/account') || pathname.startsWith('/admin')) {
       navigate('/', { replace: true })
     }
   }
@@ -134,7 +134,7 @@ export function Navbar() {
               ))}
 
             <Link
-              to="/dashboard/bag"
+              to="/account/bag"
               aria-label={`Your bag, ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
               className="group flex min-h-11 min-w-11 items-center justify-center gap-2 px-2 text-ink transition-colors hover:text-graphite"
             >
@@ -272,7 +272,7 @@ function MobileMenu({
                 </Link>
               ))}
               <Link
-                to="/dashboard/bag"
+                to="/account/bag"
                 onClick={closeMenu}
                 className="flex min-h-12 items-center justify-between border-b border-line-soft text-[17px] font-medium text-ink/85 transition-colors hover:text-ink"
               >

@@ -43,11 +43,11 @@ export function AdminForbidden() {
       </h1>
       <p className="mt-2.5 text-[14.5px] leading-relaxed text-graphite">
         You are signed in as a customer. The studio tools need an admin account — your orders,
-        wishlist and addresses are still available in your dashboard.
+        wishlist and addresses are still available in your account.
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
-        <Action to="/dashboard" size="sm" withArrow>
-          Your dashboard
+        <Action to="/account" size="sm" withArrow>
+          Your account
         </Action>
         <Action to="/" variant="outline" size="sm">
           Back to storefront

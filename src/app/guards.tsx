@@ -9,7 +9,7 @@ const signInPath = (location: Location): string =>
   `/login?from=${encodeURIComponent(`${location.pathname}${location.search}`)}`
 
 /**
- * Everything under `/dashboard` requires a session.
+ * Everything under `/account` requires a session.
  *
  * `isInitializing` renders the shared fallback rather than redirecting: the
  * token may be perfectly good and still being checked, and bouncing a signed-in

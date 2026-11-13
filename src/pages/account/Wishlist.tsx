@@ -127,13 +127,14 @@ export default function Wishlist() {
                 <Panel className="flex h-full flex-col">
                   <Link
                     to={`/product/${item.product.id}`}
-                    className="group relative block aspect-4/5 overflow-hidden bg-bone"
+                    className="group relative block aspect-[4/5] overflow-hidden bg-[#f4f4f4]"
                     aria-label={item.product.name}
                   >
                     {item.product.image ? (
                       <SmartImage
                         src={item.product.image.imageUrl}
                         alt={item.product.image.altText ?? item.product.name}
+                        position="object-top"
                         className="size-full object-cover transition-transform duration-700 ease-editorial group-hover:scale-[1.03]"
                       />
                     ) : (

@@ -205,13 +205,13 @@ export default function Profile() {
           </dl>
 
           <div className="mt-auto space-y-2 border-t border-line px-5 py-5 sm:px-6">
-            <Action to="/dashboard/orders" variant="outline" size="sm" className="w-full">
+            <Action to="/account/orders" variant="outline" size="sm" className="w-full">
               Your orders
             </Action>
-            <Action to="/dashboard/addresses" variant="outline" size="sm" className="w-full">
+            <Action to="/account/addresses" variant="outline" size="sm" className="w-full">
               Your addresses
             </Action>
-            <Action to="/dashboard/wishlist" variant="ghost" size="sm" className="w-full">
+            <Action to="/account/wishlist" variant="ghost" size="sm" className="w-full">
               Saved pieces
             </Action>
           </div>

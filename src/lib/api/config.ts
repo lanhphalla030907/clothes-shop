@@ -68,6 +68,7 @@ export const API = {
   adminCodReconciliation: '/admin/cod-reconciliation',
   adminCustomers: '/admin/customers',
   adminFinance: '/admin/finance',
+  adminStockAlerts: '/admin/inventory/stock-alerts',
   cart: '/cart',
   cartItems: '/cart/items',
   wishlist: '/wishlist',

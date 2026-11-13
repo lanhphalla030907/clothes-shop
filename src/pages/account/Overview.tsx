@@ -65,7 +65,7 @@ export default function Overview() {
             <Action to="/shop" size="sm" withArrow>
               Continue shopping
             </Action>
-            <Action to="/dashboard/orders" variant="outline" size="sm">
+            <Action to="/account/orders" variant="outline" size="sm">
               My orders
             </Action>
           </div>
@@ -138,7 +138,7 @@ export default function Overview() {
       {/* Quick Navigation Cards */}
       <section aria-label="Account quick navigation" className="grid gap-3 sm:grid-cols-3">
         <Link
-          to="/dashboard/orders"
+          to="/account/orders"
           className="group flex items-center justify-between rounded-lg border border-line bg-paper p-4 transition-all hover:border-ink hover:bg-bone/40"
         >
           <div className="flex items-center gap-3">
@@ -157,7 +157,7 @@ export default function Overview() {
         </Link>
 
         <Link
-          to="/dashboard/addresses"
+          to="/account/addresses"
           className="group flex items-center justify-between rounded-lg border border-line bg-paper p-4 transition-all hover:border-ink hover:bg-bone/40"
         >
           <div className="flex items-center gap-3">
@@ -176,7 +176,7 @@ export default function Overview() {
         </Link>
 
         <Link
-          to="/dashboard/profile"
+          to="/account/profile"
           className="group flex items-center justify-between rounded-lg border border-line bg-paper p-4 transition-all hover:border-ink hover:bg-bone/40"
         >
           <div className="flex items-center gap-3">
@@ -203,7 +203,7 @@ export default function Overview() {
             hint="The last five orders, newest first."
             action={
               <Link
-                to="/dashboard/orders"
+                to="/account/orders"
                 className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-ink"
               >
                 View all
@@ -225,7 +225,7 @@ export default function Overview() {
               {orders.data.slice(0, 5).map((order) => (
                 <li key={order.id}>
                   <Link
-                    to={`/dashboard/orders/${order.id}`}
+                    to={`/account/orders/${order.id}`}
                     className="group flex flex-col gap-3 px-5 py-4 transition-colors duration-200 hover:bg-bone/60 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6"
                   >
                     <div className="min-w-0">
@@ -291,7 +291,7 @@ export default function Overview() {
               title="Saved pieces"
               action={
                 <Link
-                  to="/dashboard/wishlist"
+                  to="/account/wishlist"
                   className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-ink"
                 >
                   <Heart size={14} className="text-ash" />
@@ -313,7 +313,7 @@ export default function Overview() {
             hint={addresses.defaultAddress ? `Default: ${addresses.defaultAddress.label}` : undefined}
             action={
               <Link
-                to="/dashboard/addresses"
+                to="/account/addresses"
                 className="inline-flex min-h-11 items-center gap-1.5 text-[13px] font-medium text-graphite transition-colors hover:text-ink"
               >
                 Manage
@@ -339,7 +339,7 @@ export default function Overview() {
                 title="Add somewhere to deliver to"
                 description="Checkout needs an address. Adding one now means the step is already done when you are ready."
                 action={
-                  <Action to="/dashboard/addresses" size="sm" withArrow>
+                  <Action to="/account/addresses" size="sm" withArrow>
                     Add an address
                   </Action>
                 }
@@ -379,10 +379,10 @@ export default function Overview() {
               live status and digital receipts.
             </p>
             <div className="mt-5 flex flex-col gap-2">
-              <Action to="/dashboard/orders" variant="outline" size="sm">
+              <Action to="/account/orders" variant="outline" size="sm">
                 Track orders
               </Action>
-              <Action to="/dashboard/addresses" variant="ghost" size="sm">
+              <Action to="/account/addresses" variant="ghost" size="sm">
                 Delivery details
               </Action>
             </div>
@@ -416,7 +416,7 @@ const BagSummary = ({ cart }: { cart: CartActions }) => {
         <p className="text-[13.5px] leading-relaxed text-graphite">
           Your bag is empty. Pieces you save to your wishlist can be moved straight into it.
         </p>
-        <Action to="/dashboard/wishlist" variant="outline" size="sm" className="mt-5" withArrow>
+        <Action to="/account/wishlist" variant="outline" size="sm" className="mt-5" withArrow>
           Browse wishlist
         </Action>
       </>
@@ -438,7 +438,7 @@ const BagSummary = ({ cart }: { cart: CartActions }) => {
           Subtotal. Shipping is priced at checkout.
         </p>
       </div>
-      <Action to="/dashboard/checkout" size="sm" className="mt-5" withArrow>
+      <Action to="/account/checkout" size="sm" className="mt-5" withArrow>
         Checkout
       </Action>
     </>
@@ -472,7 +472,7 @@ const WishlistSummary = ({ wishlist }: { wishlist: WishlistActions }) => {
           ? 'Nothing saved yet. Keep pieces here while you decide.'
           : `${saved === 1 ? 'One piece' : `${saved} pieces`} saved to this account, not to this browser.`}
       </p>
-      <Action to="/dashboard/wishlist" variant="outline" size="sm" className="mt-5" withArrow>
+      <Action to="/account/wishlist" variant="outline" size="sm" className="mt-5" withArrow>
         Open wishlist
       </Action>
     </>

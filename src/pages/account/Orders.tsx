@@ -83,7 +83,7 @@ export default function Orders() {
           title="You have not ordered anything yet"
           description="Once you place an order it will appear here with its status, its total and every line that made it up."
           action={
-            <Action to="/dashboard/bag" withArrow>
+            <Action to="/account/bag" withArrow>
               Go to your bag
             </Action>
           }
@@ -143,7 +143,7 @@ export default function Orders() {
 
 const OrderRow = ({ order }: { order: OrderSummary }) => (
   <Link
-    to={`/dashboard/orders/${order.id}`}
+    to={`/account/orders/${order.id}`}
     className="group block border border-line bg-paper transition-colors duration-300 hover:border-ink"
   >
     <div className="flex flex-col gap-4 border-b border-line-soft px-6 py-4 sm:flex-row sm:items-center sm:justify-between">

@@ -106,7 +106,7 @@ export default function Register() {
     }
   }
 
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />
+  if (isAuthenticated) return <Navigate to="/account" replace />
 
   return (
     <AuthShell

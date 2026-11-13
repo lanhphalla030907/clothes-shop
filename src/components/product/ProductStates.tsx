@@ -21,14 +21,26 @@ export const Plate = ({
   src,
   alt,
   className = '',
+  position,
   priority = false,
 }: {
   src: string | undefined
   alt: string
   className?: string
+  /** Tailwind object-position override, e.g. `object-top` for product plates. */
+  position?: string
   priority?: boolean
 }) => {
-  if (src) return <SmartImage src={src} alt={alt} className={className} priority={priority} />
+  if (src)
+    return (
+      <SmartImage
+        src={src}
+        alt={alt}
+        className={className}
+        position={position}
+        priority={priority}
+      />
+    )
 
   return (
     <span
@@ -87,7 +99,7 @@ export const ProductGridSkeleton = ({ count = 6, columns = 3, className = '' }: 
     <span className="sr-only">Loading the collection…</span>
     {Array.from({ length: count }, (_, index) => (
       <div key={index}>
-        <div className="aspect-4/5 w-full bg-bone" />
+        <div className="aspect-[4/5] w-full bg-[#f4f4f4]" />
         <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-line pt-3">
           <div className="w-full space-y-2">
             <div className="h-3 w-3/5 bg-bone" />
@@ -104,10 +116,10 @@ export const ProductDetailSkeleton = () => (
   <div role="status" aria-busy="true" className="container-editorial grid gap-10 pb-20 sm:pt-12 lg:grid-cols-12 lg:gap-14 lg:pb-32">
     <span className="sr-only">Loading this piece…</span>
     <div className="lg:col-span-7">
-      <div className="aspect-4/5 w-full animate-pulse bg-bone sm:aspect-4/3 lg:aspect-4/5" />
+      <div className="aspect-[4/5] w-full animate-pulse bg-[#f4f4f4]" />
       <div className="mt-3 grid grid-cols-4 gap-3">
         {Array.from({ length: 4 }, (_, index) => (
-          <div key={index} className="aspect-4/5 animate-pulse bg-bone" />
+          <div key={index} className="aspect-[4/5] animate-pulse bg-[#f4f4f4]" />
         ))}
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { Info, RefreshCw } from 'lucide-react'
 import { Action } from '@/components/ui/Action'
 import { EmptyState, ErrorState, InlineNotice } from '@/components/account/States'
 import { Skeleton } from '@/components/account/Skeleton'
@@ -102,7 +102,7 @@ export function RevenueTrendSection({
         }
       />
 
-      <div className="flex flex-col gap-3 border border-line bg-paper">
+      <div className="card-premium flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div>
           <p className="text-[12px] font-medium text-graphite">Granularity</p>
           <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Trend granularity">
@@ -112,9 +112,9 @@ export function RevenueTrendSection({
                 type="button"
                 aria-pressed={granularity === option.value}
                 onClick={() => updateGranularity(option.value)}
-                className={`min-h-9 border px-3 text-[12px] font-medium transition-colors ${
+                className={`min-h-9 rounded-lg border px-3.5 text-[12px] font-medium transition-colors ${
                   granularity === option.value
-                    ? 'border-ink bg-ink text-paper'
+                    ? 'border-ink bg-ink text-paper shadow-xs'
                     : 'border-line bg-paper-pure text-ink hover:border-ink'
                 }`}
               >
@@ -126,18 +126,19 @@ export function RevenueTrendSection({
         {trend.data && (
           <p className="text-[12px] text-graphite sm:text-right" aria-live="polite">
             <span className="font-medium text-ink">
-              {formatFinanceRange(trend.data.range)}
+              {granularityLabel(trend.data.granularity)}
             </span>
-            <span className="mt-0.5 block">
-              {granularityLabel(trend.data.granularity)} · {trend.data.timezone}
-            </span>
+            <span className="mt-0.5 block">{trend.data.timezone}</span>
           </p>
         )}
       </div>
 
-      <p className="border border-line bg-bone px-4 py-3 text-[12px] leading-relaxed text-graphite">
-        Yearly buckets are not exposed by the current finance API. Use a
-        12-month window with monthly granularity for an annual view.
+      <p className="flex items-start gap-2 border border-line bg-bone px-4 py-3 text-[12px] leading-relaxed text-graphite">
+        <Info size={14} strokeWidth={1.8} aria-hidden className="mt-0.5 shrink-0 text-graphite" />
+        <span>
+          Yearly buckets are not exposed by the current finance API. Use a 12-month
+          window with monthly granularity for an annual view.
+        </span>
       </p>
 
       {trend.error !== undefined && trend.data === undefined && (
@@ -173,7 +174,7 @@ export function RevenueTrendSection({
         )}
 
       {requiresCurrency && trend.data && (
-        <div className="border border-line bg-paper px-5 py-6 sm:px-6">
+        <div className="card-premium p-5 sm:p-6">
           <p className="eyebrow text-graphite">Choose a currency</p>
           <h3 className="mt-1.5 text-[16px] font-semibold text-ink">
             The trend is available in more than one currency
@@ -182,13 +183,17 @@ export function RevenueTrendSection({
             Amounts in different currencies cannot be combined. Select one
             currency to draw its trend.
           </p>
+          <p className="mt-2 font-mono text-[11.5px] text-graphite">
+            {formatFinanceRange(trend.data.range)} ·{' '}
+            {granularityLabel(trend.data.granularity)} · {trend.data.timezone}
+          </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {trend.data.series.map((series) => (
               <button
                 key={series.currency}
                 type="button"
                 onClick={() => onCurrencyChange(series.currency)}
-                className="min-h-10 border border-line bg-paper-pure px-4 font-mono text-[12px] font-semibold text-ink transition-colors hover:border-ink hover:bg-bone"
+                className="min-h-10 rounded-lg border border-line bg-paper-pure px-4 font-mono text-[12px] font-semibold text-ink transition-colors hover:border-ink hover:bg-bone"
               >
                 {series.currency}
               </button>
@@ -197,27 +202,43 @@ export function RevenueTrendSection({
         </div>
       )}
 
-      {selectedSeries && (
-        <div className="border border-line bg-paper">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-4 sm:px-6">
-            <div>
-              <p className="font-mono text-[12px] font-semibold tracking-[0.08em] text-ink">
-                {selectedSeries.currency}
-              </p>
-              <p className="mt-1 text-[12px] text-graphite">
-                {selectedSeries.buckets.length}{' '}
-                {selectedSeries.buckets.length === 1 ? 'bucket' : 'buckets'}
+      {selectedSeries && trend.data && (
+        <div className="card-premium overflow-hidden">
+          <div className="flex flex-col gap-3 border-b border-line px-5 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+            <div className="min-w-0">
+              <h3 className="text-[1.1rem] font-semibold tracking-[-0.01em] text-ink">
+                Revenue Trend
+              </h3>
+              <p className="mt-1 text-[12px] leading-relaxed text-graphite">
+                {formatFinanceRange(trend.data.range)} ·{' '}
+                {granularityLabel(trend.data.granularity)} buckets in{' '}
+                {trend.data.timezone}
               </p>
             </div>
-            <p className="text-[11px] text-ash">
-              Hover or focus a period for exact values.
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-bone px-2.5 py-1 font-mono text-[11px] font-semibold text-ink">
+                <span aria-hidden className="size-1.5 rounded-full bg-ink" />
+                {selectedSeries.currency}
+              </span>
+              <span className="text-[11px] text-ash">
+                {selectedSeries.buckets.length}{' '}
+                {selectedSeries.buckets.length === 1 ? 'period' : 'periods'}
+              </span>
+            </div>
+          </div>
+          <div className="px-3 pb-4 pt-4 sm:px-5 sm:pb-5">
+            <RevenueTrendChart
+              key={`${selectedSeries.currency}-${trend.data.granularity}`}
+              buckets={selectedSeries.buckets}
+              currency={selectedSeries.currency}
+              granularity={trend.data.granularity}
+              range={trend.data.range}
+              timezone={trend.data.timezone}
+            />
+            <p className="mt-3 text-[11px] text-ash">
+              Hover, tap or focus the chart to inspect a period.
             </p>
           </div>
-          <RevenueTrendChart
-            buckets={selectedSeries.buckets}
-            currency={selectedSeries.currency}
-            granularity={trend.data?.granularity ?? granularity}
-          />
         </div>
       )}
     </section>
@@ -226,7 +247,7 @@ export function RevenueTrendSection({
 
 const TrendSkeleton = () => (
   <div
-    className="border border-line bg-paper p-5 sm:p-6"
+    className="card-premium p-5 sm:p-6"
     role="status"
     aria-busy="true"
     aria-label="Loading revenue trend"

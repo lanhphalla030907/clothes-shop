@@ -99,7 +99,7 @@ const renderLogin = (initialEntry = '/login') =>
           <Route path="/login" element={<Login />} />
           <Route path="/admin" element={<div>admin-landing</div>} />
           <Route path="/admin/products" element={<div>admin-products</div>} />
-          <Route path="/dashboard" element={<div>customer-landing</div>} />
+          <Route path="/account" element={<div>customer-landing</div>} />
           <Route path="/delivery" element={<div>delivery-landing</div>} />
         </Routes>
       </AuthProvider>
@@ -184,7 +184,7 @@ describe('login routing', () => {
 
   it('does not return an ADMIN to the customer dashboard through ?from=', async () => {
     installFetch({ meRole: 'ADMIN' })
-    renderLogin('/login?from=%2Fdashboard')
+    renderLogin('/login?from=%2Faccount')
 
     submitCredentials()
 
@@ -254,12 +254,12 @@ describe('route guards', () => {
   it('redirects an unauthenticated visitor from a protected route to sign in', async () => {
     renderWithRouter(
       <Routes>
-        <Route path="/dashboard" element={<RequireAuth />}>
+        <Route path="/account" element={<RequireAuth />}>
           <Route index element={<div>customer-home</div>} />
         </Route>
         <Route path="/login" element={<div>login-screen</div>} />
       </Routes>,
-      ['/dashboard'],
+      ['/account'],
     )
 
     await waitFor(() => expect(screen.getByText('login-screen')).toBeTruthy())
@@ -344,7 +344,7 @@ describe('route guards', () => {
         <Route path="/delivery" element={<RequireDeliveryStaffRoute />}>
           <Route index element={<div>delivery-home</div>} />
         </Route>
-        <Route path="/dashboard" element={<div>customer-home</div>} />
+        <Route path="/account" element={<div>customer-home</div>} />
       </Routes>,
       ['/delivery'],
     )

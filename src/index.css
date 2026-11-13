@@ -210,22 +210,6 @@
   letter-spacing: 0.005em;
 }
 
-/* Shared content width for the account shell. Slightly narrower than the
-   storefront so long account pages keep a comfortable measure. */
-@utility container-account {
-  width: 100%;
-  margin-inline: auto;
-  max-width: 78rem;
-  padding-inline: 1rem;
-
-  @media (min-width: 640px) {
-    padding-inline: 2rem;
-  }
-  @media (min-width: 1280px) {
-    padding-inline: 2.5rem;
-  }
-}
-
 /* Admin tables need the extra width; the chrome still uses the same spacing. */
 @utility container-admin {
   width: 100%;
@@ -460,6 +444,40 @@
 /* Safe area bottom padding for mobile bottom navigation */
 @utility pb-safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Finance trend redraw — the chart rises and fades in when filters change. */
+@keyframes chart-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility chart-enter {
+  animation: chart-enter 320ms var(--ease-swift) both;
+}
+
+/* Active data point — a small marker that scales in on inspection. */
+@keyframes chart-point-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@utility chart-point {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: chart-point-in 140ms var(--ease-swift) both;
 }
 
 @media (min-width: 1024px) {

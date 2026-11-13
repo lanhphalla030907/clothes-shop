@@ -254,7 +254,7 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
               <div role="status" className="mt-4 flex flex-wrap items-center justify-between gap-3 border border-line bg-bone px-4 py-3">
                 <span className="text-sm text-ink">Added to your bag.</span>
                 <Link
-                  to="/dashboard/bag"
+                  to="/account/bag"
                   className="inline-flex items-center gap-2 text-[13px] font-medium text-ink transition-opacity hover:opacity-70"
                 >
                   View bag
@@ -384,7 +384,7 @@ const Gallery = ({ detail }: { detail: CatalogueDetail }) => {
   return (
     <div className="lg:col-span-7">
       <div className="relative">
-        <div className="relative aspect-4/5 overflow-hidden bg-bone sm:aspect-4/3 lg:aspect-4/5">
+        <div className="relative aspect-[4/5] overflow-hidden bg-[#f4f4f4]">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={`${detail.id}-${index}`}
@@ -397,6 +397,7 @@ const Gallery = ({ detail }: { detail: CatalogueDetail }) => {
               <Plate
                 src={images[index]}
                 alt={`${detail.name} — view ${index + 1}`}
+                position="object-top"
                 priority
                 className="h-full w-full"
               />
@@ -426,11 +427,11 @@ const Gallery = ({ detail }: { detail: CatalogueDetail }) => {
                 onClick={() => setActive(position)}
                 aria-label={`View image ${position + 1}`}
                 aria-current={position === index}
-                className={`relative aspect-4/5 overflow-hidden bg-bone transition-opacity duration-400 ease-editorial ${
+                className={`relative aspect-[4/5] overflow-hidden bg-[#f4f4f4] transition-opacity duration-400 ease-editorial ${
                   position === index ? 'opacity-100' : 'opacity-45 hover:opacity-80'
                 }`}
               >
-                <SmartImage src={source} alt="" shimmer={false} className="h-full w-full" />
+                <SmartImage src={source} alt="" shimmer={false} position="object-top" className="h-full w-full" />
                 <span
                   className={`absolute inset-0 border transition-colors duration-400 ${
                     position === index ? 'border-ink' : 'border-transparent'
