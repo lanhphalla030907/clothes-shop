@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowUpRight } from 'lucide-react'
 import { Action } from '@/components/ui/Action'
+import { AdminBadge } from '@/components/admin/AdminBadge'
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader'
 import { AdminCard, AdminCardHeader } from '@/components/admin/AdminCard'
 import { EmptyState, ErrorState } from '@/components/account/States'
@@ -16,8 +17,9 @@ import {
   useAdminProducts,
 } from '@/features/adminProducts/useAdminProducts'
 import { fetchOrderStatusCounts, fetchRecentOrders } from '@/features/adminDashboard/api'
+import { fetchStockAlerts } from '@/features/adminDashboard/api'
 import { BestSellersPanel } from '@/features/adminDashboard/components/BestSellersPanel'
-import { InventoryStockAlerts } from '@/features/adminDashboard/components/InventoryStockAlerts'
+import { InventorySummary } from '@/features/adminDashboard/components/InventorySummary'
 import { KpiGrid } from '@/features/adminDashboard/components/KpiGrid'
 import { OrderStatusOverview } from '@/features/adminDashboard/components/OrderStatusOverview'
 import { PaymentBreakdownDonut } from '@/features/adminDashboard/components/PaymentBreakdownDonut'
@@ -33,17 +35,7 @@ import {
   toReportingStartTimestamp,
 } from '@/features/adminDashboard/reporting'
 import { toUserMessage } from '@/lib/api/errors'
-
-/**
- * The store overview: money, orders and operations for the whole business.
- *
- * Every figure comes from an existing admin API. The selected period is shared
- * by the finance, trend and order panels; recent orders stay "latest overall" and
- * customers/products are lifetime counters. Amounts are never added across
- * currencies — the finance API returns them per currency and so does this page.
- *
- * Catalogue records keep their own dashboard at `/admin/products/overview`.
- */
+import type { StockAlertsResponse } from '@/types/api'
 export default function AdminDashboard() {
   const filters = useDashboardFilters()
   const granularity = granularityForRange(filters.range)
@@ -96,6 +88,11 @@ export default function AdminDashboard() {
 
   const products = useAdminProducts({})
   const bestSellers = useAdminBestSellers(6)
+
+  const stock = useAsyncResource<StockAlertsResponse>(
+    (signal) => fetchStockAlerts({ page: 1, limit: 10, status: 'alerts' }, signal),
+    [],
+  )
 
   const cashRows = finance.data?.cashByCurrency ?? []
   const trendSeries = trend.data?.series ?? []
@@ -359,14 +356,70 @@ export default function AdminDashboard() {
           description="Variants that need attention, based on available stock."
           action={
             <Link
-              to="/admin/product-variants"
+              to="/admin/products/overview"
               className="inline-flex min-h-9 items-center rounded-lg border border-line bg-paper px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink"
             >
-              Manage stock
+              View Inventory
             </Link>
           }
         />
-        <InventoryStockAlerts />
+        <div className="p-5 sm:p-6">
+          {stock.error !== undefined ? (
+            <ErrorState message={toUserMessage(stock.error)} onRetry={stock.refetch} />
+          ) : (
+            <>
+              <InventorySummary summary={stock.data?.summary} loading={stock.isLoading} />
+              {stock.data !== undefined &&
+                stock.data.summary.lowStock + stock.data.summary.outOfStock > 0 && (
+                  <div className="mt-6">
+                    <h2 className="text-[12px] font-semibold tracking-wider text-graphite uppercase">
+                      Urgent alerts
+                    </h2>
+                    <ul className="mt-2 space-y-2">
+                      {stock.data.items.slice(0, 3).map((item) => (
+                        <li
+                          key={item.variantId}
+                          className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-line bg-bone"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[13px] font-medium text-ink truncate">
+                              {item.productName}
+                            </p>
+                            <p className="mt-0.5 text-[11px] text-graphite font-mono">
+                              {item.sku}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-[12px] tabular-nums text-ink">
+                              {item.available}
+                            </span>
+                            <AdminBadge
+                              variant={
+                                item.status === 'IN_STOCK'
+                                  ? 'success'
+                                  : item.status === 'LOW_STOCK'
+                                    ? 'warning'
+                                    : 'danger'
+                              }
+                            >
+                              {item.status === 'IN_STOCK'
+                                ? 'In stock'
+                                : item.status === 'LOW_STOCK'
+                                  ? 'Low stock'
+                                  : 'Out of stock'}
+                            </AdminBadge>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-[11px] text-ash">
+                      Available = stock on hand − reserved for unpaid checkouts.
+                    </p>
+                  </div>
+                )}
+            </>
+          )}
+        </div>
       </AdminCard>
 
       <AdminCard>

@@ -232,6 +232,7 @@ const stockAlerts: StockAlertsResponse = {
       status: 'OUT_OF_STOCK',
     },
   ],
+  pagination: { page: 1, limit: 3, total: 17, totalPages: 6 },
 }
 
 const customerStats: AdminCustomerStats = {
@@ -341,29 +342,44 @@ describe('AdminDashboard (store overview)', () => {
     expect(screen.getAllByText('sokha@example.com').length).toBeGreaterThan(0)
     expect(screen.getAllByText('$100.00').length).toBeGreaterThan(0)
 
-    // Stock alerts: full summary cards plus the default low + out table.
+    // Stock alerts: compact summary cards plus urgent low/out alerts.
+    expect(stockAlertsMock).toHaveBeenCalledWith(
+      { page: 1, limit: 10, status: 'alerts' },
+      expect.anything(),
+    )
     const inStockCard = await screen.findByRole('group', {
       name: 'In stock variants',
     })
+    expect(within(inStockCard).getByText('12')).toBeTruthy()
     expect(
-      within(inStockCard).getByText('12'),
-    ).toBeTruthy()
-    expect(
-      within(screen.getByRole('group', { name: 'Low stock variants' })).getByText(
-        '3',
-      ),
+      within(
+        screen.getByRole('group', { name: 'Low stock variants' }),
+      ).getByText('3'),
     ).toBeTruthy()
     expect(
       within(
         screen.getByRole('group', { name: 'Out of stock variants' }),
       ).getByText('2'),
     ).toBeTruthy()
+
+    // Urgent alerts list the low and out of stock variants.
     expect(await screen.findByText('HOD-BLK-M')).toBeTruthy()
     expect(screen.getByText('Oversized Tee')).toBeTruthy()
-    expect(screen.getAllByText('Out of stock').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Out of stock')).toHaveLength(2)
+
+    // No more than 3 urgent alerts are displayed.
+    const urgentHeading = screen.getByRole('heading', { name: 'Urgent alerts' })
     expect(
-      screen.getByRole('link', { name: /Manage stock/ }).getAttribute('href'),
-    ).toBe('/admin/product-variants')
+      within(urgentHeading.closest('div')!).getAllByRole('listitem').length,
+    ).toBeLessThanOrEqual(3)
+
+    // The full table is gone; the card links to the inventory page.
+    expect(screen.queryByRole('link', { name: /Manage stock/ })).toBeNull()
+    expect(
+      screen
+        .getByRole('link', { name: /View Inventory/ })
+        .getAttribute('href'),
+    ).toBe('/admin/products/overview')
 
     // Best sellers still render alongside the stock panel.
     expect(

@@ -213,7 +213,7 @@ type DefinitionRowProps = {
 }
 
 export const DefinitionRow = ({ label, children }: DefinitionRowProps) => (
-  <div className="flex items-baseline justify-between gap-6 border-b border-line-soft py-3 last:border-b-0">
+  <div className="flex items-baseline justify-between gap-6 border-b border-line-soft px-5 py-3 last:border-b-0">
     <dt className="text-[13px] text-graphite">{label}</dt>
     <dd className="text-right text-[14px] text-ink">{children}</dd>
   </div>

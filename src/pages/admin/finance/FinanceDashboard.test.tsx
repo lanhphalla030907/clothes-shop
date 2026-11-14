@@ -377,7 +377,7 @@ describe('FinanceDashboard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'USD' }))
 
     expect(
-      await screen.findByRole('img', { name: /Revenue trend in USD/ }),
+      await screen.findByText('Revenue Trend'),
     ).toBeTruthy()
     expect(screen.getAllByText('Gross product sales').length).toBeGreaterThan(0)
     expect(

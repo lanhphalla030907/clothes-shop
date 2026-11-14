@@ -5,7 +5,7 @@ import { ORDER_STATUS_OPTIONS } from '@/features/adminOrders/rules'
 import type {
   AdminOrderListResponse,
   OrderStatus,
-  StockAlertFilter,
+  StockAlertsQuery,
   StockAlertsResponse,
 } from '@/types/api'
 import { emptyOrderStatusCounts } from './reporting'
@@ -58,13 +58,19 @@ export const fetchRecentOrders = (
  *
  * The server always returns the three full totals, so the cards do not change
  * when the table is filtered. `alerts` is the default view and means low stock
- * plus out of stock.
+ * plus out of stock. `page`/`limit` are paginated in the database; `search`
+ * matches the product name or variant SKU.
  */
 export const fetchStockAlerts = (
-  status: StockAlertFilter,
+  query: StockAlertsQuery,
   signal?: AbortSignal,
 ): Promise<StockAlertsResponse> =>
   apiGetOne<StockAlertsResponse>(API.adminStockAlerts, {
-    query: { status },
     signal,
+    query: {
+      page: query.page,
+      limit: query.limit,
+      status: query.status,
+      search: query.search,
+    },
   })

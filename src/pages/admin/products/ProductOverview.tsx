@@ -23,8 +23,13 @@ import {
   useAdminProducts,
   useAdminBestSellers,
 } from '@/features/adminProducts/useAdminProducts'
+import { fetchStockAlerts } from '@/features/adminDashboard/api'
+import { InventorySummary } from '@/features/adminDashboard/components/InventorySummary'
+import InventoryStockTable from '@/features/adminProducts/components/InventoryStockTable'
+import { useAsyncResource } from '@/hooks/useAsyncResource'
 import { displayName, useAuth } from '@/features/auth/useAuth'
 import { toUserMessage } from '@/lib/api/errors'
+import type { StockAlertsResponse } from '@/types/api'
 
 /**
  * The product-focused dashboard.
@@ -39,6 +44,11 @@ export default function ProductOverview() {
   const products = useAdminProducts({})
   const categories = useAdminCategories()
   const bestSellers = useAdminBestSellers(10)
+
+  const stock = useAsyncResource<StockAlertsResponse>(
+    (signal) => fetchStockAlerts({ page: 1, limit: 10, status: 'all' }, signal),
+    [],
+  )
 
   const list = products.data ?? []
   const active = list.filter(
@@ -123,6 +133,20 @@ export default function ProductOverview() {
               icon={FolderTree}
             />
           </div>
+        )}
+      </section>
+
+      <section aria-label="Inventory summary">
+        {stock.error !== undefined ? (
+          <ErrorState
+            message={toUserMessage(stock.error)}
+            onRetry={stock.refetch}
+          />
+        ) : (
+          <InventorySummary
+            summary={stock.data?.summary}
+            loading={stock.isLoading}
+          />
         )}
       </section>
 
@@ -347,6 +371,10 @@ export default function ProductOverview() {
           </div>
         </div>
       </div>
+
+      <section aria-label="Inventory stock table">
+        <InventoryStockTable />
+      </section>
     </div>
   )
 }

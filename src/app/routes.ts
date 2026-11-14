@@ -28,6 +28,7 @@ const Addresses = lazy(() => import('@/pages/account/Addresses'))
 const AccountCheckout = lazy(() => import('@/pages/account/Checkout'))
 const Profile = lazy(() => import('@/pages/account/Profile'))
 const AccountFeedback = lazy(() => import('@/pages/account/Feedback'))
+const Notifications = lazy(() => import('@/pages/account/Notifications'))
 const DeliveryDashboard = lazy(() => import('@/pages/delivery/DeliveryDashboard'))
 
 export const routes: RouteObject[] = [
@@ -47,6 +48,11 @@ export const routes: RouteObject[] = [
       { path: '/register', Component: Register },
       { path: '/forgot-password', Component: ForgotPassword },
       { path: '/reset-password', Component: ResetPassword },
+      {
+        path: '/notifications',
+        Component: RequireAuth,
+        children: [{ index: true, Component: Notifications }],
+      },
       {
         path: '/account',
         Component: RequireAuth,

@@ -29,6 +29,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { displayName, useAuth } from '@/features/auth/useAuth'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
+import { NotificationCenter } from '@/features/notifications/NotificationCenter'
 
 type NavItem = {
   label: string
@@ -324,6 +325,7 @@ export function AdminLayout() {
             </div>
 
             <div className="flex shrink-0 items-center gap-2.5">
+              <NotificationCenter />
               <Link
                 to="/"
                 className="hidden h-9 items-center gap-1.5 rounded-lg border border-line bg-paper px-3 text-[12.5px] font-medium text-graphite shadow-xs transition-colors hover:border-ink hover:text-ink sm:inline-flex"

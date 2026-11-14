@@ -10,6 +10,7 @@ import { useCartActions } from '@/features/cart/useCartActions'
 import { useWishlistActions } from '@/features/wishlist/useWishlistActions'
 import { useUI } from '@/hooks/useUI'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
+import { NotificationCenter } from '@/features/notifications/NotificationCenter'
 
 // Official shop logo from public directory
 const LOGO_SRC = '/logo.png'
@@ -109,6 +110,7 @@ export function Navbar() {
 
           {/* RIGHT CLUSTER: Account, Bag, & Auth */}
           <div className="flex shrink-0 items-center justify-end gap-1 sm:gap-2">
+            <NotificationCenter />
             {!isInitializing &&
               (isAuthenticated ? (
                 <AccountMenu

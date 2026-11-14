@@ -111,7 +111,7 @@ export default function ReconciliationRunDetail() {
 
   if (!id) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 px-4 sm:px-6 lg:px-8">
         <BackLink to={HISTORY_PATH}>Run history</BackLink>
         <EmptyState eyebrow="No run selected" title="Choose a reconciliation run from history" />
       </div>
@@ -120,7 +120,7 @@ export default function ReconciliationRunDetail() {
 
   if (resource.isLoading) {
     return (
-      <div className="space-y-6" aria-label="Loading reconciliation run details">
+      <div className="space-y-6 px-4 sm:px-6 lg:px-8" aria-label="Loading reconciliation run details">
         <Skeleton className="h-4 w-28" />
         <Skeleton className="h-8 w-64" />
         <SkeletonCard rows={4} />
@@ -130,7 +130,7 @@ export default function ReconciliationRunDetail() {
 
   if (resource.error !== undefined && resource.data === undefined) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 px-4 sm:px-6 lg:px-8">
         <BackLink to={HISTORY_PATH}>Run history</BackLink>
         <ErrorState
           message={toUserMessage(resource.error)}
@@ -142,7 +142,7 @@ export default function ReconciliationRunDetail() {
 
   if (!resource.data) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 px-4 sm:px-6 lg:px-8">
         <BackLink to={HISTORY_PATH}>Run history</BackLink>
         <EmptyState
           eyebrow="Run unavailable"
@@ -158,7 +158,7 @@ export default function ReconciliationRunDetail() {
 
   if (!run.hasSnapshot) {
     return (
-      <div className="space-y-8">
+      <div className="space-y-8 px-4 sm:px-6 lg:px-8">
         <BackLink to={HISTORY_PATH}>Run history</BackLink>
         <RunOverview run={run} isRefreshing={resource.isRefreshing} error={resource.error} />
         <EmptyState
@@ -242,20 +242,22 @@ function RunOverview({
             title="Reconciliation window"
             hint="The reconciliation uses a half-open UTC window."
           />
-          <dl>
-            <DefinitionRow label="Trigger type">
-              {run.triggerType.charAt(0).toUpperCase() + run.triggerType.slice(1)}
-            </DefinitionRow>
-            <DefinitionRow label="Window start (inclusive)">
-              {formatUtcDateTime(run.windowStart)}
-            </DefinitionRow>
-            <DefinitionRow label="Window end (exclusive)">
-              {formatUtcDateTime(run.windowEnd)}
-            </DefinitionRow>
-            <DefinitionRow label="Started">{formatUtcDateTime(run.startedAt)}</DefinitionRow>
-            <DefinitionRow label="Completed">{formatUtcDateTime(run.completedAt)}</DefinitionRow>
-            <DefinitionRow label="Created">{formatUtcDateTime(run.createdAt)}</DefinitionRow>
-          </dl>
+          <div className="px-5 py-2 sm:px-6">
+            <dl>
+              <DefinitionRow label="Trigger type">
+                {run.triggerType.charAt(0).toUpperCase() + run.triggerType.slice(1)}
+              </DefinitionRow>
+              <DefinitionRow label="Window start (inclusive)">
+                {formatUtcDateTime(run.windowStart)}
+              </DefinitionRow>
+              <DefinitionRow label="Window end (exclusive)">
+                {formatUtcDateTime(run.windowEnd)}
+              </DefinitionRow>
+              <DefinitionRow label="Started">{formatUtcDateTime(run.startedAt)}</DefinitionRow>
+              <DefinitionRow label="Completed">{formatUtcDateTime(run.completedAt)}</DefinitionRow>
+              <DefinitionRow label="Created">{formatUtcDateTime(run.createdAt)}</DefinitionRow>
+            </dl>
+          </div>
         </Panel>
 
         <Panel>
@@ -263,15 +265,17 @@ function RunOverview({
             title="Reconciliation counters"
             hint="Counts recorded on this run."
           />
-          <dl>
-            <DefinitionRow label="Processed orders">{run.processedCount}</DefinitionRow>
-            <DefinitionRow label="Matched orders">{run.matchedCount}</DefinitionRow>
-            <DefinitionRow label="Discrepancies">{run.discrepancyCount}</DefinitionRow>
-            <DefinitionRow label="Uncollected COD">{run.uncollectedCount}</DefinitionRow>
-            <DefinitionRow label="Snapshot availability">
-              {run.hasSnapshot ? 'Persisted' : 'Not persisted'}
-            </DefinitionRow>
-          </dl>
+          <div className="px-5 py-2 sm:px-6">
+            <dl>
+              <DefinitionRow label="Processed orders">{run.processedCount}</DefinitionRow>
+              <DefinitionRow label="Matched orders">{run.matchedCount}</DefinitionRow>
+              <DefinitionRow label="Discrepancies">{run.discrepancyCount}</DefinitionRow>
+              <DefinitionRow label="Uncollected COD">{run.uncollectedCount}</DefinitionRow>
+              <DefinitionRow label="Snapshot availability">
+                {run.hasSnapshot ? 'Persisted' : 'Not persisted'}
+              </DefinitionRow>
+            </dl>
+          </div>
         </Panel>
       </div>
 
@@ -310,7 +314,7 @@ function CurrencySummary({
             No currency rows to summarise.
           </p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="p-5 sm:p-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {summaryByCurrency.map((summary) => (
               <CurrencyCard key={summary.currency} summary={summary} />
             ))}
@@ -415,20 +419,22 @@ function RunAuditTable({
           hint={items.length === 0 ? 'No snapshot records for this run.' : undefined}
         />
         {items.length === 0 && (
-          <EmptyState
-            align="left"
-            eyebrow="No orders"
-            title="This snapshot has no order records"
-            description={
-              total === 0
-                ? 'The reconciliation run processed no delivered COD orders.'
-                : 'Move to another page to see records.'
-            }
-            className="mt-4"
-          />
+          <div className="px-5 py-4 sm:px-6">
+            <EmptyState
+              align="left"
+              eyebrow="No orders"
+              title="This snapshot has no order records"
+              description={
+                total === 0
+                  ? 'The reconciliation run processed no delivered COD orders.'
+                  : 'Move to another page to see records.'
+              }
+              className="mt-0"
+            />
+          </div>
         )}
         {items.length > 0 && (
-          <>
+          <div className="px-5 py-3 sm:px-6">
             <div className="flex items-center justify-between gap-4 text-[12px] text-graphite mb-3">
               <p aria-live="polite">
                 Showing {(page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}{' '}
@@ -478,7 +484,7 @@ function RunAuditTable({
               total={total}
               onPage={onPage}
             />
-          </>
+          </div>
         )}
       </Panel>
     </section>
