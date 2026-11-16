@@ -52,10 +52,14 @@ export function Navbar() {
             : 'pointer-events-none border-b border-transparent opacity-0'
         }`}
       >
-        <div className="container-editorial flex h-16 items-center justify-between gap-4 sm:h-[4.5rem] lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-0">
+        {/* 
+          Added `relative` to the parent container.
+          This allows us to absolutely center the logo on mobile.
+        */}
+        <div className="container-editorial relative flex h-16 items-center justify-between gap-4 sm:h-[4.5rem] lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-0">
           
-          {/* LEFT CLUSTER: Navigation Links (Desktop) / Menu Toggle (Mobile) */}
-          <div className="flex items-center justify-start">
+          {/* LEFT CLUSTER */}
+          <div className="flex items-center justify-start z-10">
             
             {/* Mobile Menu Button */}
             <button
@@ -98,7 +102,12 @@ export function Navbar() {
           </div>
 
           {/* CENTER: The Logo */}
-          <div className="flex justify-center">
+          {/* 
+            On mobile: absolute positioning keeps it perfectly in the middle.
+            On desktop (lg): reverts to static grid layout.
+            Your original size `h-15` is preserved.
+          */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:static lg:translate-x-0 lg:translate-y-0 lg:flex lg:justify-center z-0 lg:z-10">
             <Link to="/" className="group flex min-h-11 shrink-0 items-center gap-2.5" aria-label="LOMOR — home">
               <img
                 src={LOGO_SRC}
@@ -108,8 +117,8 @@ export function Navbar() {
             </Link>
           </div>
 
-          {/* RIGHT CLUSTER: Account, Bag, & Auth */}
-          <div className="flex shrink-0 items-center justify-end gap-1 sm:gap-2">
+          {/* RIGHT CLUSTER */}
+          <div className="flex shrink-0 items-center justify-end gap-1 sm:gap-2 z-10">
             <NotificationCenter />
             {!isInitializing &&
               (isAuthenticated ? (

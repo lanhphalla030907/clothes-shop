@@ -11,6 +11,8 @@ import { displayName, useAuth } from '@/features/auth/useAuth'
 import { useOrders } from '@/features/orders/useOrders'
 import { useWishlistActions } from '@/features/wishlist/useWishlistActions'
 import { useAddressActions } from '@/features/addresses/useAddressActions'
+import { PushSettings } from '@/components/PushSettings'
+import { registerPushSubscription, revokePushSubscription } from '@/lib/push/pushApi'
 
 /**
  * What this account actually is.
@@ -36,6 +38,7 @@ export default function Profile() {
   const navigate = useNavigate()
 
   const [identities, setIdentities] = useState<UserIdentity[]>([])
+  const [pushSubscribed, setPushSubscribed] = useState(false)
   const [loadingIdentities, setLoadingIdentities] = useState(true)
 
   const loadIdentities = useCallback(async () => {
@@ -214,6 +217,19 @@ export default function Profile() {
             <Action to="/account/wishlist" variant="ghost" size="sm" className="w-full">
               Saved pieces
             </Action>
+          </div>
+        </Panel>
+      </div>
+      <div className="mt-6">
+        <Panel>
+          <PanelHeader title="Push Notifications" />
+          <div className="p-4">
+            <PushSettings
+              isSubscribed={pushSubscribed}
+              setIsSubscribed={setPushSubscribed}
+              onSubscribe={registerPushSubscription}
+              onUnsubscribe={revokePushSubscription}
+            />
           </div>
         </Panel>
       </div>

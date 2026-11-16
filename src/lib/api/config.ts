@@ -81,4 +81,5 @@ export const API = {
   adminFeedback: '/admin/feedback',
   publicFeedback: '/feedback/public',
   notifications: '/notifications',
+  pushSubscriptions: '/push/subscriptions',
 } as const
