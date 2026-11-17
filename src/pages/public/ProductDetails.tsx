@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Check, Truck, Ruler, RotateCcw } from 'lucide-react'
@@ -26,7 +26,6 @@ import type { ProductAttribute } from '@/types/api'
 
 const EASE = [0.16, 1, 0.3, 1] as const
 
-/** The house ceiling on a single line, independent of what is in stock. */
 const MAX_QUANTITY = 10
 
 const ASSURANCES = [
@@ -42,8 +41,6 @@ export default function ProductDetails() {
   if (resource.isLoading) return <ProductDetailSkeleton />
 
   if (resource.error !== undefined) {
-    // Absent is a fact about the catalogue and gets its own words; anything else
-    // is a fault worth offering a retry for.
     if (isApiError(resource.error) && resource.error.kind === 'notFound') {
       return (
         <ProductNotice
@@ -87,7 +84,6 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
   const [quantity, setQuantity] = useState(1)
   const [justAdded, setJustAdded] = useState(false)
 
-  // Derive-during-reset: a different product means a fresh set of choices.
   const [shownId, setShownId] = useState(detail.id)
   if (shownId !== detail.id) {
     setShownId(detail.id)
@@ -96,7 +92,6 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
     setJustAdded(false)
   }
 
-  // Options that still lead somewhere buyable, given everything else chosen.
   const axes = useMemo(
     () => reachableAxes(detail.variants.filter(isBuyable), detail.axes, selection),
     [detail, selection],
@@ -123,7 +118,6 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
 
   return (
     <>
-      {/* Breadcrumb */}
       <div className="container-editorial pt-24 sm:pt-32">
         <nav
           aria-label="Breadcrumb"
@@ -146,10 +140,10 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
       </div>
 
       <div className="container-editorial grid gap-10 pt-8 pb-20 sm:pt-12 lg:grid-cols-12 lg:gap-14 lg:pb-32">
-        {/* ── Gallery ──────────────────────────────────────────── */}
+        
+        {/* GALLERY */}
         <Gallery detail={detail} />
 
-        {/* ── Info ─────────────────────────────────────────────── */}
         <div className="lg:col-span-5">
           <div className="lg:sticky lg:top-28">
             <motion.div
@@ -187,34 +181,13 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
               />
             ))}
 
-            {/* Quantity + add */}
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.85, delay: 0.24, ease: EASE }}
-              className="mt-8 flex flex-col gap-3 sm:flex-row"
+              className="mt-8 hidden gap-3 lg:flex"
             >
-              <div className="flex items-center border border-line">
-                <button
-                  type="button"
-                  onClick={() => setQuantity((current) => Math.max(1, current - 1))}
-                  disabled={quantity <= 1}
-                  aria-label="Decrease quantity"
-                  className="grid size-12 place-items-center text-lg transition-colors duration-300 ease-editorial hover:bg-ink hover:text-paper disabled:pointer-events-none disabled:text-ash"
-                >
-                  −
-                </button>
-                <span className="w-9 text-center font-mono text-xs tabular-nums">{quantity}</span>
-                <button
-                  type="button"
-                  onClick={() => setQuantity((current) => Math.min(ceiling, current + 1))}
-                  disabled={quantity >= ceiling}
-                  aria-label="Increase quantity"
-                  className="grid size-12 place-items-center text-lg transition-colors duration-300 ease-editorial hover:bg-ink hover:text-paper disabled:pointer-events-none disabled:text-ash"
-                >
-                  +
-                </button>
-              </div>
+              <QuantityControl quantity={quantity} ceiling={ceiling} onChange={setQuantity} />
 
               <button
                 type="button"
@@ -245,13 +218,19 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
             />
 
             {actionError !== undefined && (
-              <p role="alert" className="mt-4 border border-signal/30 bg-signal-soft px-4 py-3 text-sm text-ink">
+              <p
+                role="alert"
+                className="mt-4 hidden border border-signal/30 bg-signal-soft px-4 py-3 text-sm text-ink lg:block"
+              >
                 {toUserMessage(actionError)}
               </p>
             )}
 
             {justAdded && (
-              <div role="status" className="mt-4 flex flex-wrap items-center justify-between gap-3 border border-line bg-bone px-4 py-3">
+              <div
+                role="status"
+                className="mt-4 hidden flex-wrap items-center justify-between gap-3 border border-line bg-bone px-4 py-3 lg:flex"
+              >
                 <span className="text-sm text-ink">Added to your bag.</span>
                 <Link
                   to="/account/bag"
@@ -263,7 +242,6 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
               </div>
             )}
 
-            {/* Assurances */}
             <ul className="mt-8 flex flex-col gap-px border border-line bg-line">
               {ASSURANCES.map(({ icon: Icon, label }) => (
                 <li key={label} className="flex items-center gap-3 bg-paper px-4 py-3.5">
@@ -339,7 +317,6 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
         </section>
       )}
 
-      {/* Related */}
       {related.data !== undefined && related.data.length > 0 && (
         <section className="container-editorial border-t border-line py-16 sm:py-24">
           <Reveal>
@@ -360,15 +337,135 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
           </div>
         </section>
       )}
+
+      <MobileBuyBar
+        productName={detail.name}
+        buyable={buyable}
+        pending={pending}
+        justAdded={justAdded}
+        quantity={quantity}
+        ceiling={ceiling}
+        error={actionError}
+        onQuantityChange={setQuantity}
+        onAdd={() => void handleAdd()}
+      />
     </>
   )
 }
 
-/* ──────────────────────────────── gallery ──────────────────────────────── */
+const QuantityControl = ({
+  quantity,
+  ceiling,
+  onChange,
+  compact = false,
+}: {
+  quantity: number
+  ceiling: number
+  onChange: (next: number) => void
+  compact?: boolean
+}) => (
+  <div className="flex shrink-0 items-center border border-line">
+    <button
+      type="button"
+      onClick={() => onChange(Math.max(1, quantity - 1))}
+      disabled={quantity <= 1}
+      aria-label="Decrease quantity"
+      className={`grid place-items-center text-lg transition-colors duration-300 ease-editorial hover:bg-ink hover:text-paper disabled:pointer-events-none disabled:text-ash ${
+        compact ? 'size-11' : 'size-12'
+      }`}
+    >
+      −
+    </button>
+    <span className={`text-center font-mono text-xs tabular-nums ${compact ? 'w-8' : 'w-9'}`}>
+      {quantity}
+    </span>
+    <button
+      type="button"
+      onClick={() => onChange(Math.min(ceiling, quantity + 1))}
+      disabled={quantity >= ceiling}
+      aria-label="Increase quantity"
+      className={`grid place-items-center text-lg transition-colors duration-300 ease-editorial hover:bg-ink hover:text-paper disabled:pointer-events-none disabled:text-ash ${
+        compact ? 'size-11' : 'size-12'
+      }`}
+    >
+      +
+    </button>
+  </div>
+)
+
+const MobileBuyBar = ({
+  productName,
+  buyable,
+  pending,
+  justAdded,
+  quantity,
+  ceiling,
+  error,
+  onQuantityChange,
+  onAdd,
+}: {
+  productName: string
+  buyable: boolean
+  pending: boolean
+  justAdded: boolean
+  quantity: number
+  ceiling: number
+  error: unknown
+  onQuantityChange: (next: number) => void
+  onAdd: () => void
+}) => (
+  <div className="sticky bottom-24 z-40 border-t border-line bg-paper/95 backdrop-blur-md lg:hidden">
+    {error !== undefined && (
+      <p
+        role="alert"
+        className="border-b border-signal/30 bg-signal-soft px-5 py-2 text-[12px] text-ink"
+      >
+        {toUserMessage(error)}
+      </p>
+    )}
+    <div
+      className="container-editorial flex items-center gap-3 pt-2.5"
+      style={{ paddingBottom: 'calc(0.625rem + env(safe-area-inset-bottom))' }}
+    >
+      <QuantityControl quantity={quantity} ceiling={ceiling} onChange={onQuantityChange} compact />
+      <button
+        type="button"
+        onClick={onAdd}
+        disabled={!buyable || pending}
+        aria-busy={pending}
+        aria-label={stickyAddLabel({ buyable, pending, justAdded, productName })}
+        className="flex h-11 flex-1 items-center justify-center gap-2 bg-ink text-[12px] font-semibold tracking-[0.06em] text-paper uppercase transition-colors duration-300 ease-editorial hover:bg-ink-soft disabled:pointer-events-none disabled:opacity-40"
+      >
+        {addLabel({ buyable, pending, justAdded })}
+        <ArrowRight size={13} strokeWidth={1.5} aria-hidden />
+      </button>
+      {justAdded && (
+        <span role="status" className="sr-only">
+          {productName} added to your bag.
+        </span>
+      )}
+    </div>
+  </div>
+)
+
+const stickyAddLabel = ({
+  buyable,
+  pending,
+  justAdded,
+  productName,
+}: {
+  buyable: boolean
+  pending: boolean
+  justAdded: boolean
+  productName: string
+}): string => `${addLabel({ buyable, pending, justAdded })} — ${productName}`
+
+/* ──────────────────────────────── GALLERY ──────────────────────────────── */
 
 const Gallery = ({ detail }: { detail: CatalogueDetail }) => {
   const [active, setActive] = useState(0)
   const [shownId, setShownId] = useState(detail.id)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
 
   if (shownId !== detail.id) {
     setShownId(detail.id)
@@ -381,67 +478,90 @@ const Gallery = ({ detail }: { detail: CatalogueDetail }) => {
   const step = (direction: 1 | -1) =>
     images.length > 0 && setActive((index + direction + images.length) % images.length)
 
+  const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    if (images.length < 2) return
+    const touch = event.touches[0]
+    touchStart.current = { x: touch.clientX, y: touch.clientY }
+  }
+
+  const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const start = touchStart.current
+    touchStart.current = null
+    if (!start || images.length < 2) return
+
+    const touch = event.changedTouches[0]
+    const deltaX = touch.clientX - start.x
+    const deltaY = touch.clientY - start.y
+    if (Math.abs(deltaX) < 44 || Math.abs(deltaX) <= Math.abs(deltaY)) return
+
+    step(deltaX < 0 ? 1 : -1)
+  }
+
   return (
-    <div className="lg:col-span-7">
-      <div className="relative">
-        <div className="relative aspect-[4/5] overflow-hidden bg-[#f4f4f4]">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={`${detail.id}-${index}`}
-              initial={{ opacity: 0, scale: 1.04 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6, ease: EASE }}
-              className="absolute inset-0"
-            >
-              <Plate
-                src={images[index]}
-                alt={`${detail.name} — view ${index + 1}`}
-                position="object-top"
-                priority
-                className="h-full w-full"
-              />
-            </motion.div>
-          </AnimatePresence>
+    <div className="lg:col-span-7 flex flex-col items-center justify-start gap-4">
+      
+      {/* 
+        THE MAIN IMAGE
+        No background, max-height 70vh so it fits the screen, and object-contain to show the whole image.
+      */}
+      <div
+        className="relative w-full max-h-[70vh] flex items-center justify-center overflow-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={`${detail.id}-${index}`}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, ease: EASE }}
+            className="w-full h-full flex items-center justify-center"
+          >
+            <Plate
+              src={images[index]}
+              alt={`${detail.name} — view ${index + 1}`}
+              fit="contain"
+              priority
+              className="max-h-[70vh] w-auto max-w-full object-contain"
+            />
+          </motion.div>
+        </AnimatePresence>
 
-          {images.length > 1 && (
-            <>
-              <span className="label-micro pointer-events-none absolute top-4 left-4 bg-paper/85 px-2.5 py-2 text-ink backdrop-blur-sm">
-                {String(index + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}
-              </span>
-
-              <div className="absolute right-4 bottom-4 flex gap-2">
-                <GalleryArrow direction={-1} onClick={() => step(-1)} />
-                <GalleryArrow direction={1} onClick={() => step(1)} />
-              </div>
-            </>
-          )}
-        </div>
-
+        {/* Minimal Floating Arrows */}
         {images.length > 1 && (
-          <div className="mt-3 grid grid-cols-4 gap-3">
-            {images.slice(0, 4).map((source, position) => (
-              <button
-                key={source}
-                type="button"
-                onClick={() => setActive(position)}
-                aria-label={`View image ${position + 1}`}
-                aria-current={position === index}
-                className={`relative aspect-[4/5] overflow-hidden bg-[#f4f4f4] transition-opacity duration-400 ease-editorial ${
-                  position === index ? 'opacity-100' : 'opacity-45 hover:opacity-80'
-                }`}
-              >
-                <SmartImage src={source} alt="" shimmer={false} position="object-top" className="h-full w-full" />
-                <span
-                  className={`absolute inset-0 border transition-colors duration-400 ${
-                    position === index ? 'border-ink' : 'border-transparent'
-                  }`}
-                />
-              </button>
-            ))}
+          <div className="absolute bottom-4 right-4 z-10 flex gap-2">
+            <GalleryArrow direction={-1} onClick={() => step(-1)} />
+            <GalleryArrow direction={1} onClick={() => step(1)} />
           </div>
         )}
       </div>
+
+      {/* THUMBNAILS */}
+      {images.length > 1 && (
+        <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar w-full justify-start">
+          {images.map((source, position) => (
+            <button
+              key={`${source}-${position}`}
+              type="button"
+              onClick={() => setActive(position)}
+              className={`relative w-[60px] h-[75px] shrink-0 overflow-hidden transition-all duration-300 ${
+                position === index 
+                  ? 'ring-2 ring-ink ring-offset-2 opacity-100' 
+                  : 'opacity-50 hover:opacity-100'
+              }`}
+            >
+              <SmartImage
+                src={source}
+                alt=""
+                shimmer={false}
+                fit="cover"
+                className="h-full w-full object-cover object-center"
+              />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -451,12 +571,12 @@ const GalleryArrow = ({ direction, onClick }: { direction: 1 | -1; onClick: () =
     type="button"
     onClick={onClick}
     aria-label={direction === 1 ? 'Next image' : 'Previous image'}
-    className="grid size-10 place-items-center border border-line bg-paper/85 text-ink backdrop-blur-sm transition-colors duration-400 ease-editorial hover:bg-ink hover:text-paper"
+    className="grid size-9 place-items-center rounded-full bg-white text-ink shadow-md border border-line transition-all duration-300 hover:scale-110 hover:bg-ink hover:text-white"
   >
     {direction === 1 ? (
-      <ArrowRight size={14} strokeWidth={1.4} />
+      <ArrowRight size={16} strokeWidth={1.5} />
     ) : (
-      <ArrowLeft size={14} strokeWidth={1.4} />
+      <ArrowLeft size={16} strokeWidth={1.5} />
     )}
   </button>
 )
@@ -548,7 +668,6 @@ const Swatch = ({
   onSelect,
 }: {
   entry: CatalogueAxisValue
-  /** Required, so the tick's contrast never has to guess at an absent colour. */
   hex: string
   isSelected: boolean
   onSelect: (value: string) => void
@@ -574,7 +693,6 @@ const Swatch = ({
 
 /* ───────────────────────────────── copy ─────────────────────────────────── */
 
-/** Relative luminance, so a swatch's tick is legible on any colour. */
 const isLight = (hex: string): boolean => {
   const value = hex.replace('#', '')
   const full =

@@ -1,224 +1,344 @@
-import { motion, useReducedMotion } from 'framer-motion'
-import { Link } from 'react-router-dom'
-import { heroProducts } from '@/data/products'
-import type { Product } from '@/types'
-import { HangingGarment } from './HangingGarment'
-import { round2, pieceMetrics, pieceHeightCm, pieceScale } from './garmentGeometry'
-import {
-  TOKENS,
-  STUDIO,
-  GRAIN,
-  CHROME,
-  CHROME_SHADOW,
-  DISPLAY,
-  LABEL,
-} from './studioTokens'
+import { useEffect, useRef } from 'react'
+import { motion, useAnimationFrame, useReducedMotion } from 'framer-motion'
+
+/* ================================================================== */
+/* PRODUCTS                                                            */
+/* ================================================================== */
+type Product = { id: string; name: string; image: string }
+
+const products: Product[] = [
+  { id: 'p1', name: 'Butterfly Oversized Tshirt', image: '/garments/image2.png' },
+  { id: 'p2', name: 'Ghost Oversized Tshirt', image: '/garments/image4.png' },
+  { id: 'p3', name: 'Skull Oversized Tshirt', image: '/garments/image5.png' },
+  { id: 'p4', name: 'Fearless Oversized Tshirt', image: '/garments/image.png' },
+  { id: 'p5', name: 'Soul Oversized Tshirt', image: '/garments/image3.png' },
+]
+
+const RAIL_ITEMS = [...products, ...products, ...products]
 
 const EASE = [0.16, 1, 0.3, 1] as const
-const PER_BAR = 4
+const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v))
 
-const toRows = <T,>(items: T[], size: number): T[][] =>
-  Array.from({ length: Math.ceil(items.length / size) }, (_, row) =>
-    items.slice(row * size, row * size + size),
-  )
+/* ================================================================== */
+/* Fonts + CSS                                                         */
+/* ================================================================== */
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=Permanent+Marker&display=swap');
+.tux-hero{--ink:#000;--paper:#fff;font-family:'Archivo',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--ink)}
+.tux-display{font-family:'Anton','Bebas Neue',Impact,'Arial Narrow',sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:-0.005em}
+.tux-logo{font-family:'Permanent Marker','Brush Script MT',cursive}
+@keyframes tux-drift{0%,100%{transform:translateX(0)}50%{transform:translateX(20px)}}
+.tux-cloud{animation:tux-drift var(--d,20s) ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.tux-cloud{animation:none}}
+`
 
-function RailBar({
-  products,
-  startIndex = 0,
-  first = false,
-}: {
-  products: Product[]
-  startIndex?: number
-  first?: boolean
-}) {
-  const ratios = pieceRatios(products)
-
+/* ================================================================== */
+/* Cloud Background                                                    */
+/* ================================================================== */
+function CloudBackground() {
   return (
-    <div className={first ? 'mt-[clamp(1.5rem,3.5vh,2.75rem)] flex-1' : 'mt-16 lg:mt-24'}>
-      <div
-        className="relative [--g:calc((50vw-0.75rem)/760)] [--rail-y:0.75rem] [--piece-scale:650] md:[--g:min(.4px,calc((100vw-4rem)/2200),calc((100svh-450px)/1130))] md:[--piece-scale:780]"
-        style={{ width: '100vw', marginInline: 'calc(50% - 50vw)', paddingTop: 'var(--rail-y)' }}
-      >
-        <motion.div
-          aria-hidden
-          initial={false}
-          animate={{ scaleX: 1 }}
-          className="absolute inset-x-0 top-[var(--rail-y)] hidden h-[9px] rounded-[9px] origin-center md:block"
-          style={{ background: CHROME, boxShadow: CHROME_SHADOW }}
-        />
-
-        <div className="flex items-stretch justify-center max-md:grid max-md:grid-cols-2 max-md:row-gap-9">
-          {products.map((product, index) => (
-            <HangingGarment
-              key={product.id}
-              product={product}
-              index={startIndex + index}
-              ratio={ratios.get(product.id)}
-            />
-          ))}
-        </div>
-      </div>
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      <svg className="tux-cloud absolute top-[20%] left-[-10%] w-[600px] text-gray-100 blur-2xl opacity-60" style={{ '--d': '25s' } as React.CSSProperties} viewBox="0 0 100 50">
+        <path d="M10 40 Q 20 20 40 30 Q 50 10 70 25 Q 90 15 100 35 Q 110 50 90 50 L 20 50 Q 0 50 10 40 Z" fill="currentColor" />
+      </svg>
+      <svg className="tux-cloud absolute top-[35%] right-[-10%] w-[700px] text-gray-100 blur-2xl opacity-50" style={{ '--d': '30s', animationDirection: 'reverse' } as React.CSSProperties} viewBox="0 0 100 50">
+        <path d="M10 40 Q 20 20 40 30 Q 50 10 70 25 Q 90 15 100 35 Q 110 50 90 50 L 20 50 Q 0 50 10 40 Z" fill="currentColor" />
+      </svg>
     </div>
   )
 }
 
-/**
- * Ratio for each piece = how wide to render the cutout image so that the
- * *drawn garment* is the correct real-world size relative to its neighbours.
- *
- * - `garmentHeightCm` is the physical length of the item (hoodie ≈ 72cm,
- *   trouser ≈ 108cm). Normalising by the tallest piece makes the trouser the
- *   reference and shortens everything else accordingly.
- * - `clothSpan` (hemY - hookY) is the fraction of the cutout canvas the garment
- *   actually occupies. The image is drawn at `width = ratio * scale * g`, and
- *   its height is width / aspect. So multiplying by `clothSpan` compensates
- *   for padding baked into the PNG.
- * - `pieceScale` remains a per-product or per-category nudge (accessories
- *   shrink, bottoms grow slightly). Keep it near 1.
- */
-function pieceRatios(products: Product[]) {
-  const metrics = products.map((product) => ({ product, ...pieceMetrics(product) }))
-  if (metrics.length === 0) return new Map<string, number>()
-
-  const heights = metrics.map((m) => pieceHeightCm(m.product))
-  const refHeight = Math.max(...heights)
-
-  const raw = metrics.map((m) => {
-    const span = m.product.hemY! - m.product.hookY!
-    const aspect = m.product.cutoutAspect ?? 1
-    // Width such that rendered height = (height / refHeight) * pieceScale.
-    return (pieceHeightCm(m.product) / refHeight) * (aspect / span) * pieceScale(m.product)
-  })
-
-  const norm = 1 / Math.max(...raw)
-
-  return new Map(
-    metrics.map((m, i) => [m.product.id, round2(raw[i] * norm, 4)]),
+/* ================================================================== */
+/* NEW DESIGN: Giant Background Typography                             */
+/* ================================================================== */
+function BackgroundTypography() {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-[5vh] z-10 flex w-full items-center justify-center overflow-hidden">
+      <motion.h2 
+        className="tux-display whitespace-nowrap text-[25vw] leading-none text-black opacity-[0.03] select-none"
+        initial={{ y: 50 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 1.5, ease: EASE }}
+      >
+        LOMOR
+      </motion.h2>
+    </div>
   )
 }
 
-export function Hero() {
-  const prefersReduced = useReducedMotion()
-  const [firstBar = [], ...extraBars] = toRows(heroProducts, PER_BAR)
+/* ================================================================== */
+/* Tee rail (កោងចុះក្រោម និងធំជាងមុនបន្តិច)                              */
+/* ================================================================== */
+function TeeRail({ reduced, kickRef }: { reduced: boolean | null; kickRef: React.MutableRefObject<(d: 1 | -1) => void> }) {
+  const wrap = useRef<HTMLDivElement>(null)
+  const els = useRef<(HTMLAnchorElement | null)[]>([])
+  const offset = useRef(0)
+  const velocity = useRef(0)
+  const dir = useRef<1 | -1>(-1)
+  const dragging = useRef(false)
+  const hovering = useRef(false)
+  const lastX = useRef(0)
+  const lastT = useRef(0)
+  const moved = useRef(0)
 
-  const rise = (delay: number) =>
-    prefersReduced
-      ? { initial: false as const, animate: { opacity: 1, y: 0 } }
-      : {
-          initial: { opacity: 0, y: 10 },
-          animate: { opacity: 1, y: 0 },
-          transition: { duration: 0.9, delay, ease: EASE },
-        }
+  kickRef.current = (d) => {
+    dir.current = d
+    velocity.current = d * 1500
+  }
+
+  useAnimationFrame((time, delta) => {
+    const box = wrap.current
+    const first = els.current[0]
+    if (!box || !first) return
+    const dt = Math.min(delta, 50) / 1000
+    const w = box.clientWidth
+    
+    const isMobile = w < 640
+    const isTablet = w >= 640 && w < 1024
+    
+    const itemW = first.offsetWidth || (isMobile ? 120 : (isTablet ? 180 : 240))
+    
+    const baseSpeed = isMobile ? 30 : (isTablet ? 40 : 50)
+    const base = reduced ? 0 : dir.current * (hovering.current ? 14 : baseSpeed)
+    
+    if (!dragging.current) {
+      velocity.current += (base - velocity.current) * Math.min(1, dt * 2)
+      offset.current += velocity.current * dt
+    }
+
+    const gapMultiplier = isMobile ? 1.0 : (isTablet ? 0.95 : 0.9)
+    const gap = itemW * gapMultiplier
+    const total = gap * RAIL_ITEMS.length
+    
+    RAIL_ITEMS.forEach((_, i) => {
+      const el = els.current[i]
+      if (!el) return
+      
+      let x = (((i * gap + offset.current) % total) + total) % total
+      x -= total / 2
+      
+      const nx = Math.min(1.2, Math.abs(x) / (w / 2))
+      
+      const scale = isMobile 
+        ? 0.9 + 0.1 * Math.pow(nx, 1.5) 
+        : 0.8 + 0.3 * Math.pow(nx, 1.5)
+        
+      // បន្ថយ curveDepth នៅលើទូរស័ព្ទ ដើម្បីកុំឲ្យវាធ្លាក់ចុះទាបពេក
+      const curveDepth = isMobile ? 30 : 120; 
+      const yOffset = Math.pow(nx, 2) * curveDepth; 
+
+      const bob = reduced ? 0 : Math.sin(time / 1000 + i * 1.7) * (isMobile ? 4 : 6)
+      const rot = (x / w) * (isMobile ? 10 : 18)
+      
+      el.style.transform = `translate3d(${x}px, ${yOffset + bob}px, 0) translate(-50%, -50%) rotate(${rot}deg) scale(${scale})`
+      el.style.zIndex = String(Math.round(scale * 20))
+      el.style.opacity = nx > 1.05 ? '0' : '1'
+    })
+  })
+
+  const down = (e: React.PointerEvent) => {
+    dragging.current = true
+    moved.current = 0
+    lastX.current = e.clientX
+    lastT.current = performance.now()
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  }
+  const move = (e: React.PointerEvent) => {
+    if (!dragging.current) return
+    const now = performance.now()
+    const dx = e.clientX - lastX.current
+    offset.current += dx
+    velocity.current = (dx / Math.max(1, now - lastT.current)) * 1000
+    if (Math.abs(velocity.current) > 40) dir.current = velocity.current > 0 ? 1 : -1
+    moved.current += Math.abs(dx)
+    lastX.current = e.clientX
+    lastT.current = now
+  }
+  const up = () => {
+    dragging.current = false
+    velocity.current = clamp(velocity.current, -2600, 2600)
+  }
 
   return (
-    <section
-      className="relative isolate flex min-h-svh flex-col overflow-x-clip px-[clamp(1rem,4vw,3.5rem)] pt-[clamp(1.25rem,3vw,2.5rem)] text-[var(--ink)]"
-      style={{ ...TOKENS, background: STUDIO }}
+    <div
+      ref={wrap}
+      role="group"
+      aria-roledescription="carousel"
+      aria-label="New arrivals."
+      tabIndex={0}
+      className="relative h-full cursor-grab select-none outline-none active:cursor-grabbing"
+      style={{ touchAction: 'pan-y' }}
+      onPointerDown={down}
+      onPointerMove={move}
+      onPointerUp={up}
+      onPointerCancel={up}
+      onPointerEnter={(e) => (hovering.current = e.pointerType === 'mouse')}
+      onPointerLeave={() => (hovering.current = false)}
+      onWheel={(e) => {
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) offset.current -= e.deltaX
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowLeft') kickRef.current(1)
+        if (e.key === 'ArrowRight') kickRef.current(-1)
+      }}
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-55 mix-blend-soft-light"
-        style={{ backgroundImage: GRAIN }}
-      />
+      {RAIL_ITEMS.map((p, i) => {
+        const copy = i >= products.length
+        return (
+          <a
+            key={i}
+            ref={(el) => {
+              els.current[i] = el
+            }}
+            href={`/product/${p.id}`}
+            draggable={false}
+            tabIndex={-1}
+            aria-hidden={copy || undefined}
+            aria-label={copy ? undefined : p.name}
+            onClick={(e) => {
+              if (moved.current > 6) e.preventDefault()
+            }}
+            className="absolute left-1/2 top-1/2 block w-[38vw] sm:w-[clamp(12rem,22vw,18rem)] will-change-transform"
+          >
+            <img
+              ref={(img) => {
+                if (img?.complete) img.classList.remove('opacity-0')
+              }}
+              src={p.image}
+              alt=""
+              draggable={false}
+              decoding="async"
+              onLoad={(e) => e.currentTarget.classList.remove('opacity-0')}
+              className="h-auto w-full select-none opacity-0 drop-shadow-[0_15px_15px_rgba(0,0,0,0.15)] transition-opacity duration-700"
+            />
+          </a>
+        )
+      })}
+    </div>
+  )
+}
 
-      <header className="flex items-start justify-between">
-        <motion.p {...rise(0)} className={`${LABEL} text-[clamp(0.95rem,1.5vw,1.25rem)]`}>
-          Limited
-          <br />
-          Release
-        </motion.p>
-        <motion.p
-          {...rise(0.12)}
-          className={`${LABEL} text-right text-[clamp(0.95rem,1.5vw,1.25rem)]`}
+/* ================================================================== */
+/* Hero                                                                */
+/* ================================================================== */
+export function Hero() {
+  const reduced = useReducedMotion()
+  const kickRef = useRef<(d: 1 | -1) => void>(() => {})
+  const words = ['FEARLESS', 'SOUL']
+
+  return (
+    <section className="tux-hero relative isolate flex h-svh min-h-[40rem] flex-col overflow-hidden bg-white">
+      <style>{CSS}</style>
+
+      <CloudBackground />
+      <BackgroundTypography />
+
+      <header className="relative z-40 flex items-center justify-between px-[clamp(1.25rem,4vw,3.5rem)] pt-[clamp(1rem,2.4vw,2rem)]">
+        <motion.a
+          href="/"
+          aria-label="LOMOR home"
+          className="tux-logo inline-block -rotate-6 select-none text-[2rem] leading-none sm:text-[2.4rem]"
+          initial={reduced ? false : { opacity: 0, rotate: -14, y: -10 }}
+          animate={{ opacity: 1, rotate: -6, y: 0 }}
+          transition={{ duration: 0.9, ease: EASE }}
         >
-          June
-          <br />
-          2026
-        </motion.p>
+          LOMOR
+        </motion.a>
+        <motion.nav
+          aria-label="Primary"
+          className="flex gap-5 text-[0.82rem] font-semibold sm:gap-9 sm:text-[0.95rem]"
+          initial={reduced ? false : { opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3, ease: EASE }}
+        >
+          {[
+            ['New & Featured', 'New', '/new'],
+            ['Men', 'Men', '/men'],
+            ['Women', 'Women', '/women'],
+          ].map(([long, short, href]) => (
+            <a key={href} href={href} className="underline-offset-[6px] decoration-2 hover:underline focus-visible:underline focus-visible:outline-none">
+              <span className="hidden sm:inline">{long}</span>
+              <span className="sm:hidden">{short}</span>
+            </a>
+          ))}
+        </motion.nav>
       </header>
 
-      <div className="mt-[clamp(0.5rem,2vw,1.5rem)] flex flex-col items-center text-center">
-        <motion.svg
-          viewBox="0 0 48 24"
-          fill="currentColor"
-          aria-hidden
-          focusable="false"
-          className={`h-[clamp(0.9rem,1.6vw,1.35rem)] w-auto ${prefersReduced ? '' : 'intro-spark'}`}
-          initial={prefersReduced ? false : { opacity: 0, rotate: -45, scale: 0.3 }}
-          animate={{ opacity: 1, rotate: 0, scale: 1 }}
-          transition={{ duration: 1.1, delay: 0.12, ease: EASE }}
-        >
-          <path d="M10 5C10.84 11.16 10.84 11.16 17 12C10.84 12.84 10.84 12.84 10 19C9.16 12.84 9.16 12.84 3 12C9.16 11.16 9.16 11.16 10 5Z" />
-          <path d="M24 1C25.32 10.68 25.32 10.68 35 12C25.32 13.32 25.32 13.32 24 23C22.68 13.32 22.68 13.32 13 12C22.68 10.68 22.68 10.68 24 1Z" />
-          <path d="M38 5C38.84 11.16 38.84 11.16 45 12C38.84 12.84 38.84 12.84 38 19C37.16 12.84 37.16 12.84 31 12C37.16 11.16 37.16 11.16 38 5Z" />
-        </motion.svg>
-
-        <h1
-          className={`${DISPLAY} mt-[clamp(0.75rem,1.6vw,1.25rem)] text-[clamp(2.75rem,8.4vw,7rem)] text-balance`}
-        >
-          {(['The', 'New', 'Era'] as const).map((word, i) => (
-            <motion.span
-              key={word}
-              className="inline-block"
-              initial={
-                prefersReduced
-                  ? false
-                  : { opacity: 0, y: '0.55em', clipPath: 'inset(-0.2em -0.1em 100%)' }
-              }
-              animate={{ opacity: 1, y: 0, clipPath: 'inset(-0.2em -0.1em)' }}
-              transition={{ duration: 1, delay: 0.2 + i * 0.11, ease: EASE }}
-            >
-              {word}
-            </motion.span>
-          ))}
-        </h1>
-
-        <motion.p
-          {...(prefersReduced
-            ? { initial: false as const, animate: { opacity: 1, y: 0 } }
-            : {
-                initial: { opacity: 0, y: 10, filter: 'blur(6px)' },
-                animate: { opacity: 1, y: 0, filter: 'blur(0px)' },
-                transition: { duration: 1, delay: 0.62, ease: EASE },
-              })}
-          className="mt-[clamp(0.75rem,1.4vw,1.1rem)] max-w-[40ch] text-[clamp(1rem,1.5vw,1.25rem)] leading-snug text-balance text-[var(--ink-soft)]"
-        >
-          A new chapter of elevated essentials and statement silhouettes.
-        </motion.p>
-      </div>
-
-      <RailBar products={firstBar} first />
-
-      {extraBars.map((bar, barIndex) => (
-        <RailBar key={barIndex} products={bar} startIndex={PER_BAR * (barIndex + 1)} />
-      ))}
-
-      <footer className="grid grid-cols-[auto_1fr_auto] items-end gap-4 pb-[clamp(1.25rem,3vw,2.25rem)]">
-        <motion.p {...rise(1.25)} className={`${LABEL} text-[clamp(0.95rem,1.5vw,1.25rem)]`}>
-          Never
-          <br />
-          Basic
-        </motion.p>
-
-        <motion.p {...rise(1.32)} className="text-center text-[0.95rem] leading-snug text-[var(--ink-soft)]">
-          <span className="hidden sm:inline">
-            Designed for those who never follow the crowd.
-            <br />
-          Tap a piece on the rail to take it to checkout.
+      <h1 className="tux-display relative z-30 mt-[6svh] flex flex-col items-center text-center text-[14vw] leading-[0.86] sm:flex-row sm:justify-center sm:gap-[0.22em] sm:text-[8vw] 2xl:text-[9rem]">
+        {words.map((word, wi) => (
+          <span key={word} className="flex">
+            {word.split('').map((ch, ci) => (
+              <span key={ci} className="block overflow-hidden pb-[0.03em]">
+                <motion.span
+                  className="block"
+                  initial={reduced ? false : { y: '110%' }}
+                  animate={{ y: 0 }}
+                  transition={{ duration: 1.1, delay: 0.2 + (wi * 8 + ci) * 0.05, ease: EASE }}
+                >
+                  {ch}
+                </motion.span>
+              </span>
+            ))}
           </span>
-        </motion.p>
+        ))}
+      </h1>
 
-        <motion.div {...rise(1.39)} className="col-start-3 text-right">
-          <Link
-            to="/shop"
-            className={`${LABEL} inline-block text-[clamp(0.95rem,1.5vw,1.25rem)] underline decoration-2 underline-offset-4 decoration-[var(--ctrl-red)] transition-colors hover:text-[var(--ctrl-red)] focus-visible:underline focus-visible:outline-none`}
+      <motion.div
+        className="relative z-30 mt-4 flex flex-col items-center gap-5 px-6 text-center"
+        initial={reduced ? false : { opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.9, delay: 1.1, ease: EASE }}
+      >
+        <p className="max-w-md text-[clamp(0.85rem,1.2vw,1.05rem)] font-medium leading-relaxed tracking-wide text-black/70">
+          Wear your story. Oversized tees crafted for the fearless &amp; the free — made to move with you.
+        </p>
+        <a
+          href="/new"
+          className="group relative inline-flex items-center gap-2 rounded-full bg-black px-8 py-3.5 text-[0.85rem] font-semibold uppercase tracking-[0.12em] text-white transition-all duration-300 hover:scale-[1.03] hover:bg-black/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black active:scale-[0.98]"
+        >
+          Shop the Collection
+          <svg
+            aria-hidden
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
           >
-            Shop
-            <br />
-            Now
-          </Link>
-        </motion.div>
-      </footer>
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </a>
+      </motion.div>
+
+      {/* 
+        កែសម្រួល៖ 
+        - ប្តូរ flex-1 ទៅជា flex-none នៅលើទូរស័ព្ទ (ដើម្បីកុំឲ្យវាទាញទំហំធំ)
+        - បង្កើនកម្ពស់អប្បបរមា (min-h) ដើម្បីឲ្យមានកន្លែងដាក់សម្លៀកបំពាក់
+        - បន្ថយ mb (margin bottom) ដើម្បីឲ្យវាមិនទាបពេក
+      */}
+      <motion.div
+        className="relative z-20 flex-none mt-2 h-[35vh] min-h-[220px] sm:flex-1 sm:mt-6 sm:mb-[12svh] sm:h-auto sm:min-h-0"
+        initial={reduced ? false : { opacity: 0, y: 50, scale: 0.94 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 1.3, delay: 0.6, ease: EASE }}
+      >
+        <TeeRail reduced={reduced} kickRef={kickRef} />
+      </motion.div>
+
+      <motion.p
+        aria-hidden
+        className="tux-display pointer-events-none absolute bottom-[4svh] left-1/2 z-30 text-[clamp(1.5rem,4vw,3.5rem)] leading-none text-white"
+        style={{ WebkitTextStroke: '2px #000', paintOrder: 'stroke fill', x: '-50%' }}
+        initial={reduced ? false : { opacity: 0, y: 30, rotate: -14 }}
+        animate={{ opacity: 1, y: 0, rotate: -8 }}
+        transition={{ duration: 1, delay: 1.3, ease: EASE }}
+      >
+        Originals
+      </motion.p>
     </section>
   )
 }
+
+export default Hero

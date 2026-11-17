@@ -33,6 +33,12 @@ export const REQUEST_TIMEOUT_MS = 20_000
 export const UPLOAD_TIMEOUT_MS = 60_000
 export const STORE_CURRENCY = 'USD'
 
+/** Base URL of the storefront, used to resolve next-drop button destinations
+ *  into absolute URLs the backend's @IsUrl() validator accepts. Defaults to the
+ *  current origin so admin and storefront stay on the same host. */
+export const STOREFRONT_BASE_URL =
+  import.meta.env['VITE_STOREFRONT_BASE_URL']?.trim() || ''
+
 /** Paths, named once so a route change is a single-file edit. */
 export const API = {
   login: '/auth/login',
@@ -63,6 +69,8 @@ export const API = {
   adminUsers: '/admin/users',
   adminOrders: '/admin/orders',
   adminPromotions: '/admin/promotions',
+  adminNextDrops: '/admin/next-drops',
+  nextDropsActive: '/next-drops/active',
   deliveryManager: '/delivery/manager',
   deliveryStaff: '/delivery/staff',
   adminCodReconciliation: '/admin/cod-reconciliation',

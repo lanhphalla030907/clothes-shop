@@ -110,7 +110,7 @@ export function Footer() {
           {/* Left Side: We Accept Payments */}
           <div className="flex flex-wrap items-center gap-4">
             <span className="text-[10px] font-bold text-ink uppercase tracking-widest">We Accept:</span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {/* Using real public CDN URLs so images load immediately. You can swap these with your own local paths later. */}
               <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXGBGvIzWHbT6GrW-0a5CM9O5YwjF0X-5xccfW2oH4NQ&s=10" alt="Visa" className="h-5 sm:h-10 w-auto object-contain bg-white rounded px-1.5 py-0.5 border border-line" />
               <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-d6IXVAcVMx-_n1WeVZY_JSUfARX4zMuZ9CUcF2xV4Q&s=10" alt="Mastercard" className="h-5 sm:h-6 w-auto object-contain bg-white rounded px-1.5 py-0.5 border border-line" />

@@ -24,6 +24,7 @@ const CodAreasIndex = lazy(() => import('@/pages/admin/cod-areas/CodEligibilityI
 const ReconciliationIndex = lazy(() => import('@/pages/admin/cod-reconciliation/ReconciliationIndex'))
 const ReconciliationRunDetail = lazy(() => import('@/pages/admin/cod-reconciliation/RunDetail'))
 const PromotionsIndex = lazy(() => import('@/pages/admin/promotions/PromotionsIndex'))
+const NextDropsIndex = lazy(() => import('@/pages/admin/next-drops/NextDropsIndex'))
 const DeliveryStaffIndex = lazy(() => import('@/pages/admin/delivery-staff/DeliveryStaffIndex'))
 const FeedbackIndex = lazy(() => import('@/pages/admin/feedback/FeedbackIndex'))
 
@@ -57,6 +58,7 @@ export const adminRoutes: RouteObject[] = [
           { path: 'cod-reconciliation', Component: ReconciliationIndex },
           { path: 'cod-reconciliation/runs/:id', Component: ReconciliationRunDetail },
           { path: 'promotions', Component: PromotionsIndex },
+          { path: 'next-drops', Component: NextDropsIndex },
           { path: 'feedback', Component: FeedbackIndex },
         ],
       },

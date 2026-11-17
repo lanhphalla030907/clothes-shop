@@ -22,6 +22,7 @@ export const Plate = ({
   alt,
   className = '',
   position,
+  fit = 'cover',
   priority = false,
 }: {
   src: string | undefined
@@ -29,6 +30,8 @@ export const Plate = ({
   className?: string
   /** Tailwind object-position override, e.g. `object-top` for product plates. */
   position?: string
+  /** `contain` keeps the whole product in frame; `cover` fills the plate. */
+  fit?: 'cover' | 'contain'
   priority?: boolean
 }) => {
   if (src)
@@ -38,6 +41,7 @@ export const Plate = ({
         alt={alt}
         className={className}
         position={position}
+        fit={fit}
         priority={priority}
       />
     )

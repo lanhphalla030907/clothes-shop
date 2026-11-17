@@ -7,6 +7,7 @@ import {
   Boxes,
   ChevronRight,
   ClipboardList,
+  Clock,
   CreditCard,
   FileClock,
   FolderTree,
@@ -56,6 +57,7 @@ const NAV_GROUPS: ReadonlyArray<NavGroup> = [
     items: [
       { label: 'Orders', to: '/admin/orders', icon: ClipboardList, exact: false },
       { label: 'Promotions', to: '/admin/promotions', icon: BadgePercent, exact: false },
+      { label: 'Next drops', to: '/admin/next-drops', icon: Clock, exact: false },
       { label: 'COD dashboard', to: '/admin/cod-dashboard', icon: CreditCard, exact: false },
       { label: 'COD reconciliation', to: '/admin/cod-reconciliation', icon: FileClock, exact: false },
     ],
