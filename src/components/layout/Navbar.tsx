@@ -101,18 +101,13 @@ export function Navbar() {
             </nav>
           </div>
 
-          {/* CENTER: The Logo */}
-          {/* 
-            On mobile: absolute positioning keeps it perfectly in the middle.
-            On desktop (lg): reverts to static grid layout.
-            Your original size `h-15` is preserved.
-          */}
+         
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:static lg:translate-x-0 lg:translate-y-0 lg:flex lg:justify-center z-0 lg:z-10">
             <Link to="/" className="group flex min-h-11 shrink-0 items-center gap-2.5" aria-label="LOMOR — home">
               <img
                 src={LOGO_SRC}
                 alt="LOMOR Logo"
-                className="h-15 w-auto object-contain transition-opacity duration-300 group-hover:opacity-70"
+                className="h-17 w-auto object-contain transition-opacity duration-300 group-hover:opacity-70"
               />
             </Link>
           </div>

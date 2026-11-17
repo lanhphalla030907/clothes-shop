@@ -15,7 +15,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-canvas border-t border-line mt-16 sm:mt-24 pt-12 pb-6">
+    <footer className="bg-white border-t border-line mt-16 sm:mt-24 pt-12 pb-6">
       <div className="container-editorial">
         
         {/* Main Footer Links Row */}

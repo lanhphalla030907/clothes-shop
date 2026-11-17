@@ -14,7 +14,7 @@ const LOGO_SRC = '/logo.png'
 export default function About() {
 
   return (
-    <div className="bg-canvas text-ink font-sans selection:bg-[var(--ctrl-red)] selection:text-white">
+    <div className="bg-white text-ink font-sans selection:bg-[var(--ctrl-red)] selection:text-white">
       
       {/* SECTION 1: Hero — Brand Introduction */}
       <section className="relative w-full max-w-7xl mx-auto pt-24 pb-20 px-6 lg:px-12 flex flex-col lg:flex-row items-center">

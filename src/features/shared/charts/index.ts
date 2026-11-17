@@ -1,6 +1,8 @@
 export { ChartContainer } from './ChartContainer'
 export { ChartTooltip } from './ChartTooltip'
 export { ChartLegend } from './ChartLegend'
+export { ComposedMetricChart } from './ComposedMetricChart'
+export type { ComposedDatum, ComposedSeries } from './ComposedMetricChart'
 export { RevenueAreaChart } from './RevenueAreaChart'
 export { OrdersLineChart } from './OrdersLineChart'
 export { PaymentDonutChart } from './PaymentDonutChart'

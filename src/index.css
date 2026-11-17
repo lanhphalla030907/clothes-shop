@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=Permanent+Marker&display=swap');
+
 @import 'tailwindcss';
 
 @theme {
@@ -20,6 +22,20 @@
   --color-text-muted: #5f5f5b;
   --color-action-primary: #0b0b0b;
   --color-action-secondary: #f5f4f1;
+
+  /* LOMOR storefront palette — derived from the Hero section.
+     The storefront uses a pure white background (#ffffff) with black
+     ink, matching the Hero's `bg-white` and `text-black` foundation. */
+  --color-store-bg: #ffffff;
+  --color-store-ink: #000000;
+  --color-store-paper: #ffffff;
+
+  /* Storefront font families — extracted from Hero.tsx CSS block.
+     Archivo is the primary body face; Anton is the display face;
+     Permanent Marker is the logo face. */
+  --font-store: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Anton', 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
+  --font-logo: 'Permanent Marker', 'Brush Script MT', cursive;
 
   /* Type scale — display sizes are fluid, clamped between breakpoints.
      Archivo is variable on two axes: wdth (62-125) and wght (100-900), so the
@@ -92,16 +108,15 @@
 
   body {
     margin: 0;
-    background-color: var(--color-canvas);
-    color: var(--color-ink);
-    font-family: var(--font-sans);
+    background-color: var(--color-store-bg);
+    color: var(--color-store-ink);
+    font-family: var(--font-store);
     font-size: 1rem;
     line-height: 1.55;
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-variation-settings: 'wdth' 100;
     overflow-x: clip;
   }
 
@@ -485,3 +500,48 @@
     padding-bottom: 0;
   }
 }
+
+/* =====================================================================
+   LOMOR storefront classes — extracted from the Hero section.
+   These were previously defined inline in Hero.tsx; they are now global
+   so every storefront page shares the same visual identity.
+   ===================================================================== */
+
+  .tux-hero {
+    --ink: #000;
+    --paper: #fff;
+    font-family: var(--font-store);
+    color: var(--ink);
+  }
+
+  .tux-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: -0.005em;
+  }
+
+  .tux-logo {
+    font-family: var(--font-logo);
+    font-weight: 400;
+  }
+
+  @keyframes tux-drift {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(20px);
+    }
+  }
+
+  .tux-cloud {
+    animation: tux-drift var(--d, 20s) ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tux-cloud {
+      animation: none;
+    }
+  }

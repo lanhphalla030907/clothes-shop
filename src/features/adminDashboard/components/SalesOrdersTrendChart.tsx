@@ -1,4 +1,14 @@
-import { RevenueAreaChart, OrdersLineChart } from '@/features/shared/charts'
+import { ComposedMetricChart } from '@/features/shared/charts'
+import type { ComposedDatum, ComposedSeries } from '@/features/shared/charts'
+import {
+  CHART_COLORS,
+  formatOrdersAxisValue,
+  formatOrdersTooltipValue,
+  formatPeriodAxisLabel,
+  formatPeriodTooltipLabel,
+  formatRevenueAxisValue,
+  formatRevenueTooltipValue,
+} from '@/features/shared/charts/chartFormatters'
 import type {
   FinanceRangeResponse,
   FinanceTrendGranularity,
@@ -17,6 +27,13 @@ interface SalesOrdersTrendChartProps {
   timezone: string
 }
 
+/** API money strings are kept as-is; missing cost data stays missing. */
+function finiteValue(value: number | string | null): number | null {
+  if (value === null || value === '') return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
 export function SalesOrdersTrendChart({
   buckets,
   currency,
@@ -24,9 +41,20 @@ export function SalesOrdersTrendChart({
   range,
   timezone,
 }: SalesOrdersTrendChartProps) {
-  if (buckets.length === 0) {
+  const groupLabel = `Sales, profit and orders trend in ${currency}`
+  const chartLabel = `${groupLabel}. Revenue and profit use a money axis; orders use a separate count axis. ${formatFinanceRange(range)} in ${timezone}, ${granularityLabel(granularity).toLowerCase()} buckets.`
+
+  const chartData: ComposedDatum[] = buckets.map((bucket) => ({
+    label: formatPeriodAxisLabel(bucket.period, granularity),
+    fullLabel: formatPeriodTooltipLabel(bucket.period, granularity),
+    revenue: finiteValue(bucket.netRevenue),
+    profit: finiteValue(bucket.grossProfit),
+    orders: finiteValue(bucket.orderCount),
+  }))
+
+  if (chartData.length === 0) {
     return (
-      <div className="space-y-4" role="group" aria-label={`Sales and orders trend in ${currency}`}>
+      <div className="space-y-4" role="group" aria-label={groupLabel}>
         <p className="border border-line bg-bone px-4 py-6 text-[13px] text-graphite">
           No periods in this reporting window.
         </p>
@@ -35,11 +63,12 @@ export function SalesOrdersTrendChart({
         </p>
         <div className="sr-only">
           <table>
-            <caption>{`Sales and orders trend in ${currency}`}</caption>
+            <caption>{groupLabel}</caption>
             <thead>
               <tr>
                 <th scope="col">Period</th>
                 <th scope="col">Net revenue</th>
+                <th scope="col">Profit</th>
                 <th scope="col">Orders</th>
               </tr>
             </thead>
@@ -50,56 +79,84 @@ export function SalesOrdersTrendChart({
     )
   }
 
+  const series: ComposedSeries[] = [
+    {
+      key: 'revenue',
+      label: 'Revenue',
+      kind: 'bar',
+      color: CHART_COLORS.revenue,
+      axis: 'left',
+      formatValue: (value) => formatRevenueTooltipValue(value, currency),
+      formatAxis: (value) => formatRevenueAxisValue(value, currency),
+    },
+    {
+      key: 'profit',
+      label: 'Profit',
+      kind: 'line',
+      color: CHART_COLORS.grossProfit,
+      axis: 'left',
+      formatValue: (value) => formatRevenueTooltipValue(value, currency),
+      missingValueLabel: 'Not available',
+    },
+    {
+      key: 'orders',
+      label: 'Orders',
+      kind: 'area',
+      color: 'var(--color-finance-shipping)',
+      axis: 'right',
+      formatValue: (value) => formatOrdersTooltipValue(value),
+      formatAxis: (value) => formatOrdersAxisValue(value),
+    },
+  ]
+
+  const profitAvailable = chartData.some(
+    (point) => typeof point.profit === 'number',
+  )
+  const profitNote = !profitAvailable
+    ? 'Profit is unavailable for this window because cost data is missing.'
+    : buckets.some((bucket) => bucket.isProfitPartial)
+      ? 'Profit uses known costs only and may be partial.'
+      : 'Profit uses known costs only.'
+
+  const moneyCell = (value: number | string | null): string => {
+    const parsed = finiteValue(value)
+    return parsed === null ? 'Not available' : formatRevenueTooltipValue(parsed, currency)
+  }
+
   return (
-    <div className="space-y-4" role="group" aria-label={`Sales and orders trend in ${currency}. Revenue and order count use separate Y axes.`}>
-      <section aria-labelledby="revenue-heading">
-        <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2">
-          <h3 id="revenue-heading" className="text-[12px] font-semibold text-ink">Revenue</h3>
-          <span className="font-mono text-[10.5px] text-graphite">{currency}</span>
-        </div>
-        <RevenueAreaChart
-          data={buckets}
-          currency={currency}
-          granularity={granularity}
-          height={196}
-          ariaLabel={`Revenue trend in ${currency}, ${granularityLabel(granularity).toLowerCase()} buckets. ${formatFinanceRange(range)} in ${timezone}.`}
-        />
-      </section>
+    <div className="space-y-4" role="group" aria-label={groupLabel}>
+      <ComposedMetricChart
+        data={chartData}
+        series={series}
+        height={300}
+        ariaLabel={chartLabel}
+      />
 
-      <section aria-labelledby="orders-heading">
-        <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2">
-          <h3 id="orders-heading" className="text-[12px] font-semibold text-ink">Orders</h3>
-          <span className="font-mono text-[10.5px] text-graphite">count</span>
-        </div>
-        <OrdersLineChart
-          data={buckets}
-          granularity={granularity}
-          height={196}
-          ariaLabel={`Order count trend. ${formatFinanceRange(range)} · ${granularityLabel(granularity)} buckets in ${timezone}. Orders per period, on a separate count axis.`}
-        />
-      </section>
-
-      <p className="text-[11px] text-ash">
-        Hover, tap or focus the chart to inspect a period. Revenue and order count
-        use separate Y axes.
+      <p className="text-[11px] leading-relaxed text-ash">
+        {profitNote} Orders use a separate count axis. Hover or focus a period
+        to inspect exact values.
       </p>
 
       <div className="sr-only">
         <table>
-          <caption>{`Sales and orders trend in ${currency}`}</caption>
+          <caption>{groupLabel}</caption>
           <thead>
             <tr>
               <th scope="col">Period</th>
               <th scope="col">Net revenue</th>
+              <th scope="col">Profit (known cost)</th>
               <th scope="col">Orders</th>
             </tr>
           </thead>
           <tbody>
             {buckets.map((bucket) => (
               <tr key={bucket.period}>
-                <th scope="row">{bucket.period}</th>
-                <td>{bucket.netRevenue}</td>
-                <td>{bucket.orderCount.toString()}</td>
+                <th scope="row">
+                  {formatPeriodTooltipLabel(bucket.period, granularity)}
+                </th>
+                <td>{moneyCell(bucket.netRevenue)}</td>
+                <td>{moneyCell(bucket.grossProfit)}</td>
+                <td>{formatOrdersTooltipValue(bucket.orderCount)}</td>
               </tr>
             ))}
           </tbody>

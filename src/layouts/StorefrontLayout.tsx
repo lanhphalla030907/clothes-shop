@@ -24,7 +24,7 @@ const ScrollToTop = () => {
 
 export function StorefrontLayout() {
   return (
-    <div className="flex min-h-svh flex-col bg-paper pb-safe-bottom lg:pb-0">
+    <div className="flex min-h-svh flex-col bg-white pb-safe-bottom lg:pb-0">
       <ScrollToTop />
       <a
         href="#main"

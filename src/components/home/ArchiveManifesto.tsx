@@ -44,7 +44,7 @@ export function ArchiveManifesto() {
   const buttonLabel = drop.buttonText?.trim() || 'Get Access'
 
   return (
-    <section className="w-full bg-canvas border-y border-line">
+    <section className="w-full bg-white border-y border-line">
       <div className="container-editorial">
         <div className="flex flex-col lg:flex-row items-center justify-between divide-y lg:divide-y-0 lg:divide-x divide-line">
           <div className="w-full lg:w-1/3 py-6 lg:py-8 lg:pr-8 flex items-center justify-between">

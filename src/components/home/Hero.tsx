@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { motion, useAnimationFrame, useReducedMotion } from 'framer-motion'
 
 /* ================================================================== */
@@ -18,19 +18,6 @@ const RAIL_ITEMS = [...products, ...products, ...products]
 
 const EASE = [0.16, 1, 0.3, 1] as const
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v))
-
-/* ================================================================== */
-/* Fonts + CSS                                                         */
-/* ================================================================== */
-const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=Permanent+Marker&display=swap');
-.tux-hero{--ink:#000;--paper:#fff;font-family:'Archivo',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--ink)}
-.tux-display{font-family:'Anton','Bebas Neue',Impact,'Arial Narrow',sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:-0.005em}
-.tux-logo{font-family:'Permanent Marker','Brush Script MT',cursive}
-@keyframes tux-drift{0%,100%{transform:translateX(0)}50%{transform:translateX(20px)}}
-.tux-cloud{animation:tux-drift var(--d,20s) ease-in-out infinite}
-@media (prefers-reduced-motion:reduce){.tux-cloud{animation:none}}
-`
 
 /* ================================================================== */
 /* Cloud Background                                                    */
@@ -228,8 +215,6 @@ export function Hero() {
 
   return (
     <section className="tux-hero relative isolate flex h-svh min-h-[40rem] flex-col overflow-hidden bg-white">
-      <style>{CSS}</style>
-
       <CloudBackground />
       <BackgroundTypography />
 
@@ -311,13 +296,6 @@ export function Hero() {
           </svg>
         </a>
       </motion.div>
-
-      {/* 
-        កែសម្រួល៖ 
-        - ប្តូរ flex-1 ទៅជា flex-none នៅលើទូរស័ព្ទ (ដើម្បីកុំឲ្យវាទាញទំហំធំ)
-        - បង្កើនកម្ពស់អប្បបរមា (min-h) ដើម្បីឲ្យមានកន្លែងដាក់សម្លៀកបំពាក់
-        - បន្ថយ mb (margin bottom) ដើម្បីឲ្យវាមិនទាបពេក
-      */}
       <motion.div
         className="relative z-20 flex-none mt-2 h-[35vh] min-h-[220px] sm:flex-1 sm:mt-6 sm:mb-[12svh] sm:h-auto sm:min-h-0"
         initial={reduced ? false : { opacity: 0, y: 50, scale: 0.94 }}

@@ -98,7 +98,7 @@ export function CategorySection() {
               <span className="h-px w-8 bg-line" aria-hidden />
               <span className="label-micro text-graphite">The Categories</span>
             </div>
-            <h2 className="type-display mt-6 text-[13vw] leading-[0.86] sm:text-[7vw]">
+            <h2 className="type-display mt-6 text-[12vw] leading-[0.86] sm:text-[5vw]">
               Shop by
               <br />
               category

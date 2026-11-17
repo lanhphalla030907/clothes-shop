@@ -88,7 +88,7 @@ export function RevenueTrendSection({
       <FinanceSectionHeading
         eyebrow="Revenue trend"
         title="Revenue and known-cost profit over time"
-        description="Buckets are calculated in the reporting timezone. Null cost or profit breaks the line rather than becoming zero."
+        description="Buckets use the API's Asia/Phnom_Penh calendar dates. Revenue is formatted with the selected currency; no currencies are combined."
         action={
           <Action
             variant="outline"
