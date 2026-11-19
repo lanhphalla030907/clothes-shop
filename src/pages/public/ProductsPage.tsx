@@ -236,7 +236,7 @@ export default function ProductsPage() {
 
             {/* Loading Initial Skeleton */}
             {!error && isLoading && pieces.length === 0 && (
-              <ProductGridSkeleton count={9} columns={3} />
+              <ProductGridSkeleton count={8} columns={4} />
             )}
 
             {/* Empty State */}
@@ -264,7 +264,7 @@ export default function ProductsPage() {
             {/* Product Grid */}
             {!error && pieces.length > 0 && (
               <div className={`transition-opacity duration-300 ${isFetching ? 'opacity-60' : 'opacity-100'}`}>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 sm:gap-y-14 lg:grid-cols-3">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 sm:gap-y-14 md:grid-cols-3 lg:grid-cols-4">
                   {pieces.map((piece, index) => (
                     <ProductCard
                       key={piece.id}

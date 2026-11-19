@@ -36,6 +36,8 @@ export interface ApiErrorInit {
   status?: number
   /** Field-level messages from a `ValidationPipe` response, when present. */
   details?: string[]
+  /** Machine-readable backend classification, e.g. `REFRESH_REPLAY_STALE`. */
+  code?: string
   cause?: unknown
 }
 
@@ -43,13 +45,16 @@ export class ApiError extends Error {
   readonly kind: ApiErrorKind
   readonly status: number | undefined
   readonly details: string[]
+  /** Preserved so refresh failures can be classified without parsing messages. */
+  readonly code: string | undefined
 
-  constructor(message: string, { kind, status, details = [], cause }: ApiErrorInit) {
+  constructor(message: string, { kind, status, details = [], code, cause }: ApiErrorInit) {
     super(message, cause === undefined ? undefined : { cause })
     this.name = 'ApiError'
     this.kind = kind
     this.status = status
     this.details = details
+    this.code = code
   }
 
   /** True when retrying the same request could plausibly succeed. */
@@ -101,7 +106,11 @@ export const toUserMessage = (error: unknown): string => {
         if (error.details.length > 1) return error.details.join(' ')
         return serverMessage || 'Some of the details are not valid. Check the form and try again.'
       case 'unauthorized':
-        return 'This session is no longer recognised. Reload the page to start a new one.'
+        // A 401 means the session ended; a 403 is a permission answer. Neither
+        // belongs in the customer's view as a technical auth detail.
+        return error.status === 403
+          ? 'You do not have access to that.'
+          : 'Please sign in to your account to continue.'
       case 'notFound':
         return serverMessage || 'We could not find that. It may have been removed.'
       case 'conflict':

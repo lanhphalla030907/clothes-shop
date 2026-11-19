@@ -330,7 +330,7 @@ function Piece({ detail }: { detail: CatalogueDetail }) {
               </Link>
             </div>
           </Reveal>
-          <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 lg:grid-cols-3">
+          <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4">
             {related.data.map((piece, index) => (
               <ProductCard key={piece.id} piece={piece} index={index} />
             ))}

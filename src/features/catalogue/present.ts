@@ -220,6 +220,9 @@ export const toPiece = ({
     // and it is the catalogue's own — not a guess. With them, the cheapest
     // buyable variant is what the shopper would actually be charged.
     price: buyable[0]?.price ?? product.basePrice,
+    // Carry through the original price when the catalogue has one, so a card can
+    // show a strikethrough without inventing a discount the server never offered.
+    originalPrice: product.originalPrice ?? undefined,
     images: imageUrls(images),
     // Variants unread means unknown, not sold out: only a variant set that was
     // read and held nothing buyable can retire the piece.

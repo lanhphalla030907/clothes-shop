@@ -12,16 +12,16 @@ const products: Product[] = [
   { id: 'p3', name: 'Skull Oversized Tshirt', image: '/garments/image5.png' },
   { id: 'p4', name: 'Fearless Oversized Tshirt', image: '/garments/image.png' },
   { id: 'p5', name: 'Soul Oversized Tshirt', image: '/garments/image3.png' },
+  { id: 'p5', name: 'Soul Oversized Tshirt', image: '/garments/image6.png' },
+  { id: 'p5', name: 'Soul Oversized Tshirt', image: '/garments/image7.png' },
+  { id: 'p5', name: 'Soul Oversized Tshirt', image: '/garments/image8.png' },
+  { id: 'p5', name: 'Soul Oversized Tshirt', image: '/garments/image9.png' },
 ]
 
 const RAIL_ITEMS = [...products, ...products, ...products]
 
 const EASE = [0.16, 1, 0.3, 1] as const
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v))
-
-/* ================================================================== */
-/* Cloud Background                                                    */
-/* ================================================================== */
 function CloudBackground() {
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
@@ -35,9 +35,6 @@ function CloudBackground() {
   )
 }
 
-/* ================================================================== */
-/* NEW DESIGN: Giant Background Typography                             */
-/* ================================================================== */
 function BackgroundTypography() {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-[5vh] z-10 flex w-full items-center justify-center overflow-hidden">
@@ -53,9 +50,6 @@ function BackgroundTypography() {
   )
 }
 
-/* ================================================================== */
-/* Tee rail (កោងចុះក្រោម និងធំជាងមុនបន្តិច)                              */
-/* ================================================================== */
 function TeeRail({ reduced, kickRef }: { reduced: boolean | null; kickRef: React.MutableRefObject<(d: 1 | -1) => void> }) {
   const wrap = useRef<HTMLDivElement>(null)
   const els = useRef<(HTMLAnchorElement | null)[]>([])

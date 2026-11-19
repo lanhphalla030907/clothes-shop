@@ -2,14 +2,24 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useLocation, useNavigate } from 'react-router-dom'
 import { isApiError } from '@/lib/api/errors'
 import { useFeedback } from '@/context/feedbackContext'
+import { loginPathFor } from './returnTo'
+import { LOGIN_REQUIRED } from './loginRequired'
+import { refreshAccessToken } from '@/lib/api/refresh'
 import {
   clearAccessToken,
+  hasUsableAccessToken,
   onUnauthorized,
   readAccessToken,
   writeAccessToken,
 } from '@/lib/api/session'
 import { AuthContext, type AuthContextValue } from './authContext'
-import { fetchCurrentUser, loginErrorMessage, loginUser, loginWithGoogle as loginWithGoogleApi } from './api'
+import {
+  fetchCurrentUser,
+  loginErrorMessage,
+  loginUser,
+  loginWithGoogle as loginWithGoogleApi,
+  logoutSession,
+} from './api'
 import type { AuthUser } from './authTypes'
 
 /**
@@ -33,14 +43,14 @@ import type { AuthUser } from './authTypes'
  * user-scoped state itself beyond `user`, which is replaced wholesale on sign-in
  * and dropped wholesale on sign-out.
  *
- * ## No logout request
+ * ## Logout
  *
- * The API exposes no logout endpoint and a bearer token cannot be revoked by
- * asking for it. Forgetting it here ends the session on this device, which is
- * the full extent of what logout can honestly do — so nothing is faked.
+ * `POST /auth/logout` revokes the refresh family and clears the HttpOnly
+ * cookies. Local state is cleared whether or not that request succeeds, so an
+ * offline shopper is never left staring at a signed-in interface.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { showFeedback } = useFeedback()
+  const { showFeedback, confirmFeedback } = useFeedback()
   const [user, setUser] = useState<AuthUser | null>(null)
   // A stored token means there is something to check, so the guards wait rather
   // than treating "not yet loaded" as "signed out".
@@ -50,39 +60,102 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /** A second submit in the same tick must not exchange credentials twice. */
   const loginInFlight = useRef(false)
+  /** Guards the one sign-in dialog/notice created by a burst of 401s. */
+  const loginRequiredInFlight = useRef(false)
+  const sessionNoticeShown = useRef(false)
+  const loginRedirectTarget = useRef<string | null>(null)
+  /** A bootstrapping guest must not be told they were signed out. */
+  const hadStoredSessionAtMount = useRef(readAccessToken() !== null)
 
   const navigate = useNavigate()
   const location = useLocation()
+  const currentPath = `${location.pathname}${location.search}`
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register'
+
+  const showSessionNotice = useCallback(() => {
+    if (sessionNoticeShown.current) return
+    sessionNoticeShown.current = true
+    showFeedback({
+      type: 'info',
+      title: LOGIN_REQUIRED.title,
+      message: LOGIN_REQUIRED.message,
+    })
+  }, [showFeedback])
+
+  /**
+   * One dialog, one redirect target. A burst of 401s from one page load must not
+   * queue the same message repeatedly or navigate more than once.
+   */
+  const requireLogin = useCallback(
+    (returnTo?: string) => {
+      if (isInitializing || user !== null || isAuthPage || loginRequiredInFlight.current) return
+
+      const target = loginPathFor(returnTo ?? currentPath)
+      if (loginRedirectTarget.current === target) return
+      loginRedirectTarget.current = target
+      loginRequiredInFlight.current = true
+
+      void Promise.resolve(
+        confirmFeedback({
+          type: 'info',
+          title: LOGIN_REQUIRED.title,
+          message: LOGIN_REQUIRED.message,
+          confirmLabel: LOGIN_REQUIRED.action,
+          cancelLabel: null,
+        }),
+      ).then((confirmed) => {
+        loginRequiredInFlight.current = false
+        if (confirmed === true) {
+          navigate(target, { replace: true })
+          return
+        }
+        loginRedirectTarget.current = null
+      })
+    },
+    [confirmFeedback, currentPath, isAuthPage, isInitializing, navigate, user],
+  )
+
+  useEffect(() => {
+    if (location.pathname === '/login') {
+      loginRedirectTarget.current = null
+      sessionNoticeShown.current = false
+      loginRequiredInFlight.current = false
+    }
+  }, [location.pathname])
 
   useEffect(() => {
     let active = true
-    if (readAccessToken() === null) {
-      const id = window.setTimeout(() => {
+
+    const bootstrap = async (): Promise<void> => {
+      // An absent or locally expired token is not proof of logout: the HttpOnly
+      // refresh cookie may still be valid. Give it one chance first.
+      if (!hasUsableAccessToken()) {
+        const refreshed = await refreshAccessToken()
+        if (!active) return
+        if (!refreshed.ok) {
+          setIsInitializing(false)
+          return
+        }
+      }
+
+      try {
+        const me = await fetchCurrentUser()
+        if (active) setUser(me)
+      } catch (error: unknown) {
+        if (!active) return
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        // A 401 is terminal only after refresh has been given its chance.
+        // Network failures leave the stored credential for a later reload.
+        if (isApiError(error) && error.status === 401) {
+          clearAccessToken()
+          setUser(null)
+        }
+      } finally {
         if (active) setIsInitializing(false)
-      }, 0)
-      return () => {
-        active = false
-        window.clearTimeout(id)
       }
     }
 
-    fetchCurrentUser().then(
-      (me) => {
-        if (!active) return
-        setUser(me)
-        setIsInitializing(false)
-      },
-      (error: unknown) => {
-        if (!active) return
-        // A cancellation is not an answer: the token may well still be good and
-        // another mount of this provider will ask again.
-        if (error instanceof DOMException && error.name === 'AbortError') return
-        clearAccessToken()
-        setUser(null)
-        setIsInitializing(false)
-      },
-    )
-
+    void bootstrap()
     return () => {
       active = false
     }
@@ -93,19 +166,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       onUnauthorized(({ hadToken }) => {
         if (hadToken) {
           // The session ended on the server's say-so. Any protected screen is
-          // redirected by its own guard, so no navigation is forced from here.
+          // redirected by its own guard; this notice is the only customer-facing
+          // message. A first-visit refresh with no stored credential is not an
+          // expired session, so stay quiet for that case.
+          const wasKnownSession = user !== null || hadStoredSessionAtMount.current
           clearAccessToken()
           setUser(null)
+          if (wasKnownSession) showSessionNotice()
           return
         }
 
-        // No token: this was a shopper doing something that needs an account,
-        // such as saving a piece. Send them to sign in, and back afterwards.
-        if (location.pathname === '/login') return
-        const from = `${location.pathname}${location.search}`
-        navigate(`/login?from=${encodeURIComponent(from)}`, { replace: true })
+        // No token: a guest tried a customer-only action. The shared dialog
+        // explains why and offers the validated way back.
+        requireLogin()
       }),
-    [navigate, location.pathname, location.search],
+    [requireLogin, showSessionNotice, user],
   )
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
@@ -190,7 +265,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [showFeedback],
   )
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await logoutSession()
+    } catch {
+      // Offline or refused logout must not strand the shopper in a signed-in UI.
+    }
     clearAccessToken()
     setUser(null)
     setLoginError(null)
@@ -206,8 +286,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       loginWithGoogle,
       logout,
+      requireLogin,
     }),
-    [user, isInitializing, isLoginPending, loginError, login, loginWithGoogle, logout],
+    [user, isInitializing, isLoginPending, loginError, login, loginWithGoogle, logout, requireLogin],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

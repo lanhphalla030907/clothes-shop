@@ -24,6 +24,7 @@ export const Plate = ({
   position,
   fit = 'cover',
   priority = false,
+  background = true,
 }: {
   src: string | undefined
   alt: string
@@ -33,6 +34,8 @@ export const Plate = ({
   /** `contain` keeps the whole product in frame; `cover` fills the plate. */
   fit?: 'cover' | 'contain'
   priority?: boolean
+  /** When false, omit background so the image's own background shows. */
+  background?: boolean
 }) => {
   if (src)
     return (
@@ -43,13 +46,14 @@ export const Plate = ({
         position={position}
         fit={fit}
         priority={priority}
+        background={background}
       />
     )
 
   return (
     <span
       aria-label={alt}
-      className={`grid h-full w-full place-items-center bg-bone px-6 text-center ${className}`}
+      className={`grid h-full w-full place-items-center ${background ? 'bg-bone' : ''} px-6 text-center ${className}`}
     >
       <span className="label-micro text-graphite">{alt}</span>
     </span>
@@ -89,12 +93,12 @@ type ProductGridSkeletonProps = {
 
 const columnClass: Record<NonNullable<ProductGridSkeletonProps['columns']>, string> = {
   2: 'grid-cols-2',
-  3: 'grid-cols-2 lg:grid-cols-3',
-  4: 'grid-cols-2 lg:grid-cols-4',
+  3: 'grid-cols-2 md:grid-cols-3',
+  4: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
 }
 
 /** The collection's own shape, filled in with placeholders. */
-export const ProductGridSkeleton = ({ count = 6, columns = 3, className = '' }: ProductGridSkeletonProps) => (
+export const ProductGridSkeleton = ({ count = 8, columns = 4, className = '' }: ProductGridSkeletonProps) => (
   <div
     role="status"
     aria-busy="true"
@@ -103,7 +107,7 @@ export const ProductGridSkeleton = ({ count = 6, columns = 3, className = '' }: 
     <span className="sr-only">Loading the collection…</span>
     {Array.from({ length: count }, (_, index) => (
       <div key={index}>
-        <div className="aspect-[4/5] w-full bg-[#f4f4f4]" />
+        <div className="aspect-[4/5] w-full bg-bone" />
         <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-line pt-3">
           <div className="w-full space-y-2">
             <div className="h-3 w-3/5 bg-bone" />

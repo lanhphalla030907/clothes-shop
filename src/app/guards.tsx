@@ -1,12 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import type { Location } from 'react-router-dom'
 import { RouteFallback } from '@/app/RouteFallback'
 import { useAuth } from '@/features/auth/useAuth'
-import { landingPathFor } from '@/features/auth/returnTo'
-
-/** Where to sign in, and how to get back to what was being looked at. */
-const signInPath = (location: Location): string =>
-  `/login?from=${encodeURIComponent(`${location.pathname}${location.search}`)}`
+import { landingPathFor, loginPathFor } from '@/features/auth/returnTo'
 
 /**
  * Everything under `/account` requires a session.
@@ -20,7 +15,7 @@ export function RequireAuth() {
   const location = useLocation()
 
   if (isInitializing) return <RouteFallback />
-  if (!isAuthenticated) return <Navigate to={signInPath(location)} replace />
+  if (!isAuthenticated) return <Navigate to={loginPathFor(`${location.pathname}${location.search}`)} replace />
 
   return <Outlet />
 }
@@ -31,7 +26,7 @@ export function RequireDeliveryStaffRoute() {
   const location = useLocation()
 
   if (isInitializing) return <RouteFallback />
-  if (!isAuthenticated) return <Navigate to={signInPath(location)} replace />
+  if (!isAuthenticated) return <Navigate to={loginPathFor(`${location.pathname}${location.search}`)} replace />
   if (user?.role !== 'DELIVERY_STAFF') {
     return <Navigate to={landingPathFor(user?.role)} replace />
   }
@@ -52,7 +47,7 @@ export function RequireAdmin() {
   const location = useLocation()
 
   if (isInitializing) return <RouteFallback />
-  if (!isAuthenticated) return <Navigate to={signInPath(location)} replace />
+  if (!isAuthenticated) return <Navigate to={loginPathFor(`${location.pathname}${location.search}`)} replace />
   if (user?.role !== 'ADMIN') return <Navigate to="/" replace />
 
   return <Outlet />

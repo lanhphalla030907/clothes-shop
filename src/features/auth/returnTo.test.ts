@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { landingPathFor, safeReturnTo } from './returnTo'
+import { landingPathFor, loginPathFor, safeReturnTo } from './returnTo'
 
 describe('landingPathFor', () => {
   it('sends an administrator to the admin landing screen', () => {
@@ -76,5 +76,22 @@ describe('safeReturnTo', () => {
     expect(safeReturnTo('/register', 'CUSTOMER')).toBe('/account')
     expect(safeReturnTo('/LOGIN/', 'ADMIN')).toBe('/admin')
     expect(safeReturnTo('/Register', 'CUSTOMER')).toBe('/account')
+  })
+})
+
+describe('loginPathFor', () => {
+  it('builds a sign-in URL that preserves a safe destination', () => {
+    expect(loginPathFor('/account/orders')).toBe('/login?from=%2Faccount%2Forders')
+    expect(loginPathFor('/product/123?size=M')).toBe('/login?from=%2Fproduct%2F123%3Fsize%3DM')
+  })
+
+  it('rejects off-site and auth-page destinations at the point of creation', () => {
+    expect(loginPathFor('//evil.example')).toBe('/login')
+    expect(loginPathFor('https://evil.example')).toBe('/login')
+    expect(loginPathFor('/\\evil.example')).toBe('/login')
+    expect(loginPathFor('/login')).toBe('/login')
+    expect(loginPathFor('/register')).toBe('/login')
+    expect(loginPathFor(null)).toBe('/login')
+    expect(loginPathFor(undefined)).toBe('/login')
   })
 })

@@ -18,13 +18,14 @@ interface ProductGridProps {
 
 const columnClass: Record<NonNullable<ProductGridProps['columns']>, string> = {
   2: 'grid-cols-2',
-  3: 'grid-cols-2 lg:grid-cols-3',
-  4: 'grid-cols-2 lg:grid-cols-4',
+  3: 'grid-cols-2 md:grid-cols-3',
+  4: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
 }
 
 /**
- * Editorial catalogue grid with an underline filter row. Layouts reflow by
- * column count rather than shrinking the desktop arrangement.
+ * Editorial catalogue grid with an underline filter row. Shared by every listing
+ * except the homepage rail, so it defaults to four desktop columns; layouts reflow
+ * by column count rather than shrinking the desktop arrangement.
  */
 export function ProductGrid({
   pieces,
@@ -32,7 +33,7 @@ export function ProductGrid({
   filterable = false,
   activeFilter,
   onFilterChange,
-  columns = 3,
+  columns = 4,
 }: ProductGridProps) {
   const [internalFilter, setInternalFilter] = useState<CategoryFilter>('All')
   const current = activeFilter ?? internalFilter

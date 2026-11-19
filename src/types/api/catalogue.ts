@@ -21,6 +21,8 @@ export interface Product {
   description: string | null
   /** The catalogue's starting figure — not the amount a variant charges. */
   basePrice: MoneyString
+  /** Optional: the catalogue has no stored original price; sale data is evaluated at checkout. */
+  originalPrice?: MoneyString | null
   status: ProductStatus
   isActive: boolean
   createdAt: ISODateTime

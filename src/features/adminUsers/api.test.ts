@@ -1,13 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { apiGetOne, apiPost } from '@/lib/api/client'
-import { createDeliveryStaff, fetchAdminUser } from './api'
+import { apiGetOne, apiPatch, apiPost } from '@/lib/api/client'
+import {
+  changeUserRole,
+  changeUserStatus,
+  createDeliveryStaff,
+  fetchAdminUser,
+  fetchAdminUsers,
+} from './api'
 
 vi.mock('@/lib/api/client', () => ({
   apiGetOne: vi.fn(),
+  apiPatch: vi.fn(),
   apiPost: vi.fn(),
 }))
 
 const getMock = vi.mocked(apiGetOne)
+const patchMock = vi.mocked(apiPatch)
 const postMock = vi.mocked(apiPost)
 
 const staff = {
@@ -26,6 +34,7 @@ const staff = {
 
 beforeEach(() => {
   getMock.mockReset()
+  patchMock.mockReset()
   postMock.mockReset()
 })
 
@@ -64,5 +73,39 @@ describe('admin user API', () => {
     expect(getMock).toHaveBeenCalledWith('/admin/users/staff-id', {
       signal: undefined,
     })
+  })
+
+  it('fetches one bounded server-side user page from the admin-only endpoint', async () => {
+    const page = { items: [staff], pagination: { page: 2, limit: 10, total: 11, totalPages: 2 } }
+    getMock.mockResolvedValue(page)
+
+    await expect(fetchAdminUsers({ page: 2, limit: 10 })).resolves.toEqual(page)
+    expect(getMock).toHaveBeenCalledWith('/admin/users', { signal: undefined, query: { page: 2, limit: 10 } })
+  })
+
+  it('patches only the role to the role-change endpoint', async () => {
+    patchMock.mockResolvedValue({ ...staff, role: 'ADMIN' })
+
+    await expect(changeUserRole('staff-id', 'ADMIN')).resolves.toEqual({
+      ...staff,
+      role: 'ADMIN',
+    })
+    expect(patchMock).toHaveBeenCalledWith('/admin/users/staff-id/role', {
+      role: 'ADMIN',
+    })
+  })
+
+  it('rejects a role-change response that does not confirm the new role', async () => {
+    patchMock.mockResolvedValue(staff)
+
+    await expect(changeUserRole('staff-id', 'ADMIN')).rejects.toThrow(
+      'updated role was not returned',
+    )
+  })
+
+  it('patches only account status to the account-status endpoint', async () => {
+    patchMock.mockResolvedValue({ ...staff, status: 'INACTIVE' })
+    await expect(changeUserStatus('staff-id', 'INACTIVE')).resolves.toEqual({ ...staff, status: 'INACTIVE' })
+    expect(patchMock).toHaveBeenCalledWith('/admin/users/staff-id/status', { status: 'INACTIVE' })
   })
 })

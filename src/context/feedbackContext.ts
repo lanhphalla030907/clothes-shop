@@ -9,9 +9,11 @@ export type FeedbackOptions = {
 }
 
 export type ConfirmationOptions = Omit<FeedbackOptions, 'type'> & {
-  type?: 'warning' | 'confirmation'
+  /** Confirmations are normally warnings, but login-required is informational. */
+  type?: FeedbackType
   confirmLabel?: string
-  cancelLabel?: string
+  /** `null` hides the secondary action when there is only one honest choice. */
+  cancelLabel?: string | null
 }
 
 interface FeedbackContextValue {

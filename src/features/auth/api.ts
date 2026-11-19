@@ -16,7 +16,11 @@ const isAuthSession = (value: AuthSession | undefined): value is AuthSession =>
   typeof value?.accessToken === 'string' && value.accessToken.length > 0
 
 export const loginUser = async (credentials: Credentials): Promise<AuthSession> => {
-  const session = await apiPost<AuthSession>(API.login, credentials)
+  // Login sets the HttpOnly refresh cookies; credentials must be included or
+  // the browser silently discards them.
+  const session = await apiPost<AuthSession>(API.login, credentials, {
+    credentials: 'include',
+  })
 
   if (!isAuthSession(session)) {
     throw new ApiError('The studio could not start a session.', { kind: 'unknown' })
@@ -26,13 +30,25 @@ export const loginUser = async (credentials: Credentials): Promise<AuthSession> 
 }
 
 export const loginWithGoogle = async (idToken: string, nonce?: string): Promise<AuthSession> => {
-  const session = await apiPost<AuthSession>(API.googleLogin, { idToken, nonce })
+  const session = await apiPost<AuthSession>(
+    API.googleLogin,
+    { idToken, nonce },
+    { credentials: 'include' },
+  )
 
   if (!isAuthSession(session)) {
     throw new ApiError('The studio could not start a session.', { kind: 'unknown' })
   }
 
   return session
+}
+
+/** Revokes the cookie's refresh family before local state is forgotten. */
+export const logoutSession = async (): Promise<void> => {
+  await apiPost<void>(API.logout, undefined, {
+    credentials: 'include',
+    csrf: true,
+  })
 }
 
 export interface UserIdentity {

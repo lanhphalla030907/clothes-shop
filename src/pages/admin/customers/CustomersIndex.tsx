@@ -1,16 +1,14 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, ShoppingBag, UserCheck, UserPlus, UserX, Users } from 'lucide-react'
 import { Action } from '@/components/ui/Action'
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader'
+import { AdminStatCard } from '@/components/admin/AdminStatCard'
 import { EmptyState, ErrorState, InlineNotice } from '@/components/account/States'
 import { SelectField, TextField } from '@/components/account/Field'
-import { Skeleton, SkeletonGrid } from '@/components/account/Skeleton'
-import {
-  fetchAdminCustomers,
-  fetchAdminCustomerStats,
-} from '@/features/adminCustomers/api'
+import { Skeleton } from '@/components/account/Skeleton'
+import { fetchAdminCustomers, fetchAdminCustomerStats } from '@/features/adminCustomers/api'
 import {
   ADMIN_CUSTOMER_PAGE_SIZES,
   customersWithoutOrders,
@@ -60,10 +58,7 @@ export default function CustomersIndex() {
       ? sortByParam
       : undefined
   const sortOrderParam = params.get('sortOrder')
-  const appliedSortOrder =
-    sortOrderParam === 'asc' || sortOrderParam === 'desc'
-      ? sortOrderParam
-      : undefined
+  const appliedSortOrder = sortOrderParam === 'asc' || sortOrderParam === 'desc' ? sortOrderParam : undefined
 
   const [searchDraft, setSearchDraft] = useState(appliedSearch)
   const [statusDraft, setStatusDraft] = useState(appliedStatus)
@@ -100,10 +95,7 @@ export default function CustomersIndex() {
     [query],
   )
 
-  const stats = useAsyncResource<AdminCustomerStats>(
-    (signal) => fetchAdminCustomerStats(signal),
-    [],
-  )
+  const stats = useAsyncResource<AdminCustomerStats>((signal) => fetchAdminCustomerStats(signal), [])
 
   const rows = customers.data?.items ?? []
   const pagination = customers.data?.pagination
@@ -119,10 +111,7 @@ export default function CustomersIndex() {
     appliedSortOrder !== undefined
 
   const customerStats = stats.data
-  const customersWithoutOrdersCount =
-    customerStats !== undefined
-      ? customersWithoutOrders(customerStats)
-      : undefined
+  const customersWithoutOrdersCount = customerStats !== undefined ? customersWithoutOrders(customerStats) : undefined
 
   const updateParam = (key: string, value: string, resetPage = false) => {
     const next = new URLSearchParams(params)
@@ -163,16 +152,12 @@ export default function CustomersIndex() {
       />
 
       <section aria-label="Customer statistics">
-        {stats.isLoading || customers.isLoading ? (
+        {stats.isLoading ? (
           <StatsSkeleton />
-        ) : stats.error !== undefined || customers.error !== undefined ? (
-          <ErrorState
-            message={toUserMessage(stats.error ?? customers.error)}
-            onRetry={() => {
-              stats.refetch()
-              customers.refetch()
-            }}
-          />
+        ) : stats.error !== undefined ? (
+          <div className="rounded-xl border border-line bg-paper-pure p-5 shadow-xs">
+            <ErrorState message={toUserMessage(stats.error)} onRetry={stats.refetch} />
+          </div>
         ) : customerStats === undefined ? (
           <EmptyState
             align="left"
@@ -181,43 +166,47 @@ export default function CustomersIndex() {
             description="Customer statistics could not be loaded."
           />
         ) : (
-          <dl className="grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-3 lg:grid-cols-6">
-            <StatCard
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <AdminStatCard
               label="Total customers"
               value={customerStats.totalCustomers}
-              loading={false}
               hint="Every customer account"
+              icon={Users}
+              emphasis
             />
-            <StatCard
+            <AdminStatCard
               label="Active customers"
               value={customerStats.activeCustomers}
-              loading={false}
               hint="Accounts whose status is active"
+              icon={UserCheck}
             />
-            <StatCard
+            <AdminStatCard
               label="New customers"
               value={customerStats.newCustomers}
-              loading={false}
               hint={`Registered in the last ${customerStats.newCustomerWindowDays} days`}
+              icon={UserPlus}
             />
-            <StatCard
-              label="Customers with orders"
+            <AdminStatCard
+              label="With orders"
               value={customerStats.customersWithOrders}
-              loading={false}
               hint="At least one order, any status"
+              icon={ShoppingBag}
             />
-            <StatCard
-              label="Customers without orders"
-              value={customersWithoutOrdersCount}
-              loading={false}
+            <AdminStatCard
+              label="Without orders"
+              value={customersWithoutOrdersCount ?? 0}
               hint="No order recorded"
+              icon={UserX}
             />
-          </dl>
+          </div>
         )}
       </section>
 
       <div className="space-y-4">
-        <form onSubmit={submitSearch} className="flex flex-wrap items-end gap-x-4 gap-y-5">
+        <form
+          onSubmit={submitSearch}
+          className="flex flex-wrap items-end gap-x-4 gap-y-4 rounded-xl border border-line bg-paper-pure p-5 shadow-xs"
+        >
           <div className="w-full sm:min-w-64 sm:flex-1">
             <TextField
               name="customer-search"
@@ -281,12 +270,7 @@ export default function CustomersIndex() {
           </div>
         </form>
 
-        {searchFailedWithData && (
-          <InlineNotice
-            message={toUserMessage(customers.error)}
-            onDismiss={() => undefined}
-          />
-        )}
+        {searchFailedWithData && <InlineNotice message={toUserMessage(customers.error)} onDismiss={() => undefined} />}
 
         {customers.isLoading && <CustomersSkeleton />}
 
@@ -298,11 +282,7 @@ export default function CustomersIndex() {
           <EmptyState
             align="left"
             eyebrow={hasFilters ? 'No matches' : 'No customers yet'}
-            title={
-              hasFilters
-                ? 'No customers match these filters'
-                : 'No customers have registered'
-            }
+            title={hasFilters ? 'No customers match these filters' : 'No customers have registered'}
             description={
               hasFilters
                 ? 'Try a broader search, another status, or a wider date range.'
@@ -336,11 +316,11 @@ export default function CustomersIndex() {
               )}
             </div>
 
-            <div className="border border-line bg-paper">
+            <div className="overflow-hidden rounded-xl border border-line bg-paper-pure shadow-xs">
               <div className="hidden overflow-x-auto lg:block">
-                <table className="w-full text-left">
+                <table className="w-full text-left text-[13px] border-collapse">
                   <thead>
-                    <tr className="border-b border-line">
+                    <tr className="border-b border-line bg-canvas/40">
                       <Column>Customer</Column>
                       <Column>Email</Column>
                       <Column>Phone</Column>
@@ -353,45 +333,31 @@ export default function CustomersIndex() {
                   </thead>
                   <tbody className="divide-y divide-line-soft">
                     {rows.map((customer) => (
-                      <tr key={customer.id}>
-                        <td className="px-5 py-4">
+                      <tr key={customer.id} className="transition-colors hover:bg-bone/40">
+                        <td className="px-5 py-3.5">
                           <CustomerLink customer={customer} />
-                          <span className="mt-1 block text-[11.5px] text-graphite">
-                            {customer.email}
-                          </span>
+                          <span className="mt-0.5 block text-[11.5px] text-graphite">{customer.email}</span>
                         </td>
-                        <td className="px-4 py-4 text-[13px] text-graphite truncate max-w-xs">
-                          {customer.email}
-                        </td>
-                        <td className="px-4 py-4 text-[13px] text-graphite">
-                          {customer.phone ?? '—'}
-                        </td>
-                        <td className="px-4 py-4 font-mono text-[13px] tabular-nums text-ink">
+                        <td className="max-w-xs truncate px-4 py-3.5 text-[13px] text-graphite">{customer.email}</td>
+                        <td className="px-4 py-3.5 text-[13px] text-graphite">{customer.phone ?? '—'}</td>
+                        <td className="px-4 py-3.5 font-mono text-[13px] tabular-nums text-ink">
                           {customer.totalOrders}
                         </td>
-                        <td className="px-4 py-4">
+                        <td className="px-4 py-3.5">
                           <span className="font-mono text-[12.5px] tabular-nums text-ink">
                             {formatCustomerSpend(customer.totalSpentByCurrency)}
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-[13px] text-graphite">
+                        <td className="px-4 py-3.5 text-[13px] text-graphite">
                           {formatCustomerDate(customer.createdAt)}
                         </td>
-                        <td className="px-4 py-4">
-                          <span
-                            className={`inline-flex h-7 items-center border px-2.5 text-[11px] font-semibold tracking-[0.06em] uppercase ${
-                              customer.status === 'ACTIVE'
-                                ? 'border-line bg-bone text-ink'
-                                : 'border-signal/30 bg-signal-soft text-signal'
-                            }`}
-                          >
-                            {customer.status}
-                          </span>
+                        <td className="px-4 py-3.5">
+                          <CustomerStatusBadge status={customer.status} />
                         </td>
-                        <td className="px-5 py-4 text-right">
+                        <td className="px-5 py-3.5 text-right">
                           <Link
                             to={`/admin/customers/${customer.id}`}
-                            className="inline-flex min-h-9 items-center justify-center font-mono text-[12px] font-medium text-graphite underline-offset-4 transition-colors hover:text-ink hover:underline"
+                            className="inline-flex h-8 items-center rounded-md px-2.5 font-mono text-[12px] font-medium text-graphite transition-colors hover:bg-bone hover:text-ink"
                           >
                             View
                           </Link>
@@ -404,60 +370,43 @@ export default function CustomersIndex() {
 
               <ul className="divide-y divide-line-soft lg:hidden">
                 {rows.map((customer) => (
-                  <li key={customer.id} className="space-y-3 p-5">
+                  <li key={customer.id} className="space-y-3 p-4 sm:p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
                         <CustomerLink customer={customer} />
-                        <p className="mt-1 text-[12.5px] text-graphite">
-                          {customer.email}
-                        </p>
+                        <p className="mt-0.5 truncate text-[12.5px] text-graphite">{customer.email}</p>
                       </div>
                       <span className="font-mono text-[12.5px] tabular-nums text-ink">
                         {formatCustomerSpend(customer.totalSpentByCurrency)}
                       </span>
                     </div>
 
-                    <div className="grid gap-2 sm:grid-cols-2 text-[12.5px]">
+                    <div className="grid gap-2 text-[12.5px] sm:grid-cols-2">
                       <div className="flex items-center gap-2">
                         <span className="text-graphite">Orders</span>
                         <span className="font-mono text-ink">{customer.totalOrders}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-graphite">Registered</span>
-                        <span className="font-mono text-ink">
-                          {formatCustomerDate(customer.createdAt)}
-                        </span>
+                        <span className="font-mono text-ink">{formatCustomerDate(customer.createdAt)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-graphite">Phone</span>
-                        <span className="font-mono text-ink">
-                          {customer.phone ?? '—'}
-                        </span>
+                        <span className="font-mono text-ink">{customer.phone ?? '—'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-graphite">Status</span>
-                        <span
-                          className={`font-medium ${
-                            customer.status === 'ACTIVE'
-                              ? 'text-ink'
-                              : 'text-signal'
-                          }`}
-                        >
-                          {customer.status}
-                        </span>
+                        <CustomerStatusBadge status={customer.status} />
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-3">
                       <span className="text-[12px] text-graphite">
-                        Last order:{' '}
-                        {customer.lastOrderAt === null
-                          ? '—'
-                          : formatCustomerDate(customer.lastOrderAt)}
+                        Last order: {customer.lastOrderAt === null ? '—' : formatCustomerDate(customer.lastOrderAt)}
                       </span>
                       <Link
                         to={`/admin/customers/${customer.id}`}
-                        className="inline-flex min-h-10 items-center justify-center font-mono text-[12px] font-medium text-graphite underline-offset-4 transition-colors hover:text-ink hover:underline"
+                        className="inline-flex h-8 items-center rounded-md px-2.5 font-mono text-[12px] font-medium text-graphite transition-colors hover:bg-bone hover:text-ink"
                       >
                         View customer
                       </Link>
@@ -482,20 +431,27 @@ export default function CustomersIndex() {
   )
 }
 
-function Column({
-  children,
-  className = '',
-}: {
-  children: string
-  className?: string
-}) {
+function Column({ children, className = '' }: { children: string; className?: string }) {
   return (
     <th
       scope="col"
-      className={`px-4 py-3 text-[12px] font-medium text-graphite first:pl-5 last:pr-5 ${className}`}
+      className={`px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wider text-graphite first:pl-5 last:pr-5 ${className}`}
     >
       {children}
     </th>
+  )
+}
+
+function CustomerStatusBadge({ status }: { status: string }) {
+  const active = status === 'ACTIVE'
+  return (
+    <span
+      className={`inline-flex h-6 items-center rounded-md border px-2 text-[10.5px] font-semibold uppercase tracking-[0.06em] ${
+        active ? 'border-line bg-bone text-ink' : 'border-signal/25 bg-signal-soft text-signal'
+      }`}
+    >
+      {status}
+    </span>
   )
 }
 
@@ -530,7 +486,7 @@ function Pagination({
   return (
     <nav
       aria-label="Customer pagination"
-      className="flex flex-col gap-4 border border-line bg-paper px-5 py-4 sm:flex-row sm:items-end sm:justify-between"
+      className="flex flex-col gap-4 rounded-xl border border-line bg-paper-pure px-5 py-4 shadow-xs sm:flex-row sm:items-end sm:justify-between"
     >
       <div className="w-full sm:w-36">
         <SelectField
@@ -548,12 +504,7 @@ function Pagination({
       </div>
 
       <div className="flex items-center gap-2 sm:pb-0.5">
-        <Action
-          variant="outline"
-          size="sm"
-          disabled={page <= 1 || isRefreshing}
-          onClick={() => onPage(page - 1)}
-        >
+        <Action variant="outline" size="sm" disabled={page <= 1 || isRefreshing} onClick={() => onPage(page - 1)}>
           <ChevronLeft size={14} strokeWidth={1.8} aria-hidden />
           Previous
         </Action>
@@ -574,51 +525,33 @@ function Pagination({
   )
 }
 
-function StatCard({
-  label,
-  value,
-  loading,
-  hint,
-}: {
-  label: string
-  value: number | undefined
-  loading: boolean
-  hint: string
-}) {
-  return (
-    <div className="bg-paper px-5 py-5 sm:px-6">
-      <dt className="text-[12px] font-medium text-graphite">{label}</dt>
-      <dd className="mt-2">
-        {loading ? (
-          <Skeleton className="h-8 w-12" />
-        ) : (
-          <span className="font-mono text-[1.75rem] leading-none tabular-nums text-ink">
-            {String(value ?? 0).padStart(2, '0')}
-          </span>
-        )}
-        <span className="mt-2 block text-[12px] leading-relaxed text-graphite">
-          {hint}
-        </span>
-      </dd>
-    </div>
-  )
-}
-
 const StatsSkeleton = () => (
-  <div className="border border-line bg-paper p-5 sm:p-6" role="status" aria-busy="true">
+  <div
+    className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+    role="status"
+    aria-busy="true"
+    aria-label="Loading customer statistics"
+  >
     <span className="sr-only">Loading customer statistics</span>
-    <SkeletonGrid count={6} />
+    {Array.from({ length: 5 }, (_, index) => (
+      <Skeleton key={index} className="h-[108px] rounded-xl" />
+    ))}
   </div>
 )
 
 const CustomersSkeleton = () => (
-  <div className="border border-line bg-paper p-5 sm:p-6" role="status" aria-busy="true">
+  <div
+    className="rounded-xl border border-line bg-paper-pure p-5 shadow-xs sm:p-6"
+    role="status"
+    aria-busy="true"
+    aria-label="Loading customers"
+  >
     <span className="sr-only">Loading customers</span>
     {Array.from({ length: 5 }, (_, index) => (
       <div key={index} className="flex items-center gap-4 py-3">
-        <div className="h-3 w-1/5 animate-pulse bg-line-soft" />
-        <div className="h-3 w-1/4 animate-pulse bg-line-soft" />
-        <div className="ml-auto h-3 w-1/6 animate-pulse bg-line-soft" />
+        <div className="h-3 w-1/5 animate-pulse rounded bg-line-soft" />
+        <div className="h-3 w-1/4 animate-pulse rounded bg-line-soft" />
+        <div className="ml-auto h-3 w-1/6 animate-pulse rounded bg-line-soft" />
       </div>
     ))}
   </div>

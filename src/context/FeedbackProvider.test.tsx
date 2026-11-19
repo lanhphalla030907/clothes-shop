@@ -69,6 +69,20 @@ function FeedbackDriver() {
       >
         Ask confirmation
       </button>
+      <button
+        type="button"
+        onClick={() => {
+          void confirmFeedback({
+            type: 'info',
+            title: 'Sign in required',
+            message: 'Please sign in to your account to continue.',
+            confirmLabel: 'Sign In',
+            cancelLabel: null,
+          }).then((confirmed) => setConfirmationResult(confirmed ? 'Signing in' : 'Stayed'))
+        }}
+      >
+        Ask sign in
+      </button>
       {confirmationResult && <p>{confirmationResult}</p>}
     </div>
   )
@@ -134,6 +148,20 @@ describe('global feedback dialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ask confirmation' }))
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }))
     expect(await screen.findByText('Confirmed')).toBeTruthy()
+  })
+
+  it('supports a one-action confirmation for the login-required dialog', async () => {
+    renderFeedback()
+    fireEvent.click(screen.getByRole('button', { name: 'Ask sign in' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Sign in required' })
+    expect(dialog).toBeTruthy()
+    expect(screen.getByText('Please sign in to your account to continue.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }))
+    expect(await screen.findByText('Signing in')).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('does not open overlapping dialogs when multiple feedback requests are queued', () => {

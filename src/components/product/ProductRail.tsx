@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
-import { FloatingProduct } from './FloatingProduct'
+import { ProductCard } from './ProductCard'
 import type { CataloguePiece } from '@/types'
 
 interface ProductRailProps {
@@ -43,25 +43,27 @@ export function ProductRail({
   const trackRef = useRef<HTMLDivElement>(null)
   const [page, setPage] = useState(0)
 
-  const getPerPage = useCallback(() => {
-    if (typeof window === 'undefined') return 4
-    if (window.innerWidth >= 1024) return 4   // desktop → 4
-    return 2                                   // mobile + tablet → 2
+  const layoutFor = useCallback(() => {
+    if (typeof window === 'undefined') return { perPage: 5, gap: 24 }
+    const width = window.innerWidth
+    if (width >= 1024) return { perPage: 5, gap: 24 } // lg
+    if (width >= 768) return { perPage: 4, gap: 24 }  // md
+    if (width >= 640) return { perPage: 3, gap: 20 }  // sm
+    return { perPage: 2, gap: 16 }                    // mobile
   }, [])
 
-  const totalPages = Math.max(1, Math.ceil(pieces.length / getPerPage()))
+  const totalPages = Math.max(1, Math.ceil(pieces.length / layoutFor().perPage))
 
   const goToPage = useCallback((nextPage: number) => {
     const el = trackRef.current
     if (!el) return
-    const perPage = getPerPage()
+    const { perPage, gap } = layoutFor()
     const firstCard = el.querySelector<HTMLElement>('[data-card]')
     if (!firstCard) return
     const cardWidth = firstCard.offsetWidth
-    const gap = 24
     el.scrollTo({ left: nextPage * perPage * (cardWidth + gap), behavior: 'smooth' })
     setPage(nextPage)
-  }, [getPerPage])
+  }, [layoutFor])
 
   const next = () => { if (page < totalPages - 1) goToPage(page + 1) }
   const prev = () => { if (page > 0) goToPage(page - 1) }
@@ -94,11 +96,11 @@ export function ProductRail({
       <div className="container-editorial mt-6 sm:mt-8">
         <div
           ref={trackRef}
-          className="grid grid-flow-col grid-rows-1 auto-cols-[calc((100%-1rem)/2)] gap-4 overflow-x-auto scroll-smooth pb-2 sm:gap-6 lg:auto-cols-[calc((100%-3*1.5rem)/4)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
+          className="grid grid-flow-col grid-rows-1 auto-cols-[calc((100%-1rem)/2)] gap-4 overflow-x-auto scroll-smooth pb-2 sm:auto-cols-[calc((100%-2.5rem)/3)] sm:gap-5 md:auto-cols-[calc((100%-4.5rem)/4)] md:gap-6 lg:auto-cols-[calc((100%-6rem)/5)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
         >
           {pieces.map((piece, index) => (
             <div key={piece.id} data-card className="snap-start min-w-0">
-              <FloatingProduct piece={piece} index={index} />
+              <ProductCard piece={piece} index={index} priority={index < 4} />
             </div>
           ))}
         </div>

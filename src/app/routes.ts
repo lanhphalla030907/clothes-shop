@@ -41,7 +41,11 @@ export const routes: RouteObject[] = [
       { path: '/product/:id', Component: ProductDetails },
       { path: '/collections/:slug', Component: CollectionDetails },
       { path: '/cart', Component: Cart },
-      { path: '/checkout', Component: Checkout },
+      {
+        path: '/checkout',
+        Component: RequireAuth,
+        children: [{ index: true, Component: Checkout }],
+      },
       { path: '/success', Component: Success },
       { path: '/about', Component: About },
       { path: '/login', Component: Login },

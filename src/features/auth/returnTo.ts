@@ -83,3 +83,16 @@ export const safeReturnTo = (
 
   return value
 }
+
+/**
+ * The single way this app builds a sign-in URL with a return destination.
+ *
+ * Guards and centralized guest handling both need `/login?from=…`; validating at
+ * the point of creation keeps an attacker-controlled or accidental value from
+ * ever becoming an open redirect or a sign-in loop. The role-aware check still
+ * happens in {@link safeReturnTo} once `/auth/me` has identified the shopper.
+ */
+export const loginPathFor = (value: string | null | undefined): string => {
+  if (!value || !isSafePath(value) || isAuthPath(normalisedPathname(value))) return '/login'
+  return `/login?from=${encodeURIComponent(value)}`
+}

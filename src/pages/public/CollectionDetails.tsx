@@ -48,7 +48,7 @@ export default function CollectionDetails() {
       {(pieces.isLoading || categories.isLoading) && <div className="container-editorial"><ProductGridSkeleton /></div>}
       {pieces.error !== undefined && <ProductNotice eyebrow={collection.title} title="Products unavailable" message={toUserMessage(pieces.error)} />}
       {!pieces.isLoading && pieces.error === undefined && !categories.isLoading && (pieces.data?.length ?? 0) === 0 && <ProductNotice eyebrow={collection.title} title="Nothing here yet" message="This collection does not have any published pieces at the moment." />}
-      {!pieces.isLoading && pieces.error === undefined && !categories.isLoading && (pieces.data?.length ?? 0) > 0 && <ProductGrid pieces={pieces.data ?? []} categories={[]} columns={3} />}
+      {!pieces.isLoading && pieces.error === undefined && !categories.isLoading && (pieces.data?.length ?? 0) > 0 && <ProductGrid pieces={pieces.data ?? []} categories={[]} columns={4} />}
 
       {pagination && pagination.totalPages > 1 && (
         <nav className="container-editorial flex items-center justify-between py-14" aria-label="Collection pages">

@@ -59,9 +59,11 @@ type FetchOptions = {
   meRole?: Role
   /** Replaces the `/auth/me` response when a test needs to control its timing. */
   me?: () => Promise<Response>
+  /** Replaces the /auth/refresh response for bootstrap tests. */
+  refresh?: () => Promise<Response>
 }
 
-const installFetch = ({ loginRole = 'CUSTOMER', meRole = 'CUSTOMER', me }: FetchOptions = {}) => {
+const installFetch = ({ loginRole = 'CUSTOMER', meRole = 'CUSTOMER', me, refresh }: FetchOptions = {}) => {
   const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input)
 
@@ -76,6 +78,14 @@ const installFetch = ({ loginRole = 'CUSTOMER', meRole = 'CUSTOMER', me }: Fetch
     if (url.endsWith('/auth/me')) {
       return me === undefined ? jsonResponse(makeUser(meRole)) : me()
     }
+
+    if (url.endsWith('/auth/refresh')) {
+      return refresh === undefined
+        ? jsonResponse({ statusCode: 401, message: 'Invalid refresh session', code: 'INVALID_REFRESH_SESSION' }, 401)
+        : refresh()
+    }
+
+    if (url.endsWith('/auth/logout')) return jsonResponse(null, 204)
 
     throw new Error(`Unexpected request in test: ${url}`)
   })
@@ -100,6 +110,7 @@ const renderLogin = (initialEntry = '/login') =>
           <Route path="/admin" element={<div>admin-landing</div>} />
           <Route path="/admin/products" element={<div>admin-products</div>} />
           <Route path="/account" element={<div>customer-landing</div>} />
+          <Route path="/account/orders" element={<div>customer-orders</div>} />
           <Route path="/delivery" element={<div>delivery-landing</div>} />
         </Routes>
       </AuthProvider>
@@ -379,9 +390,9 @@ describe('navigation and logout', () => {
     expect(screen.queryByRole('link', { name: /Admin studio/i })).toBeNull()
   })
 
-  it('clears the token and the user on logout', async () => {
+  it('calls the backend and clears the token and the user on logout', async () => {
     seedSession('stored-token')
-    installFetch({ meRole: 'ADMIN' })
+    const fetchMock = installFetch({ meRole: 'ADMIN' })
 
     renderWithRouter(<AuthProbe />)
 
@@ -392,5 +403,34 @@ describe('navigation and logout', () => {
 
     await waitFor(() => expect(screen.getByTestId('role').textContent).toBe('NONE'))
     expect(window.localStorage.getItem(SESSION_KEY)).toBeNull()
+    expect(fetchMock.mock.calls.some(([input]) => String(input).endsWith('/auth/logout'))).toBe(true)
+  })
+
+  it('refreshes during bootstrap when no access token exists', async () => {
+    installFetch({
+      refresh: async () => jsonResponse({ accessToken: 'refreshed-access-token', expiresIn: '15m' }),
+      meRole: 'CUSTOMER',
+    })
+
+    renderWithRouter(<AuthProbe />)
+
+    await waitFor(() => expect(screen.getByTestId('role').textContent).toBe('CUSTOMER'))
+    expect(window.localStorage.getItem(SESSION_KEY)).toContain('refreshed-access-token')
+  })
+
+  it('refreshes an expired access token during bootstrap', async () => {
+    window.localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({ accessToken: 'stale-token', expiresAt: '2000-01-01T00:00:00.000Z' }),
+    )
+    installFetch({
+      refresh: async () => jsonResponse({ accessToken: 'renewed-token', expiresIn: '15m' }),
+      meRole: 'ADMIN',
+    })
+
+    renderWithRouter(<AuthProbe />)
+
+    await waitFor(() => expect(screen.getByTestId('role').textContent).toBe('ADMIN'))
+    expect(window.localStorage.getItem(SESSION_KEY)).toContain('renewed-token')
   })
 })

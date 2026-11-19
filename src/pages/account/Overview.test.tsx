@@ -105,6 +105,7 @@ describe('Customer Dashboard Overview', () => {
       login: vi.fn(),
       loginWithGoogle: vi.fn(),
       logout: vi.fn(),
+      requireLogin: vi.fn(),
     })
   })
 

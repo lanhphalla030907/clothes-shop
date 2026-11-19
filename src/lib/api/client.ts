@@ -1,36 +1,104 @@
-import { ApiError } from './errors'
-import { request, type HttpMethod, type RequestOptions, type ResponseBody } from './http'
-import { emitUnauthorized, readAccessToken } from './session'
+import { API } from './config'
+import { ApiError, isApiError } from './errors'
+import {
+  request,
+  type HttpMethod,
+  type RequestOptions,
+  type ResponseBody,
+} from './http'
+import { refreshAccessToken } from './refresh'
+import { emitUnauthorized, readCsrfCookie, readSessionSnapshot } from './session'
 
 /**
  * The session-aware layer every feature calls.
  *
- * `http.ts` moves bytes; this attaches *who* is asking — the bearer token, if
- * there is one — and announces the one outcome that is global to the app: the
- * server refusing the credential. Features never build a header, never read
- * storage, and never see a `401` they would each have to interpret differently.
+ * `http.ts` moves bytes; this attaches the caller's identity, retries a
+ * protected request once after a single shared refresh, and announces only a
+ * confirmed terminal session failure. Features never build a header or read a
+ * cookie themselves.
  */
 
-export type ApiRequestOptions = RequestOptions
+export interface ApiRequestOptions extends RequestOptions {
+  /** Inject `x-csrf-token` from the readable cookie; only for cookie endpoints. */
+  csrf?: boolean
+}
+
+/** These endpoints must never trigger the refresh retry loop. */
+const NO_REFRESH_RETRY = new Set<string>([
+  API.login,
+  API.googleLogin,
+  API.refresh,
+  API.logout,
+])
 
 export const apiRequest = async <T>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<ResponseBody<T>> => {
-  const token = readAccessToken()
+  const { csrf = false, ...transport } = options
+  const canRefresh = !NO_REFRESH_RETRY.has(path)
+  const initial = readSessionSnapshot()
+  let token = initial.accessToken
+  let generation = initial.generation
+  let retried = false
 
-  try {
-    return await request<T>(path, {
-      ...options,
-      requestHeaders: token === null ? {} : { Authorization: `Bearer ${token}` },
+  const send = (currentToken: string | null): Promise<ResponseBody<T>> => {
+    const csrfValue = csrf ? readCsrfCookie() : null
+    return request<T>(path, {
+      ...transport,
+      requestHeaders: {
+        ...transport.requestHeaders,
+        ...(currentToken === null ? {} : { Authorization: `Bearer ${currentToken}` }),
+        ...(csrf && csrfValue !== null ? { 'x-csrf-token': csrfValue } : {}),
+      },
     })
-  } catch (error) {
-    // `403` is deliberately not here: it means the credential was accepted and
-    // the request was not permitted, which must never end a valid session.
-    if (error instanceof ApiError && error.status === 401) {
-      emitUnauthorized({ hadToken: token !== null })
+  }
+
+  for (;;) {
+    try {
+      return await send(token)
+    } catch (error) {
+      const status = isApiError(error) ? error.status : undefined
+
+      if (status === 401 && canRefresh && !retried) {
+        // Compare the generation this request was sent with against the shared
+        // session store. A tab that refreshed while this one waited already
+        // produced the token worth retrying with — no second rotation needed.
+        const latest = readSessionSnapshot()
+        if (
+          latest.accessToken !== null &&
+          (latest.generation !== generation || latest.accessToken !== token)
+        ) {
+          token = latest.accessToken
+          generation = latest.generation
+          retried = true
+          continue
+        }
+
+        const outcome = await refreshAccessToken()
+        if (outcome.ok) {
+          // Read the winner from the shared store, never from a broadcast.
+          const refreshed = readSessionSnapshot()
+          token = refreshed.accessToken ?? outcome.accessToken
+          generation = refreshed.generation
+          retried = true
+          continue
+        }
+
+        // A terminal refresh already cleared state and emitted the event.
+        // CSRF/stale/network outcomes preserve the session: rethrow the
+        // original 401 without emitting a session-ended notification.
+        throw error
+      }
+
+      if (status === 401) {
+        const latest = readSessionSnapshot()
+        // A late 401 minted for an older token cannot log out a newer session.
+        if (latest.accessToken !== null && latest.generation !== generation) throw error
+        emitUnauthorized({ hadToken: token !== null })
+      }
+      throw error
     }
-    throw error
   }
 }
 
@@ -67,8 +135,8 @@ export const apiGetOne = async <T>(
  *
  * Guards the same way `apiGetOne` does, for the same reason: a collection
  * endpoint answering an empty body is the server and the client disagreeing
- * about the contract, and handing that on as `[]` would render as "this category
- * is empty" rather than as a failure worth retrying.
+ * about the contract, and handing that on as `[]` would render as "this
+ * category is empty" rather than as a failure worth retrying.
  */
 export const apiGetList = async <T>(
   path: string,

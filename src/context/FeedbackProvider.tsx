@@ -11,7 +11,7 @@ type FeedbackRequest = {
   title: string
   message: string
   confirmLabel?: string
-  cancelLabel?: string
+  cancelLabel?: string | null
   resolve?: (confirmed: boolean) => void
 }
 
@@ -191,9 +191,11 @@ function FeedbackDialog({
         <div className="mt-7 flex flex-col-reverse justify-end gap-2 sm:flex-row">
           {isConfirmation ? (
             <>
-              <Action variant="outline" size="sm" onClick={onClose}>
-                {request.cancelLabel ?? 'Cancel'}
-              </Action>
+              {request.cancelLabel !== null && (
+                <Action variant="outline" size="sm" onClick={onClose}>
+                  {request.cancelLabel ?? 'Cancel'}
+                </Action>
+              )}
               <Action
                 variant={request.type === 'warning' ? 'warning' : 'solid'}
                 size="sm"

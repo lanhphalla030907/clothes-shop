@@ -86,6 +86,7 @@ const NAV_GROUPS: ReadonlyArray<NavGroup> = [
     title: 'Customers',
     items: [
       { label: 'Customers', to: '/admin/customers', icon: Users, exact: true },
+      { label: 'User roles', to: '/admin/user-roles', icon: Users, exact: false },
       { label: 'Feedback', to: '/admin/feedback', icon: MessageSquare, exact: false },
     ],
   },

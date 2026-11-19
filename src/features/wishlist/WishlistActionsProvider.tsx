@@ -8,7 +8,7 @@ import { WishlistActionsContext } from './wishlistActions'
 type PendingKey = string
 
 export function WishlistActionsProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, requireLogin } = useAuth()
   // A saved piece belongs to an account, so with no session there is nothing to
   // read and no `401` to render as an error state.
   const resource = useAsyncResource(
@@ -57,6 +57,12 @@ export function WishlistActionsProvider({ children }: { children: ReactNode }) {
 
   const add = useCallback(
     async (productId: string): Promise<boolean> => {
+      // A saved piece belongs to an account; stop before the protected write so
+      // the guest sees the standard sign-in dialog, not a technical 401.
+      if (!isAuthenticated) {
+        requireLogin()
+        return false
+      }
       if (inFlight.current.has(productId)) return false
 
       setPendingProducts((current) => new Set(current).add(productId))
@@ -70,11 +76,15 @@ export function WishlistActionsProvider({ children }: { children: ReactNode }) {
         })
       }
     },
-    [perform],
+    [perform, isAuthenticated, requireLogin],
   )
 
   const remove = useCallback(
     async (itemId: string): Promise<boolean> => {
+      if (!isAuthenticated) {
+        requireLogin()
+        return false
+      }
       if (inFlight.current.has(itemId)) return false
 
       setPendingItems((current) => new Set(current).add(itemId))
@@ -88,10 +98,14 @@ export function WishlistActionsProvider({ children }: { children: ReactNode }) {
         })
       }
     },
-    [perform],
+    [perform, isAuthenticated, requireLogin],
   )
 
   const clear = useCallback(async (): Promise<boolean> => {
+    if (!isAuthenticated) {
+      requireLogin()
+      return false
+    }
     if (inFlight.current.has('clear')) return false
 
     inFlight.current = new Set(inFlight.current).add('clear')
@@ -102,7 +116,7 @@ export function WishlistActionsProvider({ children }: { children: ReactNode }) {
       inFlight.current = new Set([...inFlight.current].filter((key) => key !== 'clear'))
       setIsClearing(false)
     }
-  }, [perform])
+  }, [perform, isAuthenticated, requireLogin])
 
   const savedProductIds = useMemo(
     () => new Set((resource.data?.items ?? []).map((item) => item.productId)),

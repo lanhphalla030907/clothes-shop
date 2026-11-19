@@ -37,6 +37,8 @@ export interface RequestOptions {
   requestHeaders?: Record<string, string>
   /** Query parameters; `undefined` and `''` values are omitted. */
   query?: Record<string, string | number | undefined>
+  /** Cookie policy. Defaults to `omit`; auth endpoints opt into `include`. */
+  credentials?: RequestCredentials
 }
 
 /** The parsed body of a response, or `undefined` for `204 No Content`. */
@@ -85,6 +87,7 @@ const withDeadline = (
 interface ErrorBody {
   message?: unknown
   error?: unknown
+  code?: unknown
 }
 
 const messagesFrom = (payload: unknown): string[] => {
@@ -153,6 +156,7 @@ export const request = async <T>(
     query,
     requestHeaders,
     responseType = 'json',
+    credentials = 'omit',
   }: RequestOptions = {},
 ): Promise<ResponseBody<T>> => {
   const deadline = withDeadline(signal, timeoutMs)
@@ -179,7 +183,7 @@ export const request = async <T>(
           ? undefined
           : multipartBody ?? JSON.stringify(body),
       signal: deadline.signal,
-      credentials: 'omit',
+      credentials,
       mode: 'cors',
     })
   } catch (cause) {
@@ -207,6 +211,7 @@ export const request = async <T>(
       kind,
       status: response.status,
       details,
+      code: typeof errorBody.code === 'string' ? errorBody.code : undefined,
     })
   }
 

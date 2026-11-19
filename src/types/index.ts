@@ -165,6 +165,8 @@ export interface CataloguePiece {
   categoryId: UUID
   /** Always the server's figure — the base price or the cheapest variant's. */
   price: MoneyString
+  /** Original (non-discounted) price when a promotion is active; absent otherwise. */
+  originalPrice?: MoneyString
   /** Primary image first, then `sortOrder`. Empty until a product has imagery. */
   images: string[]
   /** False once a product leaves the collection — retired or switched off. */

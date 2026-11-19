@@ -78,10 +78,12 @@ export function EditorialGrid() {
         {EDITS.map((edit, index) => (
           <Reveal key={edit.id} as="article" className={edit.span} delay={(index % 2) * 0.08}>
             <Link to="/shop" className="group/edit block">
-              <div className={`relative overflow-hidden bg-bone ${edit.ratio}`}>
+              <div className={`relative overflow-hidden ${edit.ratio}`}>
                 <SmartImage
                   src={edit.image}
                   alt={edit.title}
+                  fit="cover"
+                  position="object-center"
                   className="h-full w-full transition-transform duration-[1.5s] ease-editorial group-hover/edit:scale-[1.05]"
                 />
                 <div className="pointer-events-none absolute inset-0 border border-transparent transition-colors duration-500 ease-editorial group-hover/edit:border-ink/20" />

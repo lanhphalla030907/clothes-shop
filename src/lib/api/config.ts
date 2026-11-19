@@ -45,6 +45,8 @@ export const API = {
   forgotPassword: '/auth/forgot-password',
   resetPassword: '/auth/reset-password',
   googleLogin: '/auth/google',
+  refresh: '/auth/refresh',
+  logout: '/auth/logout',
   linkGoogle: '/auth/google/link',
   identities: '/auth/identities',
   me: '/auth/me',

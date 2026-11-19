@@ -25,7 +25,7 @@ const track = (current: ReadonlySet<UUID>, key: PendingKey | null, pending: bool
  * re-implementing those rules here, and prices are not the client's to decide.
  */
 export function CartActionsProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, requireLogin } = useAuth()
   // Signed out there is no cart to read and `GET /cart` would answer 401, so the
   // scope is part of what invalidates this resource rather than an error to show.
   const resource = useAsyncResource<Cart | undefined>(
@@ -75,6 +75,12 @@ export function CartActionsProvider({ children }: { children: ReactNode }) {
 
   const add = useCallback(
     async (variantId: UUID, quantity = 1): Promise<boolean> => {
+      // The server cart is account-scoped. Stop before the 401 so a guest gets
+      // the standard sign-in dialog instead of a technical auth error.
+      if (!isAuthenticated) {
+        requireLogin()
+        return false
+      }
       if (addingVariants.current.has(variantId)) return false
 
       addingVariants.current = new Set(addingVariants.current).add(variantId)
@@ -88,7 +94,7 @@ export function CartActionsProvider({ children }: { children: ReactNode }) {
         )
       }
     },
-    [perform],
+    [perform, isAuthenticated, requireLogin],
   )
 
   const setQuantity = useCallback(

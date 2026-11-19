@@ -16,7 +16,12 @@ export interface AuthContextValue {
   /** Authenticates via a Google Identity Services ID token. */
   loginWithGoogle: (idToken: string, nonce?: string) => Promise<boolean>
   /** Forgets the token and the user. The API has no logout endpoint to call. */
-  logout: () => void
+  logout: () => Promise<void>
+  /**
+   * The single entry point for a customer-only action attempted without a
+   * session. Shows the standard sign-in dialog and offers a validated return.
+   */
+  requireLogin: (returnTo?: string) => void
 }
 
 /** `null` until `AuthProvider` is mounted, which `useAuth` turns into a clear error. */

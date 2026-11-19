@@ -7,13 +7,14 @@ interface SaveToWishlistProps {
   productName: string
   /** `plate` sits over a card image; `inline` is the product page's labelled control. */
   variant?: 'plate' | 'inline'
+  className?: string
 }
 
 /**
  * The one save control. Card and product page read the same provider, so a heart
  * filled here is filled on every other surface for that product.
  */
-export function SaveToWishlist({ productId, productName, variant = 'plate' }: SaveToWishlistProps) {
+export function SaveToWishlist({ productId, productName, variant = 'plate', className = '' }: SaveToWishlistProps) {
   const { add, remove, items, isSaved, isPendingProduct } = useWishlistActions()
   const [failed, setFailed] = useState(false)
 
@@ -63,7 +64,11 @@ export function SaveToWishlist({ productId, productName, variant = 'plate' }: Sa
   return (
     <button
       type="button"
-      onClick={() => void toggle()}
+      onClick={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        void toggle()
+      }}
       disabled={pending}
       aria-busy={pending}
       aria-pressed={saved}
@@ -79,18 +84,22 @@ export function SaveToWishlist({ productId, productName, variant = 'plate' }: Sa
               : `Save ${productName} to your wishlist`
       }
       title={label}
-      className={`absolute top-3 right-3 z-20 grid size-10 place-items-center rounded-full backdrop-blur-sm transition-colors duration-200 after:absolute after:-inset-0.5 after:content-[''] disabled:cursor-not-allowed disabled:opacity-60 ${
-        failed ? 'bg-signal text-paper' : 'bg-paper/85 text-ink hover:bg-paper'
-      }`}
+      className={`absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-30 grid size-8 sm:size-9 place-items-center rounded-full border backdrop-blur-md transition-all duration-300 ease-editorial focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60 hover:scale-105 active:scale-95 ${
+        failed
+          ? 'border-signal bg-signal text-paper'
+          : saved
+            ? 'border-signal/40 bg-white/95 text-signal shadow-xs'
+            : 'border-line/80 bg-white/80 text-ink/75 hover:border-ink hover:bg-white hover:text-ink shadow-xs'
+      } ${className}`}
     >
       {failed && !pending ? (
-        <TriangleAlert size={15} strokeWidth={1.5} aria-hidden />
+        <TriangleAlert size={14} strokeWidth={1.5} aria-hidden />
       ) : (
         <Heart
-          size={15}
+          size={14}
           strokeWidth={1.5}
           aria-hidden
-          className={saved ? 'fill-signal text-signal' : ''}
+          className={saved ? 'fill-signal text-signal' : 'transition-transform duration-200 group-hover:scale-110'}
         />
       )}
     </button>

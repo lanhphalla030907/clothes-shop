@@ -4,10 +4,8 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader'
 /**
  * Dedicated Delivery Staff management page.
  *
- * Delivery staff accounts were previously managed from the Studio Overview.
- * They now have their own page under the Delivery section of the admin
- * navigation. The create form, active staff list, validation and API calls
- * are all reused unchanged from DeliveryStaffManagement.
+ * Courier account creation and status visibility belong on the delivery page.
+ * Permission changes deliberately live on the dedicated User Roles page.
  */
 export default function DeliveryStaffIndex() {
   return (
@@ -15,7 +13,7 @@ export default function DeliveryStaffIndex() {
       <AdminPageHeader
         eyebrow="Delivery"
         title="Delivery staff"
-        description="Create active courier accounts and view staff eligible for delivery assignments."
+        description="Create courier accounts and view their access status and assignment eligibility."
       />
 
       <DeliveryStaffManagement />

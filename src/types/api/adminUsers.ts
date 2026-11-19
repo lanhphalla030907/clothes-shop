@@ -20,6 +20,24 @@ export interface AdminUserRecord {
   updatedAt: ISODateTime
 }
 
+/** Roles an administrator may assign. `CUSTOMER` is labelled USER in the UI. */
+export type AssignableUserRole = Extract<
+  AdminUserRecord['role'],
+  'CUSTOMER' | 'ADMIN' | 'DELIVERY_STAFF'
+>
+
+export type ManageableUserStatus = 'ACTIVE' | 'INACTIVE'
+
+export interface AdminUserPage {
+  items: AdminUserRecord[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
 export interface CreateDeliveryStaffRequest {
   firstName: string
   lastName: string
